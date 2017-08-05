@@ -29,8 +29,10 @@ fi
 #fi
 
 # install some software
-yum -y install boost-devel-1.41.0-27.el6.x86_64
-yum -y install mpich-devel.x86_64
+yum -y update
+yum -y groupinstall "Development Tools"
+#yum -y install boost-devel-1.41.0-27.el6.x86_64
+#yum -y install mpich-devel.x86_64
 #yum -y install gmp-devel # needs glibc 2.14 which is not installed in OS
 
 # create profile for setting MPI bin and lib path
