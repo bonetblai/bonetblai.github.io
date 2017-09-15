@@ -6,7 +6,7 @@ if [ "$cfn_node_type" == "MasterServer" ]; then
     # Do something on the MasterServer
 
     # create a symbolic link to /shared/ec2-user/software
-    ln -s /shared/ec2-user/software ~ec2-user/software
+    ln -s /shared/software ~ec2-user/software
 
     # create SGE queue and pe tailored for our workload
     #export SGE_ROOT=/opt/sge
@@ -29,8 +29,10 @@ fi
 #fi
 
 # install some software
-yum -y install boost-devel-1.41.0-27.el6.x86_64
-yum -y install mpich-devel.x86_64
+yum -y update
+yum -y groupinstall "Development Tools"
+yum -y install zlib-devel boost-devel htop
+#yum -y install mpich-devel.x86_64
 #yum -y install gmp-devel # needs glibc 2.14 which is not installed in OS
 
 # create profile for setting MPI bin and lib path
