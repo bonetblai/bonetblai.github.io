@@ -31,7 +31,7 @@ fi
 # install some software
 yum -y update
 yum -y groupinstall "Development Tools"
-yum -y install zlib-devel boost-devel htop
+yum -y install hg zlib-devel boost-devel htop
 #yum -y install mpich-devel.x86_64
 #yum -y install gmp-devel # needs glibc 2.14 which is not installed in OS
 
