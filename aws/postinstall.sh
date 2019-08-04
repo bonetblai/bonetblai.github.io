@@ -31,10 +31,8 @@ fi
 # install some software
 yum -y update
 yum -y groupinstall "Development Tools"
-yum -y install gcc72 gcc72-c++
-yum -y install hg zlib-devel boost-devel htop
-yum -y install python3
-yum -y install docker
+yum -y install gcc72 gcc72-c++ python3 gmp-devel hg zlib-devel boost-devel htop
+#yum -y install docker
 #yum -y install mpich-devel.x86_64
 #yum -y install gmp-devel # needs glibc 2.14 which is not installed in OS
 
