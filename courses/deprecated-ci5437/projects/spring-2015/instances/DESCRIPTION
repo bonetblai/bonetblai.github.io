@@ -1,0 +1,17 @@
+Each files called instances.dist=XX contains 100 random instances
+generated from the goal at distance <= XX
+
+Each file called output.<alg>.dist=XX contains solutions for the
+instances in file instances.dist=XX
+
+The format of the output file is as follow. There is an output line
+for each input instances in the instances file. The line contains:
+
+- the instance, 
+- the value of the heuristic for the initial state (- if the algorithm
+doesn't use heuristics),
+- the cost of an optimal path from the initial state to a goal state,
+- the number of states generated,
+- total time to solve the instance in seconds, and
+- number of nodes generated per second.
+

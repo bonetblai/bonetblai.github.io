@@ -1,0 +1,12 @@
+\beamer@endinputifotherversion {3.20pt}
+\beamer@sectionintoc {1}{About the course}{2}{0}{1}
+\beamer@subsectionintoc {1}{1}{Coordinates}{3}{0}{1}
+\beamer@subsectionintoc {1}{2}{Rules}{8}{0}{1}
+\beamer@sectionintoc {2}{Introduction}{15}{0}{2}
+\beamer@subsectionintoc {2}{1}{What is planning?}{16}{0}{2}
+\beamer@subsectionintoc {2}{2}{Problem classes}{18}{0}{2}
+\beamer@subsectionintoc {2}{3}{Dynamics}{25}{0}{2}
+\beamer@subsectionintoc {2}{4}{Observability}{29}{0}{2}
+\beamer@subsectionintoc {2}{5}{Objectives}{31}{0}{2}
+\beamer@subsectionintoc {2}{6}{Planning vs.\ game theory}{32}{0}{2}
+\beamer@subsectionintoc {2}{7}{Summary}{33}{0}{2}

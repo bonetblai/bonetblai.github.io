@@ -1,0 +1,289 @@
+\documentclass{gkibeamer}
+
+\input{macros}
+
+\begin{document}
+\subtitle{13.~Computational complexity of classical planning}
+\date{July 20th, 2010}
+\maketitles
+
+\tikzset{LabelStyle/.style = {sloped,above}}
+
+\newcommand{\Navigation}[2]{
+  \definecolor{Safe}{rgb}{1,1,1}
+  \definecolor{HighestProb}{gray}{0.5}
+  \definecolor{HighProb}{gray}{0.6}
+  \definecolor{MediumProb}{gray}{0.7}
+  \definecolor{LowProb}{gray}{0.8}
+  \definecolor{VeryLowProb}{gray}{0.9}
+
+  \node[fill=Safe,minimum size=1cm, inner sep=0, outer sep=0]
+  at (0.5,0.5) {}; 
+  \node[fill=Safe,minimum size=1cm, inner sep=0, outer sep=0]
+  at (1.5,0.5) {}; 
+  \node[fill=Safe,minimum size=1cm, inner sep=0, outer sep=0]
+  at (2.5,0.5) {}; 
+  \node[fill=Safe,minimum size=1cm, inner sep=0, outer sep=0]
+  at (3.5,0.5) {}; 
+  \node[fill=Safe,minimum size=1cm, inner sep=0, outer sep=0]
+  at (4.5,0.5) {}; 
+  \node[fill=Safe,minimum size=1cm, inner sep=0, outer sep=0]
+  at (5.5,0.5) {};
+
+  \node[fill=Safe,minimum size=1cm, inner sep=0, outer sep=0]
+  at (0.5,1.5) {}; 
+  \node[fill=VeryLowProb,minimum size=1cm, inner sep=0, outer sep=0]
+  at (1.5,1.5) {}; 
+  \node[fill=LowProb,minimum size=1cm, inner sep=0, outer sep=0]
+  at (2.5,1.5) {}; 
+  \node[fill=MediumProb,minimum size=1cm, inner sep=0, outer sep=0]
+  at (3.5,1.5) {}; 
+  \node[fill=HighProb,minimum size=1cm, inner sep=0, outer sep=0]
+  at (4.5,1.5) {}; 
+  \node[fill=HighestProb,minimum size=1cm, inner sep=0, outer sep=0]
+  at (5.5,1.5) {}; 
+
+  \node[fill=Safe,minimum size=1cm, inner sep=0, outer sep=0]
+  at (0.5,2.5) {}; 
+  \node[fill=VeryLowProb,minimum size=1cm, inner sep=0, outer sep=0]
+  at (1.5,2.5) {}; 
+  \node[fill=LowProb,minimum size=1cm, inner sep=0, outer sep=0]
+  at (2.5,2.5) {}; 
+  \node[fill=MediumProb,minimum size=1cm, inner sep=0, outer sep=0]
+  at (3.5,2.5) {}; 
+  \node[fill=HighProb,minimum size=1cm, inner sep=0, outer sep=0]
+  at (4.5,2.5) {}; 
+  \node[fill=HighestProb,minimum size=1cm, inner sep=0, outer sep=0]
+  at (5.5,2.5) {};
+
+  \node[fill=Safe,minimum size=1cm, inner sep=0, outer sep=0]
+  at (0.5,3.5) {}; 
+  \node[fill=VeryLowProb,minimum size=1cm, inner sep=0, outer sep=0]
+  at (1.5,3.5) {}; 
+  \node[fill=LowProb,minimum size=1cm, inner sep=0, outer sep=0]
+  at (2.5,3.5) {}; 
+  \node[fill=MediumProb,minimum size=1cm, inner sep=0, outer sep=0]
+  at (3.5,3.5) {}; 
+  \node[fill=HighProb,minimum size=1cm, inner sep=0, outer sep=0]
+  at (4.5,3.5) {}; 
+  \node[fill=HighestProb,minimum size=1cm, inner sep=0, outer sep=0]
+  at (5.5,3.5) {}; 
+  
+  \node[fill=Safe,minimum size=1cm, inner sep=0, outer sep=0]
+  at (0.5,4.5) {}; 
+  \node[fill=Safe,minimum size=1cm, inner sep=0, outer sep=0]
+  at (1.5,4.5) {}; 
+  \node[fill=Safe,minimum size=1cm, inner sep=0, outer sep=0]
+  at (2.5,4.5) {}; 
+  \node[fill=Safe,minimum size=1cm, inner sep=0, outer sep=0]
+  at (3.5,4.5) {}; 
+  \node[fill=Safe,minimum size=1cm, inner sep=0, outer sep=0]
+  at (4.5,4.5) {}; 
+  \node[fill=Safe,minimum size=1cm, inner sep=0, outer sep=0]
+  at (5.5,4.5) {};
+
+
+  \node[fill=Safe,minimum height=0.5cm, minimum width = 1cm, inner sep=0, outer sep=0]
+  at (7,1.25) {\footnotesize$0.0$}; 
+  \node[fill=VeryLowProb,minimum height=0.5cm, minimum width = 1cm, inner sep=0, outer sep=0]
+  at (7,1.75) {\footnotesize$0.05$};
+  \node[fill=LowProb,minimum height=0.5cm, minimum width = 1cm, inner sep=0, outer sep=0]
+  at (7,2.25) {\footnotesize$0.1$};
+  \node[fill=MediumProb,minimum height=0.5cm, minimum width = 1cm, inner sep=0, outer sep=0]
+  at (7,2.75) {\footnotesize$0.15$};
+  \node[fill=HighProb,minimum height=0.5cm, minimum width = 1cm, inner sep=0, outer sep=0]
+  at (7,3.25) {\footnotesize$0.2$};
+  \node[fill=HighestProb,minimum height=0.5cm, minimum width = 1cm, inner sep=0, outer sep=0]
+  at (7,3.75) {\footnotesize$0.25$};
+
+  \draw [color=black] (6.5,1) -- (6.5,4);
+  \draw [color=black] (7.5,1) -- (7.5,4);
+
+  \draw [color=black] (6.5,1) -- (7.5,1);
+  \draw [color=black] (6.5,1.5) -- (7.5,1.5);
+  \draw [color=black] (6.5,2) -- (7.5,2);
+  \draw [color=black] (6.5,2.5) -- (7.5,2.5);
+  \draw [color=black] (6.5,3) -- (7.5,3);
+  \draw [color=black] (6.5,3.5) -- (7.5,3.5);
+  \draw [color=black] (6.5,4) -- (7.5,4);
+
+  \draw (0,0) grid (6,5);
+
+
+  \node[draw, shape=circle, minimum size=0.6cm, inner sep=0, outer
+  sep=0, color=red, line width=1pt] at (#1+0.5,#2+0.5) {};
+  
+  \node[shape=circle, minimum size=0.8cm, inner sep=0, outer
+  sep=0, color=red]  at (5.5,4.5) {X};
+}
+
+\section*{Motivation}
+\begin{frame}{Probabilistic Planning}
+  \begin{itemize}
+    \item The world is not predictable, but sometimes we can estimate
+    \alert{how likely} unpredictable events happen.
+    \item Example from AI robotics:
+    \begin{itemize}
+      \item robot navigation in unknown terrain
+      \item supported by satellite maps
+      \item traversability of terrain can only be estimated
+    \end{itemize}
+    \item Use \alert{probabilities} to describe nondeterministic
+    effects.
+    \item Different \alert{objectives} (that lead to different
+    algorithms):
+    \begin{itemize}
+      \item Reach a goal state with highest possible probability. 
+      \item Reach a goal state with smallest possible \alert{expected
+        cost}.
+      \item Gain highest possible \alert{reward} (over a finite
+      \alert{horizon} or with a \alert{discount factor} in the infinite
+      case).
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Example: Navigation}
+  \begin{center}
+    \begin{tikzpicture}
+      \Navigation{5}{0}
+      \invisible{
+        %Just that the picture won't jump
+        \node[fill=Safe,inner sep=0, outer sep=0] at (8.1,0.35)
+        {\tiny$r(s,a,s') = \begin{cases} 0 & \textnormal{if } s'
+            \textnormal{ is goal}\\
+            -1 & \textnormal{else}\end{cases}$};
+      }
+      \end{tikzpicture}
+  \end{center}
+\end{frame}
+
+\begin{frame}{Objective: Reach Goal with highest possible probability}
+  \begin{center}
+    \begin{tikzpicture}
+      \Navigation{5}{0}
+      \draw[color=red, line width=1pt] (0.5,0.1) to (5.1,0.1);
+      \draw[color=red, line width=1pt] (0.5,0.1) to node[LabelStyle]
+      {\scriptsize$1.0$} (0.5,4.9);
+      \draw[color=red, line width=1pt] (0.5,4.9) to (5.1,4.9);
+
+      \draw[line width=1pt] (1.5,0.25) to (5.1,0.25);
+      \draw[line width=1pt] (1.5,0.25) to node[LabelStyle]
+      {\scriptsize$\approx 0.86$} (1.5,4.75);
+      \draw[line width=1pt] (1.5,4.75) to (5.1,4.75);
+
+      \draw[line width=1pt] (2.5,0.4) to (5.1,0.4);
+      \draw[line width=1pt] (2.5,0.4) to node[LabelStyle]
+      {\scriptsize$\approx 0.73$} (2.5,4.6);
+      \draw[line width=1pt] (2.5,4.6) to (5.1,4.6);
+
+      \draw[line width=1pt] (3.5,0.55) to (5.1,0.55);
+      \draw[line width=1pt] (3.5,0.55) to node[LabelStyle]
+      {\scriptsize$\approx 0.61$} (3.5,4.45);
+      \draw[line width=1pt] (3.5,4.45) to (5.1,4.45);
+
+      \draw[line width=1pt] (4.5,0.7) to (5.1,0.7);
+      \draw[line width=1pt] (4.5,0.7) to node[LabelStyle]
+      {\scriptsize$\approx 0.51$} (4.5,4.3);
+      \draw[line width=1pt] (4.5,4.3) to (5.1,4.3);
+
+      \draw[line width=1pt] (5.5,0.85) to node[LabelStyle]
+      {\scriptsize$\approx 0.42$} (5.5,4.15);
+
+      \invisible{
+        %Just that the picture won't jump
+        \node[fill=Safe,inner sep=0, outer sep=0] at (8.1,0.35)
+        {\tiny$r(s,a,s') = \begin{cases} 0 & \textnormal{if } s'
+            \textnormal{ is goal}\\
+            -1 & \textnormal{else}\end{cases}$};
+      }
+    \end{tikzpicture}
+  \end{center}
+\end{frame}
+
+\begin{frame}{Objective: Highest reward with finite horizon}
+  \begin{center}
+    \begin{tikzpicture}
+      \Navigation{5}{0}
+      \draw[line width=1pt] (0.5,0.1) to (5.1,0.1);
+      \draw[line width=1pt] (0.5,0.1) to node[LabelStyle]
+      {\scriptsize$-13$} (0.5,4.9);
+      \draw[line width=1pt] (0.5,4.9) to (5.1,4.9);
+
+      \draw[line width=1pt] (1.5,0.25) to (5.1,0.25);
+      \draw[line width=1pt] (1.5,0.25) to node[LabelStyle]
+      {\scriptsize$\approx -12.28$} (1.5,4.75);
+      \draw[line width=1pt] (1.5,4.75) to (5.1,4.75);
+
+      \draw[color=red, line width=1pt] (2.5,0.4) to (5.1,0.4);
+      \draw[color=red, line width=1pt] (2.5,0.4) to node[LabelStyle]
+      {\scriptsize$\approx -11.98$} (2.5,4.6);
+      \draw[color=red, line width=1pt] (2.5,4.6) to (5.1,4.6);
+
+      \draw[line width=1pt] (3.5,0.55) to (5.1,0.55);
+      \draw[line width=1pt] (3.5,0.55) to node[LabelStyle]
+      {\scriptsize$\approx -12.02$} (3.5,4.45);
+      \draw[line width=1pt] (3.5,4.45) to (5.1,4.45);
+
+      \draw[line width=1pt] (4.5,0.7) to (5.1,0.7);
+      \draw[line width=1pt] (4.5,0.7) to node[LabelStyle]
+      {\scriptsize$-12.32$} (4.5,4.3);
+      \draw[line width=1pt] (4.5,4.3) to (5.1,4.3);
+
+      \draw[line width=1pt] (5.5,0.85) to node[LabelStyle]
+      {\scriptsize$\approx -12.83$} (5.5,4.15);
+
+      \node[inner sep=0, outer sep=0] at (6.85,0.75)
+        {\tiny$h = 20$};
+      \node[inner sep=0, outer sep=0] at (8.1,0.35)
+        {\tiny$r(s,a,s') = \begin{cases} 0 & \textnormal{if } s'
+            \textnormal{ is goal}\\
+            -1 & \textnormal{else}\end{cases}$};
+    \end{tikzpicture}
+  \end{center}
+\end{frame}
+
+\begin{frame}{Probabilistic Planning}
+  \begin{itemize}
+    \item In \alert{deterministic planning} we have assumed that the
+    only changes taking place in the world are those caused by us and
+    that we can \alert{exactly predict} the results of our actions.
+    \item In \alert{nondeterministic planning} we extended this
+    framework by formalizing other agents and processes beyond our
+    control as \alert{nondeterminism}.
+    \item If it is possible to assign \alert{probabilities} to
+    nondeterministic effects we talk about \alert{probabilistic
+      planning}.
+  \end{itemize}
+\end{frame}
+
+\section{Transition systems and planning tasks}
+\subsection{Transition systems}
+
+\begin{frame}{Markov Decision Process}
+  \begin{definition}[Markov Decision Process]
+    A \alert{Markov Decision Process} (MDP) is a 4-tuple $\mathcal T =
+    \langle S, L, P, R \rangle$ where
+    \begin{itemize}
+    \item $S$ is a finite set of \alert{states},
+    \item $L$ is a finite set of (transition) \alert{labels},
+    \item $P: S \times L \times S \mapsto [0;1]$ is the
+    \alert{transition probability} % (where $\sum_{s' \in S} P(\langle
+    % s,a,s' \rangle) = 1$ or $\sum_{s' \in S} P(\langle
+    % s,a,s' \rangle) = 0$ for all $\langle s,a\rangle \in S \times A$)
+    , and 
+    \item $R: S \times L \times S \mapsto \mathbb{R}$ is the
+    \alert{reward function}
+    \end{itemize}
+  \end{definition}
+\end{frame}
+
+
+\section{Basic Algorithms}
+\subsection{Value Iteration}
+\subsection{Policy Iteration}
+
+\section{Heuristic Search Algorithms}
+\subsection{Real-Time Dynamic Programming}
+
+\end{document}

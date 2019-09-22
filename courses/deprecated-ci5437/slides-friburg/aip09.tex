@@ -1,0 +1,336 @@
+\documentclass{gkibeamer}
+
+%% NOTE: This is a much abbreviated version of the older (WS
+%% 2008/2009) chapter on invariant synthesis, which had to be skipped
+%% for time reasons. This is here mainly so that we can properly
+%% introduce tasks in finite-domain representation, which are the
+%% basis for the chapters on invariant synthesis.
+
+\input{macros}
+
+\begin{document}
+\lectureno{9}
+\subtitle{Interlude: Finite-domain representation}
+\date{December 6th, 2011}
+\maketitles
+
+\section{Invariants}
+
+\subsection{Introduction}
+
+\begin{frame}{Invariants}
+  \begin{itemize}
+  \item When we as humans reason about planning tasks, we implicitly
+    make use of ``obvious'' properties of these tasks.
+    \begin{itemize}
+    \item \hilite{Example:} we are never in two places at the same
+      time
+    \end{itemize}
+  \item We can express this as a logical formula $\varphi$ that is
+    \\ \alert{true in all reachable states}.
+    \begin{itemize}
+    \item \hilite{Example:} $\varphi = \neg (\textit{at-uni} \land
+      \textit{at-home})$
+    \end{itemize}
+  \item Such formulae are called \alert{invariants} of the task.
+  \end{itemize}
+\end{frame}
+
+\subsection{Computing invariants}
+
+\begin{frame}{Computing invariants}
+  How does an \alert{automated} planner come up with invariants?
+  \begin{itemize}
+  \item Theoretically, testing if an arbitrary formula $\varphi$ \\
+    is an invariant is \alert{as hard as planning} itself.
+  \item Still, many practical invariant synthesis algorithms exist.
+  \item To remain efficient (= polynomial-time), these algorithms only
+    compute a \alert{subset} of all useful invariants.
+  \item Empirically, they tend to at least find the ``obvious''
+    invariants of a planning task.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Invariant synthesis algorithms}
+  Most algorithms for generating invariants are based on a
+  \alert{generate-test-repair} paradigm:
+  \begin{itemize}
+  \item \hilite{Generate:} Suggest some invariant candidates, \eg,
+    by enumerating all possible formulas $\varphi$ of a certain
+    size.
+  \item \hilite{Test:} Try to prove that $\varphi$ is indeed an
+    invariant. \\
+    Usually done \alert{inductively}:
+    \begin{enumerate}
+    \item Test that \alert{initial state} satisfies $\varphi$.
+    \item Test that if $\varphi$ is true in the current state,
+      it remains true after applying a single operator.
+    \end{enumerate}
+  \item \hilite{Repair:} If invariant test fails, replace candidate
+    $\varphi$ by a \alert{weaker} formula, ideally exploiting
+    \alert{why} the proof failed.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Invariant synthesis: references}
+  We discussed invariant synthesis in detail in previous courses on AI
+  planning, but this year we will focus on other aspects of planning.% do not have enough time.
+
+  \bigskip
+
+  \hilite{Literature on invariant synthesis:}
+  \begin{itemize}
+  \item DISCOPLAN (Gerevini \& Schubert, 1998)
+  \item TIM (Fox \& Long, 1998)
+  \item Edelkamp \& Helmert's algorithm (1999)
+  \item Rintanen's algorithm (2000)
+  \item Bonet \& Geffner's algorithm (2001)
+  \item Helmert's algorithm (2009)
+  \end{itemize}
+\end{frame}
+
+\subsection{Exploiting variants}
+
+\begin{frame}{Exploiting invariants}
+  Invariants have many uses in planning:
+  \begin{itemize}
+  \item \hilite{Regression search:} \\
+    \alert{Prune states} that violate (are inconsistent with)
+    invariants.
+  \item \hilite{Planning as satisfiability:} \\
+    \alert{Add invariants} to a SAT encoding of a planning task to get
+    tighter constraints.
+  \item \hilite{Reformulation:} \\
+    Derive a \alert{more compact} state space representation \\
+    (\ie, with lower percentage of unreachable states).
+  \end{itemize}
+
+  \bigskip
+
+  We now briefly discuss the last point, since it leads to
+  \alert{planning tasks in finite-domain representation}, which are
+  very important for the next chapters.
+\end{frame}
+
+\section[FDR planning tasks]{Planning tasks in finite-domain representation}
+
+\subsection{Mutexes}
+
+\begin{frame}{Mutexes}
+  Invariants that take the form of \alert{binary clauses} are called
+  \alert{mutexes} because they state that certain variable assignments
+  cannot be simultaneously true and are hence \alert{mutually
+    exclusive}.
+  
+  \begin{example}[Blocksworld]
+    The invariant $\neg \AONB \lor \neg \AONC$ states that $\AONB$ and
+    $\AONC$ are mutex.
+  \end{example}
+
+  Often, a larger \alert{set of literals} is mutually exclusive
+  because every pair of them forms a mutex.
+
+  \begin{example}[Blocksworld]
+    Every pair in $\{\BONA, \CONA, \DONA, \CLEARA\}$ is mutex.
+  \end{example}
+\end{frame}
+
+\begin{frame}{Encoding mutex groups as finite-domain variables}
+  Let $L = \{l_1, \dots, l_n\}$ be mutually exclusive literals over
+  $n$ different variables $A_L = \{a_1, \dots, a_n\}$.
+
+  \smallskip
+    
+  Then the planning task can be rephrased using a single
+  \alert{finite-domain} (i.e., non-binary) state variable $v_L$ with
+  $n + 1$ possible values in place of the $n$ variables in $A_L$:
+  \begin{itemize}
+  \item $n$ of the possible values represent situations in which
+    \alert{exactly one} of the literals in $L$ is true.
+  \item The remaining value represents situations in which
+    \alert{none of the literals} in $L$ is true.
+    \begin{itemize}
+    \item \hilite{Note:} If we can prove that one of the literals in
+      $L$ has to be true in each state, this additional value can be
+      omitted.
+    \end{itemize}
+  \end{itemize}
+
+  In many cases, the reduction in the number of variables can
+  dramatically improve performance of a planning algorithm.
+\end{frame}
+
+\subsection{FDR planning tasks}
+
+\begin{frame}{Finite-domain state variables}
+  \begin{definition}[finite-domain state variable]
+    A \alert{finite-domain state variable} is a symbol $v$ with an
+    associated \alert{finite domain}, \ie, a non-empty finite set.
+
+    \smallskip
+
+    We write $\mathcal D_v$ for the domain of $v$.
+  \end{definition}
+
+  \begin{example}
+    $v = \var{above-a}$, $\mathcal D_{\var{above-a}} =
+    \{\val{b}, \val{c}, \val{d}, \val{nothing}\}$
+
+    \smallskip
+
+    This state variable encodes the same information as the
+    propositional variables \BONA, \CONA, \DONA\ and \CLEARA.
+  \end{example}
+\end{frame}
+
+\begin{frame}{Finite-domain states}
+  \begin{definition}[finite-domain state]
+    Let $V$ be a finite set of finite-domain state variables.
+
+    \smallskip
+    
+    A \alert{state} over $V$ is an assignment $s: V \rightarrow
+    \bigcup_{v \in V} \mathcal D_v$ such that $s(v) \in \mathcal D_v$
+    for all $v \in V$.
+  \end{definition}
+
+  \begin{example}
+    \begin{tightalign}
+      s = \{
+        &
+        \var{above-a} \mapsto \val{nothing},
+        \var{above-b} \mapsto \val{a},
+        \var{above-c} \mapsto \val{b}, \\
+        &
+        \var{below-a} \mapsto \val{b},
+        \var{below-b} \mapsto \val{c},
+        \var{below-c} \mapsto \val{table}
+        \}
+    \end{tightalign}
+  \end{example}
+\end{frame}
+
+\begin{frame}{Finite-domain formulae}
+  \begin{definition}[finite-domain formulae]
+    \alert{Logical formulae over finite-domain state variables} $V$
+    are defined as in the propositional case, except that
+    instead of atomic formulae of the form $a \in A$,
+    there are atomic formulae of the form $v = d$, where $v \in V$
+    and $d \in \mathcal D_v$.
+  \end{definition}
+
+  \begin{example}
+    The formula $(\var{above-a} = \val{nothing}) \lor
+    \neg (\var{below-b} = \val{c})$ corresponds to the formula
+    $\CLEARA \lor \neg \BONC$.
+  \end{example}
+\end{frame}
+
+\begin{frame}{Finite-domain effects}
+  \begin{definition}[finite-domain effects]
+    \alert{Effects over finite-domain state variables} $V$ are defined
+    as in the propositional case, except that instead of atomic
+    effects of the form $a$ and $\neg a$ with $a \in A$, there are
+    atomic effects of the form $v := d$, where $v \in V$ and $d \in
+    \mathcal D_v$.
+  \end{definition}
+
+  \begin{example}
+    The effect $(\var{below-a} := \val{table}) \land
+    ((\var{above-b} = \val{a}) \CEF
+    (\var{above-b} := \val{nothing}))$
+    corresponds to the effect
+    $\AONTABLE \land \neg \AONB \land \neg \AONC \land \neg \AOND
+    \land (\AONB \CEF \CLEARB)$.
+  \end{example}
+
+  $\leadsto$ definition of \alert{finite-domain operators} follows
+  from this
+\end{frame}
+
+\begin{frame}{Planning tasks in finite-domain representation}
+  \begin{definition}[planning task in finite-domain representation]
+    A \alert{deterministic planning task in finite-domain
+      representation} or \alert{FDR planning task} is a 4-tuple
+    $\Pi = \langle V,I,O,\gamma\rangle$ where
+    \begin{itemize}
+    \item $V$ is a finite set of \alert{finite-domain state
+      variables},
+    \item $I$ is an \alert{initial state} over $V$,
+    \item $O$ is a finite set of \alert{finite-domain operators} over
+      $V$, and
+    \item $\gamma$ is a formula over $V$ describing the \alert{goal
+      states}.
+    \end{itemize}
+  \end{definition}
+\end{frame}
+
+\subsection{Relationship to propositional planning tasks}
+
+\begin{frame}{Relationship to propositional planning tasks}
+  \begin{definition}[induced propositional planning task]
+    Let $\Pi = \langle V,I,O,\gamma\rangle$ be an FDR planning task.
+
+    The \alert{induced propositional planning task} $\Pi'$ is
+    the (regular) planning task $\Pi' = \langle A', I', O',
+    \gamma'\rangle$, where
+    \begin{itemize}
+    \item $A' = \{ (v,d) \mid v \in V, d \in \mathcal D_v \}$
+    \item $I'((v,d)) = 1$ iff $I(v) = d$
+    \item $O'$ and $\gamma'$ are obtained from $O$ and $\gamma$ by replacing
+      \begin{itemize}
+      \item each atomic formula $v = d$ with the proposition $(v,d)$,
+        and
+      \item each atomic effect $v := d$ with the effect $(v,d) \land 
+        \bigwedge_{d' \in \mathcal D_v \setminus \{d\}} \neg (v, d')$.
+      \end{itemize}
+    \end{itemize}
+  \end{definition}
+  \begin{itemize}
+  \item $\leadsto$ can define operator semantics, plans, relaxed
+    planning graphs, \dots\ for $\Pi$ in terms of its induced
+    propositional planning task
+  \end{itemize}
+\end{frame}
+
+\subsection{\sasplus\ planning tasks}
+
+\begin{frame}{\sasplus\ planning tasks}
+  \begin{definition}[\sasplus\ planning task]
+    An FDR planning task $\Pi = \langle V, I, O, \gamma\rangle$ is called
+    an \alert{\sasplus\ planning task} iff there are no conditional
+    effects in $O$ and all operator preconditions in $O$ and the goal
+    formula $\gamma$ are conjunctions of atoms.
+  \end{definition}
+  \begin{itemize}
+  \item analogue of STRIPS planning tasks for finite-domain
+    representations
+  \item induced propositional planning task of a \sasplus\ planning
+    task is STRIPS
+  \item FDR tasks obtained by invariant-based reformulation of
+    STRIPS planning task are \sasplus
+  \end{itemize}
+\end{frame}
+
+\section*{Summary}
+
+\begin{frame}{Summary}
+  \begin{itemize}
+  \item \alert{Invariants} are common properties of all reachable
+    states, expressed as logical formulas.
+  \item A number of algorithms for \alert{computing invariants} exist.
+  \item These algorithms will not find \alert{all useful invariants}
+    (which is too hard), but try to find some useful subset within
+    reasonable (polynomial) time.
+  \item \alert{Mutexes} are invariants that express that certain pairs
+    of state variable assignments are mutually exclusive.
+  \item Groups of mutexes can be used for \alert{problem
+    reformulation}, transforming a planning task into
+    \alert{finite-domain representation (FDR)}.
+  \item Many planning algorithms are more efficient when working on
+    these FDR tasks (rather than the original tasks) because they
+    contain \alert{fewer unreachable states}.
+  \end{itemize}
+\end{frame}
+
+\end{document}

@@ -1,0 +1,570 @@
+\documentclass{gkibeamer}
+
+\input{macros}
+
+\begin{document}
+\subtitle{13.~Computational complexity of classical planning}
+\date{July 20th, 2010}
+\maketitles
+
+%% NOTE: This chapter was drastically cut compared to WS 2006/2007.
+%% For example, we removed:
+%% * the foundational definitions and theorems needed for
+%%   nondeterministic planning complexity (ATMs, Chandra's theorem)
+%% * proofs for planning with first-order representations
+%% * proofs for domain-dependent planning
+%%
+%% So if later courses want to deal with these topics in more depth,
+%% it may make sense to base them on the 2006/2007 slides instead of
+%% these.
+%%
+%% Note though that we also applied many stylistic changes in
+%% 2008/2009 to get the chapter more in line with the rest of the
+%% course. For example:
+%% * Use theorem and definition environments instead of plain blocks.
+%% * Don't capitalize headings.
+%% * Use \langle\rangle for tuples.
+%% * Separate the statement of theorems from their proofs.
+%%
+%% It's probably less work to base future revisions of this chapter on
+%% this one and re-add the old material than to take the old version
+%% and redo the style conversions.
+
+\section{Motivation}
+
+\begin{frame}{How hard is planning?}
+  \begin{itemize}
+  \item We have seen that planning can be done in time
+    \alert{polynomial} in the size of the \alert{transition system}.
+  \item However, we have not seen algorithms which are polynomial
+    in the \alert{input size} (size of the task description).
+  \item[$\leadsto$] What is the precise \alert{computational complexity} of
+    the \alert{planning problem}?
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Why computational complexity?}
+  \begin{itemize}
+  \item \alert{understand} the problem
+  \item know what is \alert{not} possible
+  \item find interesting \alert{subproblems} that are easier to solve
+  \item distinguish \alert{essential features} from \alert{syntactic
+    sugar}
+    \begin{itemize}
+    \item Is STRIPS planning easier than general planning?
+    \item Is planning for FDR tasks harder than for propositional
+      tasks?
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\section{Background}
+\subsection{Turing machines}
+
+\begin{frame}{Nondeterministic Turing machines}
+  \begin{definition}[nondeterministic Turing machine]
+    A \alert{nondeterministic Turing machine (NTM)} is a 6-tuple
+    $\langle \Sigma, \Box, Q, q_0, q_\accept, \delta\rangle$ with the
+    following components:
+    \begin{itemize}
+    \item \alert{input alphabet} $\Sigma$ and \alert{blank symbol}
+      $\Box \notin \Sigma$
+      \begin{itemize}
+      \item alphabets always nonempty and finite
+      \item \alert{tape alphabet} $\Sigma_\Box = \Sigma \cup \{\Box\}$
+      \end{itemize}
+    \item finite set $Q$ of \alert{internal states} with \alert{initial
+      state} $q_0 \in Q$ and \alert{accepting state} $q_\accept \in Q$
+      \begin{itemize}
+      \item \alert{nonterminal states} $Q' := Q \setminus \{q_\accept\}$
+      \end{itemize}
+    \item \alert{transition relation}
+      $\delta \subseteq (Q' \times \Sigma_\Box) \times (Q \times
+      \Sigma_\Box \times \{-1,+1\})$
+    \end{itemize}
+  \end{definition}
+\end{frame}
+
+\begin{frame}{Deterministic Turing machines}
+  \begin{definition}[deterministic Turing machine]
+    A \alert{deterministic Turing machine (DTM)}
+    is an NTM
+    where the transition relation is \alert{functional}, \ie,
+    for all $\langle q, a\rangle \in Q' \times \Sigma_\Box$, there is
+    exactly one triple $\langle q', a', \Delta\rangle$ with
+    $\langle\langle q,a\rangle, \langle q', a',\Delta\rangle\rangle
+    \in \delta$.
+
+    \medskip
+
+    \hilite{Notation:} We write $\delta(q, a)$ for the unique triple
+    $\langle q', a', \Delta\rangle$ such that $\langle\langle q,
+    a\rangle, \langle q', a', \Delta\rangle\rangle \in \delta$.
+  \end{definition}
+\end{frame}
+
+\begin{frame}{Turing machine configurations}
+  \begin{definition}[Configuration]
+    Let $M = \langle \Sigma, \Box, Q, q_0, q_\accept, \delta\rangle$
+    be an NTM.
+
+    \smallskip
+
+    A \alert{configuration} of $M$ is a triple
+    $\langle w, q, x\rangle \in \Sigma_\Box^* \times Q \times \Sigma_\Box^+$.
+    \begin{itemize}
+    \item $w$: tape contents before tape head
+    \item $q$: current state
+    \item $x$: tape contents after and including tape head
+    \end{itemize}
+  \end{definition}
+\end{frame}
+
+\begin{frame}{Turing machine transitions}
+  \begin{definition}[yields relation]
+    Let $M = \langle \Sigma, \Box, Q, q_0, q_\accept, \delta\rangle$
+    be an NTM.
+
+    \smallskip
+
+    A configuration $c$ of $M$ \alert{yields}
+    a configuration $c'$ of $M$, \\
+    in symbols \alert{$c \vdash c'$}, as defined by the following rules, \\
+    where $a, a', b \in \Sigma_\Box$,
+    $w,x \in \Sigma_\Box^*$,
+    $q,q' \in Q$ and
+    $\langle\langle q, a\rangle, \langle q',a',\Delta\rangle\rangle
+    \in \delta$:
+    \begin{alignat*}{2}
+      \langle w, q, ax\rangle
+      & \vdash \langle wa', q', x\rangle
+      & \qquad & \text{if~} \Delta = +1, |x| \ge 1  \\
+      \langle w, q, a\rangle
+      & \vdash \langle wa', q', \Box\rangle
+      && \text{if~} \Delta = +1  \\
+      \langle wb, q, ax\rangle
+      & \vdash \langle w, q', ba'x\rangle
+      && \text{if~} \Delta = -1  \\
+      \langle\epsilon, q, ax\rangle
+      & \vdash
+      \langle\epsilon, q', \Box a'x\rangle
+      && \text{if~} \Delta = -1 \\
+    \end{alignat*}
+  \end{definition}
+\end{frame}
+
+\begin{frame}{Accepting configurations}
+  \begin{definition}[accepting configuration, time]
+    Let $M = \langle \Sigma, \Box, Q, q_0, q_\accept, \delta\rangle$
+    be an NTM, \\
+    let $c = \langle w, q, x\rangle$ be a configuration of $M$,
+    and let $n \in \mathbb N_0$.
+    \begin{itemize}
+    \item If $q = q_\accept$, $M$ \alert{accepts $c$ in time $n$}.
+    \item If $q \neq q_\accept$ and $M$ accepts some $c'$ with $c
+      \vdash c'$ in time $n$, then $M$ \alert{accepts $c$ in time $n +
+        1$}.
+    \end{itemize}
+  \end{definition}
+  \begin{definition}[accepting configuration, space]
+    Let $M = \langle \Sigma, \Box, Q, q_0, q_\accept, \delta\rangle$
+    be an NTM, \\
+    let $c = \langle w, q, x\rangle$ be a configuration of $M$,
+    and let $n \in \mathbb N_0$.
+    \begin{itemize}
+    \item If $q = q_\accept$ and $|w| + |x| \le n$, $M$ \alert{accepts
+      $c$ in space $n$}. 
+    \item If $q \neq q_\accept$ and $M$ accepts some $c'$ with $c
+      \vdash c'$ in space $n$, then $M$ \alert{accepts $c$ in space
+        $n$}.
+    \end{itemize}
+  \end{definition}
+\end{frame}
+%% TODO: This is a bit unintuitive, terminology-wise. "Accepts in
+%% time/space n" here really means something like "Accepts in
+%% time/space at most n". We might want to change either the name or
+%% the definition so that it is more intuitive. If we change the
+%% definition, make sure to capture nondeterminism properly and make
+%% sure to adjust the following definitions that depend on this one.
+
+\begin{frame}{Accepting words and languages}
+  \begin{definition}[accepting words]
+    Let $M = \langle \Sigma, \Box, Q, q_0, q_\accept, \delta\rangle$
+    be an NTM.
+
+    \smallskip
+
+    $M$ \alert{accepts the word $w \in \Sigma^*$
+      in time (space) $n \in \mathbb N_0$} \\
+    iff $M$ accepts $\langle\epsilon, q_0, w\rangle$ in time (space) $n$.
+    \begin{itemize}
+    \item Special case: $M$ accepts $\epsilon$ in time (space)
+      $n \in \mathbb N_0$ \\
+      iff $M$ accepts $\langle\epsilon, q_0, \Box\rangle$ in time
+      (space) $n$.
+    \end{itemize}
+  \end{definition}
+
+  \begin{definition}[accepting languages]
+    Let $M = \langle \Sigma, \Box, Q, q_0, q_\accept, \delta\rangle$
+    be an NTM, and let $f: \mathbb N_0 \to \mathbb N_0$.
+
+    \smallskip
+    
+    $M$ \alert{accepts the language $L \subseteq \Sigma^*$
+      in time (space) $f$} \\
+    iff $M$ accepts each word $w \in L$ in time (space) $f(|w|)$, \\
+    and $M$ does not accept any word $w \notin L$ (in any time/space).
+  \end{definition}
+\end{frame}
+
+\subsection{Complexity classes}
+
+\begin{frame}{Time and space complexity classes}
+    \begin{definition}[\dtime, \ntime, \dspace, \nspace]
+    Let $f: \mathbb N_0 \to \mathbb N_0$.
+
+    \smallskip
+
+    Complexity class \alert{$\dtime(f)$} contains all languages \\
+    accepted in time $f$ by some DTM.
+
+    \smallskip
+
+    Complexity class \alert{$\ntime(f)$} contains all languages \\
+    accepted in time $f$ by some NTM.
+
+    \smallskip
+
+    Complexity class \alert{$\dspace(f)$} contains all languages \\
+    accepted in space $f$ by some DTM.
+
+    \smallskip
+
+    Complexity class \alert{$\nspace(f)$} contains all languages \\
+    accepted in space $f$ by some NTM.
+    \end{definition}
+\end{frame}
+
+\begin{frame}{Polynomial time and space classes}
+  Let $\mathcal P$ be the set of polynomials $p: \mathbb N_0 \to
+  \mathbb N_0$ whose coefficients are natural numbers.
+  \begin{definition}[\ptime, \np, \pspace, \npspace]
+    \renewcommand{\arraycolsep}{1pt}
+    $\begin{array}{rl}
+      \ptime & = \bigcup_{p \in \mathcal P} \dtime(p) \\
+      \np & = \bigcup_{p \in \mathcal P} \ntime(p) \\
+      \pspace & = \bigcup_{p \in \mathcal P} \dspace(p) \\
+      \npspace & = \bigcup_{p \in \mathcal P} \nspace(p)
+    \end{array}$
+  \end{definition}
+\end{frame}
+
+\begin{frame}{Polynomial complexity class relationships}
+  \begin{theorem}[complexity class hierarchy]
+    $\ptime \subseteq \np \subseteq \pspace = \npspace$
+  \end{theorem}
+  \begin{proof}
+    $\ptime \subseteq \np$ and $\pspace \subseteq \npspace$ is
+    obvious because deterministic Turing machines are a special case
+    of nondeterministic ones.
+
+    \smallskip
+
+    $\np \subseteq \npspace$ holds because a Turing machine can
+    only visit polynomially many tape cells within polynomial time.
+
+    \smallskip
+
+    $\pspace = \npspace$ is a special case of a classical result known
+    as Savitch's theorem (Savitch 1970).
+  \end{proof}
+\end{frame}
+
+\section[Complexity of planning]{Complexity of propositional planning}
+\subsection[(Bounded) plan existence]{Plan existence and bounded plan existence}
+
+\begin{frame}{The propositional planning problem}
+  \begin{definition}[plan existence]
+    The \alert{plan existence} problem (\planex) \\
+    is the following decision problem:
+    \smallskip
+
+    \begin{tabular}{@{}ll}
+      \textsc{Given:} &
+      Planning task $\Pi$ \\
+      \textsc{Question:} &
+      Is there a plan for $\Pi$?
+    \end{tabular}
+  \end{definition}
+  $\leadsto$ decision problem analogue of \alert{satisficing planning}
+
+  \medskip
+
+  \begin{definition}[bounded plan existence]
+    The \alert{bounded plan existence} problem (\planlen) \\
+    is the following decision problem:
+    \smallskip
+
+    \begin{tabular}{@{}ll}
+      \textsc{Given:} &
+      Planning task $\Pi$, length bound $K \in \mathbb N_0$ \\
+      \textsc{Question:} &
+      Is there a plan for $\Pi$ of length at most $K$?
+    \end{tabular}
+  \end{definition}
+  $\leadsto$ decision problem analogue of \alert{optimal planning}
+\end{frame}
+
+\begin{frame}{Plan existence vs.\ bounded plan existence}
+  \begin{theorem}[reduction from {\planex} to {\planlen}]
+    $\planex \easier \planlen$
+  \end{theorem}
+
+  \begin{proof}
+    A propositional planning task with $n$ state variables has a plan
+    \\ iff it has a plan of length at most $2^n - 1$.
+
+    \smallskip
+
+    $\leadsto$ map instance $\Pi$ of {\planex}
+    to instance $\langle \Pi, 2^n - 1\rangle$ of {\planlen}, where $n$
+    is the number of $n$ state variables of $\Pi$
+
+    \smallskip
+
+    $\leadsto$ polynomial reduction
+  \end{proof}
+\end{frame}
+
+\subsection{PSPACE-completeness}
+
+\begin{frame}{Membership in \pspace}
+  \begin{theorem}[{\pspace} membership for \planlen]
+    $\planlen \in \pspace$
+  \end{theorem}
+  \begin{proof}
+    Show $\planlen \in \npspace$ and use Savitch's theorem.
+
+    Nondeterministic algorithm:
+
+    \smallskip
+    \small
+
+    \textbf{def} plan($\langle A, I, O, G\rangle$, $K$): \\
+    \hspace*{1cm} $s := I$ \\
+    \hspace*{1cm} $k := K$ \\
+    \hspace*{1cm} \textbf{while} $s \not\models G$: \\
+    \hspace*{2cm} \textbf{guess} $o \in O$ \\
+    \hspace*{2cm} \textbf{fail} if $o$ not applicable in $s$
+    \textbf{or} k = 0\\
+    \hspace*{2cm} $s := \applyop{o}{s}$ \\
+    \hspace*{2cm} $k := k-1$ \\
+    \hspace*{1cm} \textbf{accept} \\
+  \end{proof}
+\end{frame}
+
+\begin{frame}{Hardness for {\pspace}}
+  \hilite{Idea:} \alert{generic reduction}
+
+  \begin{itemize}
+  \item For an \alert{arbitrary fixed DTM $M$} with space bound
+    polynomial $p$ and input $w$, generate planning task which is
+    solvable iff $M$ accepts $w$ in space $p(|w|)$.
+  \item For simplicity, restrict to TMs which never move to the left
+    of the initial head position (no loss of generality).
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Reduction: state variables}
+  Let $M = \langle \Sigma, \Box, Q, q_0, q_\accept, \delta\rangle$ be the
+  fixed DTM and let $p$ be its space-bound polynomial.
+
+  \smallskip
+
+  Given input $w_1 \dots w_n$, define \alert{relevant tape positions}
+  $X := \{1, \dots, p(n)\}$.
+
+  \begin{block}{State variables}
+    \begin{itemize}
+    \item $\text{state}_q$ for all $q \in Q$
+    \item $\text{head}_i$ for all $i \in X \cup \{0, p(n) + 1\}$
+    \item $\text{content}_{i,a}$ for all $i \in X$, $a \in \Sigma_\Box$
+    \end{itemize}
+    $\leadsto$ allows encoding a Turing machine configuration
+  \end{block}
+\end{frame}
+
+\begin{frame}{Reduction: initial state}
+  Let $M = \langle \Sigma, \Box, Q, q_0, q_\accept, \delta\rangle$ be the
+  fixed DTM and let $p$ be its space-bound polynomial.
+
+  \smallskip
+
+  Given input $w_1 \dots w_n$, define \alert{relevant tape positions}
+  $X := \{1, \dots, p(n)\}$.
+
+  \begin{block}{Initial state}
+    Initially true:
+    \begin{itemize}
+    \item $\text{state}_{q_0}$
+    \item $\text{head}_1$
+    \item $\text{content}_{i,w_i}$ for all $i \in \{1, \dots, n\}$
+    \item $\text{content}_{i,\Box}$ for all $i \in X \setminus \{1, \dots,
+      n\}$
+    \end{itemize}
+    Initially false:
+    \begin{itemize}
+    \item all others
+    \end{itemize}
+  \end{block}
+\end{frame}
+
+\begin{frame}{Reduction: operators}
+  Let $M = \langle \Sigma, \Box, Q, q_0, q_\accept, \delta\rangle$ be the
+  fixed DTM and let $p$ be its space-bound polynomial.
+
+  \smallskip
+
+  Given input $w_1 \dots w_n$, define \alert{relevant tape positions}
+  $X := \{1, \dots, p(n)\}$.
+
+  \begin{block}{Operators}
+    One operator for each transition rule
+    $\delta(q,a) = \langle q',a',\Delta\rangle$ \\
+    and each cell position $i \in X$:
+    \begin{itemize}
+    \item precondition:
+      $\text{state}_q \land \text{head}_i \land
+        \text{content}_{i,a}$
+    \item effect: $\begin{wrappedmath}
+      \neg \text{state}_q
+      \land \neg \text{head}_i
+      \land \neg \text{content}_{i,a} \\
+            {} \land \text{state}_{q'}
+        \land \text{head}_{i + \Delta}
+        \land \text{content}_{i,a'}
+      \end{wrappedmath}$
+
+      \begin{itemize}
+      \item If $q = q'$ and/or $a = a'$, omit the effects on
+        $\text{state}_q$ and/or $\text{content}_{i,a}$, to avoid
+        consistency condition issues.
+      \end{itemize}
+    \end{itemize}
+  \end{block}
+\end{frame}
+
+\begin{frame}{Reduction: goal}
+  Let $M = \langle \Sigma, \Box, Q, q_0, q_\accept, \delta\rangle$ be the
+  fixed DTM and let $p$ be its space-bound polynomial.
+
+  \smallskip
+
+  Given input $w_1 \dots w_n$, define \alert{relevant tape positions}
+  $X := \{1, \dots, p(n)\}$.
+
+  \begin{block}{Goal}
+    $\text{state}_{q_\accept}$
+  \end{block}
+\end{frame}
+
+\begin{frame}{\pspace-completeness for STRIPS plan existence}
+  \begin{theorem}[\pspace-completeness; Bylander, 1994]
+    {\planex} and {\planlen} are \pspace-complete.
+
+    This is true even when restricting to STRIPS tasks.
+  \end{theorem}
+
+  \begin{proof}
+    Membership for {\planlen} was already shown.
+
+    \smallskip
+
+    Hardness for {\planex} follows because we just presented a
+    polynomial reduction from an arbitrary problem in {\pspace} to
+    {\planex}. (Note that the reduction only generates STRIPS tasks.)
+
+    \smallskip
+
+    Membership for {\planex} and hardness for {\planlen} follows from
+    the polynomial reduction from {\planex} to {\planlen}.
+  \end{proof}
+\end{frame}
+
+\section{More complexity results}
+
+\begin{frame}{More complexity results}
+  In addition to the basic complexity result presented in this
+  chapter, there are many special cases, generalizations, variations
+  and related problems studied in the literature:
+
+  \begin{itemize}
+  \item different \alert{planning formalisms}
+    \begin{itemize}
+    \item \eg, finite-domain representation, nondeterministic effects,
+      partial observability, schematic operators, numerical state
+      variables
+    \end{itemize}
+  \item \alert{syntactic restrictions} of planning tasks
+    \begin{itemize}
+    \item \eg, without preconditions, without conjunctive effects,
+      STRIPS without delete effects
+    \end{itemize}
+  \item \alert{semantic restrictions} of planning task
+    \begin{itemize}
+    \item \eg, restricting to certain classes of causal graphs
+    \end{itemize}
+  \item \alert{particular planning domains}
+    \begin{itemize}
+    \item \eg, Blocksworld, Logistics, FreeCell
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Complexity results for different planning formalisms}
+  Some results for different planning formalisms:
+  \begin{itemize}
+  \item \alert{FDR tasks:}
+    \begin{itemize}
+    \item same complexity as for propositional tasks (``folklore'')
+    \item also true for the {\sasplus} special case
+    \end{itemize}
+  \item \alert{nondeterministic effects:}
+    \begin{itemize}
+    \item fully observable: \exptime-complete (Littman, 1997)
+    \item unobservable: \expspace-complete (Haslum \& Jonsson, 1999)
+    \item partially observable: \dblexptime-complete (Rintanen, 2004)
+    \end{itemize}
+  \item \alert{schematic operators:}
+    \begin{itemize}
+    \item usually adds one exponential level to \planex\ complexity
+    \item \eg, classical case \expspace-complete (Erol et al., 1995)
+    \end{itemize}
+  \item \alert{numerical state variables:}
+    \begin{itemize}
+    \item undecidable in most variations (Helmert, 2002)
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\section*{Summary}
+\begin{frame}{Summary}
+  \begin{itemize}
+    \item \alert{Propositional planning} is \alert{PSPACE-complete}.
+    \item The hardness proof is a polynomial reduction that translates
+        an \alert{arbitrary polynomial-space DTM} into a \alert{STRIPS task}:
+        \begin{itemize}
+            \item Configurations of the DTM are encoded by propositional
+                variables.
+            \item Operators simulate transistions of the DTM.
+            \item The DTM accepts an input iff there is a plan for the
+               corresponding STRIPS task.
+        \end{itemize}
+    \item This implies that there is \alert{no polynomial algorithm} for
+        classical planning unless \ptime=\pspace.
+    \item It also means that classical planning is not polynomially
+        reducible to any problem in \np\ unless \np=\pspace.
+  \end{itemize}
+\end{frame}
+\end{document}

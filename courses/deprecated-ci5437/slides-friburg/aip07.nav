@@ -1,0 +1,74 @@
+\beamer@endinputifotherversion {3.20pt}
+\headcommand {\slideentry {0}{0}{1}{1/1}{}{0}}
+\headcommand {\beamer@framepages {1}{1}}
+\headcommand {\sectionentry {1}{Obtaining heuristics}{2}{How to obtain a heuristic}{0}}
+\headcommand {\beamer@sectionpages {1}{1}}
+\headcommand {\beamer@subsectionpages {1}{1}}
+\headcommand {\slideentry {1}{0}{2}{2/2}{}{0}}
+\headcommand {\beamer@framepages {2}{2}}
+\headcommand {\beamer@subsectionentry {0}{1}{1}{3}{STRIPS heuristic}}\headcommand {\beamer@subsectionpages {2}{2}}
+\headcommand {\slideentry {1}{1}{1}{3/3}{STRIPS heuristic}{0}}
+\headcommand {\beamer@framepages {3}{3}}
+\headcommand {\slideentry {1}{1}{2}{4/4}{STRIPS heuristic}{0}}
+\headcommand {\beamer@framepages {4}{4}}
+\headcommand {\beamer@subsectionentry {0}{1}{2}{5}{Relaxation and abstraction}}\headcommand {\beamer@subsectionpages {3}{4}}
+\headcommand {\slideentry {1}{2}{1}{5/5}{Relaxation and abstraction}{0}}
+\headcommand {\beamer@framepages {5}{5}}
+\headcommand {\slideentry {1}{2}{2}{6/6}{Relaxation and abstraction}{0}}
+\headcommand {\beamer@framepages {6}{6}}
+\headcommand {\slideentry {1}{2}{3}{7/14}{Relaxation and abstraction}{0}}
+\headcommand {\beamer@framepages {7}{14}}
+\headcommand {\sectionentry {2}{Relaxed planning tasks}{15}{Relaxed planning tasks}{0}}
+\headcommand {\beamer@sectionpages {2}{14}}
+\headcommand {\beamer@subsectionpages {5}{14}}
+\headcommand {\slideentry {2}{0}{4}{15/15}{}{0}}
+\headcommand {\beamer@framepages {15}{15}}
+\headcommand {\beamer@subsectionentry {0}{2}{1}{16}{Definition}}\headcommand {\beamer@subsectionpages {15}{15}}
+\headcommand {\slideentry {2}{1}{1}{16/16}{Definition}{0}}
+\headcommand {\beamer@framepages {16}{16}}
+\headcommand {\slideentry {2}{1}{2}{17/17}{Definition}{0}}
+\headcommand {\beamer@framepages {17}{17}}
+\headcommand {\slideentry {2}{1}{3}{18/18}{Definition}{0}}
+\headcommand {\beamer@framepages {18}{18}}
+\headcommand {\beamer@subsectionentry {0}{2}{2}{19}{The relaxation lemma}}\headcommand {\beamer@subsectionpages {16}{18}}
+\headcommand {\slideentry {2}{2}{1}{19/19}{The relaxation lemma}{0}}
+\headcommand {\beamer@framepages {19}{19}}
+\headcommand {\slideentry {2}{2}{2}{20/20}{The relaxation lemma}{0}}
+\headcommand {\beamer@framepages {20}{20}}
+\headcommand {\slideentry {2}{2}{3}{21/22}{The relaxation lemma}{0}}
+\headcommand {\beamer@framepages {21}{22}}
+\headcommand {\slideentry {2}{2}{4}{23/26}{The relaxation lemma}{0}}
+\headcommand {\beamer@framepages {23}{26}}
+\headcommand {\slideentry {2}{2}{5}{27/27}{The relaxation lemma}{0}}
+\headcommand {\beamer@framepages {27}{27}}
+\headcommand {\slideentry {2}{2}{6}{28/28}{The relaxation lemma}{0}}
+\headcommand {\beamer@framepages {28}{28}}
+\headcommand {\beamer@subsectionentry {0}{2}{3}{29}{Greedy algorithm}}\headcommand {\beamer@subsectionpages {19}{28}}
+\headcommand {\slideentry {2}{3}{1}{29/29}{Greedy algorithm}{0}}
+\headcommand {\beamer@framepages {29}{29}}
+\headcommand {\slideentry {2}{3}{2}{30/30}{Greedy algorithm}{0}}
+\headcommand {\beamer@framepages {30}{30}}
+\headcommand {\slideentry {2}{3}{3}{31/31}{Greedy algorithm}{0}}
+\headcommand {\beamer@framepages {31}{31}}
+\headcommand {\beamer@subsectionentry {0}{2}{4}{32}{Optimality}}\headcommand {\beamer@subsectionpages {29}{31}}
+\headcommand {\slideentry {2}{4}{1}{32/32}{Optimality}{0}}
+\headcommand {\beamer@framepages {32}{32}}
+\headcommand {\slideentry {2}{4}{2}{33/33}{Optimality}{0}}
+\headcommand {\beamer@framepages {33}{33}}
+\headcommand {\slideentry {2}{4}{3}{34/34}{Optimality}{0}}
+\headcommand {\beamer@framepages {34}{34}}
+\headcommand {\slideentry {2}{4}{4}{35/35}{Optimality}{0}}
+\headcommand {\beamer@framepages {35}{35}}
+\headcommand {\beamer@subsectionentry {0}{2}{5}{36}{Discussion}}\headcommand {\beamer@subsectionpages {32}{35}}
+\headcommand {\slideentry {2}{5}{1}{36/36}{Discussion}{0}}
+\headcommand {\beamer@framepages {36}{36}}
+\headcommand {\sectionentry {3}{Summary}{37}{Summary}{0}}
+\headcommand {\beamer@sectionpages {15}{36}}
+\headcommand {\beamer@subsectionpages {36}{36}}
+\headcommand {\slideentry {3}{0}{2}{37/37}{}{0}}
+\headcommand {\beamer@framepages {37}{37}}
+\headcommand {\beamer@partpages {1}{37}}
+\headcommand {\beamer@subsectionpages {37}{37}}
+\headcommand {\beamer@sectionpages {37}{37}}
+\headcommand {\beamer@documentpages {37}}
+\headcommand {\def \inserttotalframenumber {28}}

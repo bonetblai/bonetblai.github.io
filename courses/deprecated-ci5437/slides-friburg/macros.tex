@@ -1,0 +1,141 @@
+\usepackage{tikz}[2008/02/13]
+
+\title[AI Planning]{Principles of AI Planning}
+\author[B.~Nebel,\\R.~Mattm\"uller]{Bernhard Nebel and Robert Mattm\"uller}
+\date[]{Winter Semester 2011/2012}
+
+%% Use \alert instead of \textred where it makes sense.
+%% (\textred makes sense when you *really* want the color to be red,
+%% independent of the beamer style settings.)
+\newcommand{\hilite}[1]{{\color{structure} #1}}
+\newcommand{\textred}[1]{{\color{red} #1}}
+\newcommand{\textblue}[1]{{\color{blue} #1}}
+\newcommand{\textgreen}[1]{{\color{green} #1}}
+\newcommand{\textbrown}[1]{{\color{brown} #1}}
+\newcommand{\textviolet}[1]{{\color{violet} #1}}
+\newcommand{\textbg}[1]{{\color{bg} #1}}
+
+\newcommand{\eg}{e.\,g.}
+\newcommand{\ie}{i.\,e.}
+
+%% State variables and values for state variables
+\newcommand{\var}[1]{\textit{#1}}
+\newcommand{\val}[1]{\text{#1}}
+
+%% Various stuff
+\newcommand{\astar}{A${}^*$}
+\newcommand{\idastar}{IDA${}^*$}
+
+%% Blocksworld stuff
+\newcommand{\AONB}{\var{A-on-B}}
+\newcommand{\AONC}{\var{A-on-C}}
+\newcommand{\AOND}{\var{A-on-D}}
+\newcommand{\BONA}{\var{B-on-A}}
+\newcommand{\BONC}{\var{B-on-C}}
+\newcommand{\BOND}{\var{B-on-D}}
+\newcommand{\CONA}{\var{C-on-A}}
+\newcommand{\CONB}{\var{C-on-B}}
+\newcommand{\COND}{\var{C-on-D}}
+\newcommand{\DONA}{\var{D-on-A}}
+\newcommand{\DONB}{\var{D-on-B}}
+\newcommand{\DONC}{\var{D-on-C}}
+\newcommand{\AONTABLE}{\var{A-on-T}}
+\newcommand{\BONTABLE}{\var{B-on-T}}
+\newcommand{\CONTABLE}{\var{C-on-T}}
+\newcommand{\CLEARA}{\var{A-clear}}
+\newcommand{\CLEARB}{\var{B-clear}}
+\newcommand{\CLEARC}{\var{C-clear}}
+
+\newcommand{\applyop}[2]{\textit{app}_{#1}(#2)}
+\newcommand{\applyops}[2]{\textit{app}_{#1}(#2)}
+\newcommand{\applyplan}[2]{\textit{app}_{#1}(#2)}
+\newcommand{\regr}[2]{\textit{regr}_{#1}(#2)}
+\newcommand{\regrstrips}[2]{\textit{sregr}_{#1}(#2)}
+\newcommand{\eprecon}[2]{\textit{EPC}_{#1}(#2)}
+
+\newcommand{\compl}[1]{\overline{#1}}
+
+\newcommand{\changes}[2]{\lbrack #1\rbrack_{#2}}
+\newcommand{\CEF}{\vartriangleright}
+
+\newcommand{\relaxation}[1]{{#1}^+}
+\newcommand{\onset}[1]{\textit{on}(#1)}
+\newcommand{\hplus}{\ensuremath{h^+}}
+\newcommand{\hmax}{\ensuremath{h_{\text{max}}}}
+\newcommand{\hadd}{\ensuremath{h_{\text{add}}}}
+\newcommand{\hlmcut}{\ensuremath{h_{\text{LM-cut}}}}
+\newcommand{\hff}{\ensuremath{h_{\text{FF}}}}
+\newcommand{\hcs}{\ensuremath{h_{\text{cs}}}}
+\newcommand{\hsa}{\ensuremath{h_{\text{sa}}}}
+\newcommand{\hhhh}{\ensuremath{h_{\text{HHH}}}}
+
+\newcommand{\sasplus}{SAS${}^+$}
+
+\newcommand{\graphequiv}{\stackrel{\textup{G}}{\sim}}
+
+\newcommand{\cg}{\ensuremath{\textit{CG}}}
+
+%% Turing machines and complexity theory
+\newcommand{\accept}{{\textsf{Y}}}
+
+\newcommand{\easier}{\ensuremath{\le_{\text{p}}}}
+
+\newcommand{\decisionclass}[1]{\ensuremath{\textsf{\textup{#1}}}}
+\newcommand{\dtime}{\decisionclass{DTIME}}
+\newcommand{\ntime}{\decisionclass{NTIME}}
+\newcommand{\dspace}{\decisionclass{DSPACE}}
+\newcommand{\nspace}{\decisionclass{NSPACE}}
+
+\newcommand{\ptime}{\decisionclass{P}}
+\newcommand{\np}{\decisionclass{NP}}
+\newcommand{\pspace}{\decisionclass{PSPACE}}
+\newcommand{\npspace}{\decisionclass{NPSPACE}}
+\newcommand{\exptime}{\decisionclass{EXP}}
+\newcommand{\nexptime}{\decisionclass{NEXP}}
+\newcommand{\expspace}{\decisionclass{EXPSPACE}}
+\newcommand{\dblexptime}{\decisionclass{2EXP}}
+
+\newcommand{\planex}{\textsc{PlanEx}}
+\newcommand{\planlen}{\textsc{PlanLen}}
+
+\newcommand{\ms}[1]{\mathchoice{\mbox{\normalsize\it #1}}{\mbox{\normalsize\it #1}}{\mbox{\scriptsize\it #1}}{\mbox{\tiny\it #1}}}
+\newcommand{\image}[2]{\ms{img}_{#1}(#2)}
+\newcommand{\spreimage}[2]{\ms{spreimg}_{#1}(#2)}
+\newcommand{\wpreimage}[2]{\ms{wpreimg}_{#1}(#2)}
+\newcommand{\disbwd}[2]{\delta^{\ms{bwd}}_{#1}(#2)}
+\newcommand{\ats}[1]{\ms{scope}(#1)}
+\newcommand{\ndopcpc}[2]{\tau^{\ms{nd}}_{#1}(#2)}
+\newcommand{\choice}{\mathop{|}}
+\newcommand{\opcpc}[2]{\tau_{#1}(#2)}
+
+%% Don't use \begin{proof}/\end{proof} for multi-part proofs because
+%% this places a QED symbol.
+\newenvironment{proofstart}{\begin{block}{Proof.}}{\end{block}}
+\newenvironment{proofmid}{\begin{block}{Proof (ctd.)}}{\end{block}}
+\newenvironment{proofend}{\begin{proof}[Proof (ctd.)]}{\end{proof}}
+
+\newtheorem{remark}[theorem]{Remark}
+
+%% Macros to align the width of things.
+\newlength{\mywidth}
+\newcommand{\setmywidth}[1]{\settowidth{\mywidth}{#1}}
+\newcommand{\usemywidth}[1]{\makebox[\mywidth][l]{#1}}
+\newcommand{\usemywidthmath}[1]{\usemywidth{\ensuremath{#1}}}
+
+%% A tighter "align" environment.
+\newenvironment{tightalign}[1][c]{\par\(\begin{array}[#1]{@{}r@{}l}}
+  {\end{array}\)\par}
+\newenvironment{wrappedmath}[1][t]{\begin{array}[#1]{@{}l}}{\end{array}}
+
+%% Nondeterministic transition systems with connector arcs
+\newcommand{\arc}[4]{
+  \begin{pgfscope}
+    \pgfsetlinewidth{1pt}
+    \pgfpathmoveto{\pgfpointanchor{#3}{center}}
+    \pgfpathlineto{\pgfpointanchor{#1}{#2}}
+    \pgfpathlineto{\pgfpointanchor{#4}{center}}
+    \pgfusepath{clip}
+    \pgfpathcircle{\pgfpointanchor{#1}{#2}}{1.8mm}
+    \pgfusepath{draw}
+  \end{pgfscope}
+}

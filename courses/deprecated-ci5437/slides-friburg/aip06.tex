@@ -1,0 +1,880 @@
+\documentclass{gkibeamer}
+
+\input{macros}
+
+\begin{document}
+
+\lectureno{6}
+\subtitle{Planning as search: search algorithms}
+\date{November 15th, 2011}
+\maketitles
+
+\section[Introduction]{Introduction to search algorithms for planning}
+\subsection[Nodes and states]{Search nodes \& search states}
+
+\begin{frame}{Our plan for the next lectures}
+  Choices to make:
+  \begin{enumerate}
+  \item search direction: progression/regression/both
+    \\ $\leadsto$ previous chapter
+  \item search space representation: states/sets of states
+    \\ $\leadsto$ previous chapter
+  \item search algorithm: uninformed/heuristic; systematic/local
+    \\ $\leadsto$ \alert{this chapter}
+  \item search control: heuristics, pruning techniques
+    \\ $\leadsto$ next chapters
+  \end{enumerate}
+\end{frame}
+
+\begin{frame}{Search}
+  \begin{itemize}
+  \item Search algorithms are used to find solutions (plans) for
+    \alert{transition systems} in general, not just for planning
+    tasks.
+  \item Planning is \alert{one application} of search among many.
+  \item In this chapter, we describe some popular and/or
+    representative search algorithms, and (the basics of) how they
+    apply to planning.
+  \item Most of this is review of material that should be known \\
+    (details: Russell and Norvig's textbook).
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Search states vs.\ search nodes}
+  In search, one distinguishes:
+  \begin{itemize}
+  \item \alert{search states} \alert{$s$} $\leadsto$ states
+    (vertices) of the transition system
+  \item \alert{search nodes} \alert{$\sigma$} $\leadsto$ search
+    states plus information on where/when/how they are encountered
+    during search
+  \end{itemize}
+
+  \begin{block}{What is in a search node?}
+    Different search algorithms store different information in a
+    search node $\sigma$, but typical information includes:
+    \begin{itemize}
+    \item \alert{$\textit{state}(\sigma)$:} associated search state
+    \item \alert{$\textit{parent}(\sigma)$:} pointer to search node
+      from which $\sigma$ is reached
+    \item \alert{$\textit{action}(\sigma)$:} an action/operator
+      leading from $\textit{state}(\textit{parent}(\sigma))$ to
+      $\textit{state}(\sigma)$
+    \item \alert{$g(\sigma)$:} cost of $\sigma$ (length of path from
+      the root node)
+    \end{itemize}
+    For the root node, $\textit{parent}(\sigma)$ and
+    $\textit{action}(\sigma)$ are undefined.
+  \end{block}
+\end{frame}
+
+\begin{frame}{Search states vs.\ planning states}
+  Search states $\neq$ (planning) states:
+  \begin{itemize}
+  \item \alert{Search states} don't have to correspond to
+    \alert{states} in the planning sense.
+    \begin{itemize}
+    \item progression: search states $\approx$ \alert{(planning)
+      states}
+    \item regression: search states $\approx$ \alert{sets of
+      states} (formulae)
+    \end{itemize}
+  \item Search algorithms for planning where search states are
+    planning states are called \alert{state-space search}
+    algorithms.
+  \item Strictly speaking, regression is \alert{not} an example of
+    state-space search, although the term is often used loosely.
+  \item However, we will put the emphasis on progression, which is
+    almost always state-space search.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Required ingredients for search}
+  A general search algorithm can be applied to any transition system
+  for which we can define the following three operations:
+  \begin{itemize}
+  \item \hilite{$\text{init}()$}: generate the \alert{initial state}
+  \item \hilite{$\text{is-goal}(s)$}: test if a given state is a
+    \alert{goal state}
+  \item \hilite{$\text{succ}(s)$}: generate the set of
+    \alert{successor states} of state $s$, along with the
+    \alert{operators} through which they are reached \\
+    (represented as pairs $\langle o, s'\rangle$ of operators
+    and states)
+  \end{itemize}
+  Together, these three functions form a \alert{search space}
+  (a very similar notion to a transition system).
+\end{frame}
+
+\subsection{Search for planning}
+
+\begin{frame}{Search for planning: progression}
+  Let $\Pi = \langle A,I,O,\gamma\rangle$ be a planning task.
+
+  \begin{block}{Search space for progression search}
+    \hilite{states:} all states of $\Pi$ (assignments to $A$)
+  \begin{itemize}
+  \item $\hilite{\text{init}()} = I$
+  \item $\hilite{\text{is-goal}(s)}
+    = \begin{cases}
+      \textbf{true} & \text{if~} s \models \gamma \\
+      \textbf{false} & \text{otherwise}
+    \end{cases}$
+    %% We use 1/0 for true/false in propositional logic valuations,
+    %% but this stuff here is considered closer to pseudocode, not
+    %% mathematical logic notation.
+  \item $\hilite{\text{succ}(s)} =
+    \{ \langle o, s'\rangle \mid
+      o \in O, s' = \applyop{o}{s}\}$
+  \end{itemize}
+  \end{block}
+\end{frame}
+
+\begin{frame}{Search for planning: regression}
+  Let $\Pi = \langle A,I,O,\gamma\rangle$ be a planning task.
+
+  \begin{block}{Search space for regression search}
+    \hilite{states:} all formulae over $A$ (how many?)
+  \begin{itemize}
+  \item $\hilite{\text{init}()} = \gamma$
+  \item $\hilite{\text{is-goal}(\varphi)}
+    = \begin{cases}
+      \textbf{true} & \text{if~} I \models \varphi \\
+      \textbf{false} & \text{otherwise}
+    \end{cases}$
+  \item $\hilite{\text{succ}(\varphi)} =
+    \{ \langle o, \varphi'\rangle \mid
+      o \in O, \varphi' = \regr{o}{\varphi},
+      \varphi'~\text{is satisfiable}\}$ \\
+    (modified if splitting is used)
+  \end{itemize}
+  \end{block}
+\end{frame}
+
+\begin{frame}{Classification of search algorithms}
+  uninformed search vs.\ heuristic search:
+  \begin{itemize}
+  \item \alert{uninformed search algorithms} only use the basic
+    ingredients for general search algorithms
+  \item \alert{heuristic search algorithms} additionally use
+    \alert{heuristic functions} which estimate how close a node is to
+    the goal
+  \end{itemize}
+
+  \medskip
+
+  systematic search vs.\ local search:
+  \begin{itemize}
+  \item \alert{systematic algorithms} consider a large number of
+    search nodes simultaneously
+  \item \alert{local search algorithms} work with one (or a few)
+    candidate solutions (search nodes) at a time
+  \item not a black-and-white distinction; there are
+    \alert{crossbreeds} (\eg, enforced hill-climbing)
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Classification: what works where in planning?}
+  uninformed vs.\ heuristic search:
+  \begin{itemize}
+  \item For \alert{satisficing} planning, heuristic search
+    vastly outperforms uninformed algorithms on most domains.
+  \item For \alert{optimal} planning, the difference is less
+    pronounced.%% \\ An efficiently implemented uninformed algorithm is not
+    %% easy to beat in most domains.
+  \end{itemize}
+
+  \medskip
+
+  systematic search vs.\ local search:
+  \begin{itemize}
+  \item For \alert{satisficing} planning, the most successful
+    algorithms are somewhere between the two extremes.
+  \item For \alert{optimal} planning, systematic algorithms are
+    required.
+  \end{itemize}
+\end{frame}
+
+\subsection[Common procedures]{Common procedures for search
+  algorithms}
+
+\begin{frame}{Common procedures for search algorithms}
+  Before we describe the different search algorithms, we introduce
+  three procedures used by all of them:
+  \begin{itemize}
+  \item \alert{make-root-node:} Create a search node without parent.
+  \item \alert{make-node:} Create a search node for a state generated
+    as the successor of another state.
+  \item \alert{extract-solution:} Extract a solution from a search
+    node representing a goal state.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Procedure \text{make-root-node}}
+  \alert{make-root-node:} Create a search node without parent.
+  \begin{block}{Procedure \text{make-root-node}}
+    \textbf{def} \text{make-root-node}($s$): \\
+    {}\qquad $\sigma := \textbf{new}~\text{node}$ \\
+    {}\qquad $\textit{state}(\sigma) := s$ \\
+    {}\qquad $\textit{parent}(\sigma) := \text{undefined}$ \\
+    {}\qquad $\textit{action}(\sigma) := \text{undefined}$ \\
+    {}\qquad $g(\sigma) := 0$ \\
+    {}\qquad \textbf{return} $\sigma$
+  \end{block}
+\end{frame}
+
+\begin{frame}{Procedure \text{make-node}}
+  \alert{make-node:} Create a search node for a state generated
+  as the successor of another state.
+  \begin{block}{Procedure \text{make-node}}
+    \textbf{def} \text{make-node}($\sigma$, $o$, $s$): \\
+    {}\qquad $\sigma' := \textbf{new}~\text{node}$ \\
+    {}\qquad $\textit{state}(\sigma') := s$ \\
+    {}\qquad $\textit{parent}(\sigma') := \sigma$ \\
+    {}\qquad $\textit{action}(\sigma') := o$ \\
+    {}\qquad $g(\sigma') := g(\sigma) + 1$ \\
+    {}\qquad \textbf{return} $\sigma'$
+  \end{block}
+\end{frame}
+
+\begin{frame}{Procedure \text{extract-solution}}
+  \alert{extract-solution:} Extract a solution from a search
+  node representing a goal state.
+  \begin{block}{Procedure \text{extract-solution}}
+    \textbf{def} \text{extract-solution}($\sigma$): \\
+    {}\qquad $\textit{solution} := \textbf{new}~\text{list}$ \\
+    {}\qquad \textbf{while} $\textit{parent}(\sigma)$ is defined: \\
+    {}\qquad\qquad
+    $\textit{solution}.\text{push-front}(\textit{action}(\sigma))$ \\
+    {}\qquad\qquad $\sigma := \textit{parent}(\sigma)$ \\
+    {}\qquad \textbf{return} $\textit{solution}$
+  \end{block}
+\end{frame}
+
+\section[Uninformed search]{Uninformed search algorithms}
+\subsection[Breadth-first w/o duplicate detection]{Breadth-first
+  search without duplicate detection}
+
+\begin{frame}{Uninformed search algorithms}
+  \begin{itemize}
+  \item Uninformed algorithms are less relevant for planning than
+    heuristic ones, so we keep their discussion brief.
+  \item Uninformed algorithms are mostly interesting to us because we
+    can compare and contrast them to related heuristic search
+    algorithms.
+  \end{itemize}
+
+  \bigskip
+
+  Popular uninformed systematic search algorithms:
+  \begin{itemize}
+  \item \alert{breadth-first search}
+  \item depth-first search
+  \item iterated depth-first search
+  \end{itemize}
+
+  \bigskip
+
+  Popular uninformed local search algorithms:
+  \begin{itemize}
+  \item \alert{random walk}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Breadth-first search without duplicate detection}
+  \begin{block}{Breadth-first search}
+    \small
+    \textit{queue} := \textbf{new} \text{fifo-queue} \\
+    $\textit{queue}.\text{push-back}(\text{make-root-node}(\hilite{\text{init}()}))$ \\
+    \textbf{while not} $\textit{queue}.\text{empty}()$: \\
+    {}\qquad $\sigma = \textit{queue}.\text{pop-front}()$ \\
+    {}\qquad \textbf{if}
+    $\hilite{\text{is-goal}}(\text{state}(\sigma))$: \\
+    {}\qquad\qquad \textbf{return} $\text{extract-solution}(\sigma)$
+    \\
+    {}\qquad \textbf{for each} $\langle o, s \rangle \in
+    \hilite{\text{succ}}(\textit{state}(\sigma))$: \\
+    {}\qquad\qquad $\sigma' := \text{make-node}(\sigma, o, s)$ \\
+    {}\qquad\qquad $\textit{queue}.\text{push-back}(\sigma')$ \\
+    \textbf{return} unsolvable
+  \end{block}
+  \begin{itemize}
+  \item Possible improvement: \alert{duplicate detection} (see next
+    slide).
+  \item Another possible improvement: test if $\sigma'$ is a goal
+    node; if so, terminate immediately. (We don't do this because it
+    obscures the similarity to some of the later algorithms.)
+  \end{itemize}
+\end{frame}
+
+\subsection[Breadth-first with duplicate detection]{Breadth-first
+  search with duplicate detection}
+
+\begin{frame}<all:1,2>{Breadth-first search with duplicate detection}
+  \begin{block}{Breadth-first search with duplicate detection}
+    \small
+    \textit{queue} := \textbf{new} \text{fifo-queue} \\
+    $\textit{queue}.\text{push-back}(\text{make-root-node}(\hilite{\text{init}()}))$
+    \\
+    \alert<all:1>{$\textit{closed} := \emptyset$} \\
+    \textbf{while not} $\textit{queue}.\text{empty}()$: \\
+    {}\qquad $\sigma = \textit{queue}.\text{pop-front}()$ \\
+    {}\qquad \alert<all:1>{\textbf{if} $\textit{state}(\sigma) \notin
+      \textit{closed}$:} \\
+    {}\qquad\qquad \alert<all:1>{$\textit{closed} := \textit{closed} \cup
+      \{\textit{state}(\sigma)\}$} \\
+    {}\qquad\qquad \textbf{if}
+    $\hilite{\text{is-goal}}(\text{state}(\sigma))$: \\
+    {}\qquad\qquad\qquad \textbf{return} $\text{extract-solution}(\sigma)$
+    \\
+    {}\qquad\qquad \textbf{for each} $\langle o, s \rangle \in
+    \hilite{\text{succ}}(\textit{state}(\sigma))$: \\
+    {}\qquad\qquad\qquad $\sigma' := \text{make-node}(\sigma, o, s)$ \\
+    {}\qquad\qquad\qquad $\textit{queue}.\text{push-back}(\sigma')$ \\
+    \textbf{return} unsolvable
+  \end{block}
+\end{frame}
+
+\subsection{Random walk}
+
+\begin{frame}{Random walk}
+  \begin{block}{Random walk}
+    $\sigma := \text{make-root-node}(\hilite{\text{init}}())$ \\
+    \textbf{forever}: \\
+    {}\qquad \textbf{if}
+    $\hilite{\text{is-goal}}(\text{state}(\sigma))$: \\
+    {}\qquad\qquad \textbf{return} $\text{extract-solution}(\sigma)$
+    \\
+    {}\qquad Choose a random element $\langle o, s\rangle$
+    from $\text{\hilite{succ}}(\text{state}(\sigma))$. \\
+    {}\qquad $\sigma := \text{make-node}(\sigma, o, s)$
+  \end{block}
+
+  \begin{itemize}
+  \item The algorithm usually does not find any solutions, unless
+    almost every sequence of actions is a plan.
+  \item Often, it runs indefinitely without making progress.
+  \item It can also fail by reaching a \alert{dead end}, a state with
+    no successors. This is a weakness of many local search approaches.
+  \end{itemize}
+\end{frame}
+
+\section[Heuristic search]{Heuristic search algorithms}
+\subsection[Heuristics]{Heuristics: definition and properties}
+
+\begin{frame}{Heuristic search algorithms:
+    \only<all:1>{systematic}\only<all:2>{local}}
+  \begin{itemize}
+  \item Heuristic search algorithms are the most common and overall
+    most successful algorithms for classical planning.
+  \end{itemize}
+
+  \bigskip
+
+  \begin{overprint}
+    \onslide<all:1>
+    Popular systematic heuristic search algorithms:
+    \begin{itemize}
+    \item \alert{greedy best-first search}
+    \item \alert{\astar}
+    \item \alert{weighted \astar}
+    \item {\idastar}
+    \item depth-first branch-and-bound search
+    % \item breadth-first heuristic search
+    \item \dots
+    \end{itemize}
+    \onslide<all:2>
+    Popular heuristic local search algorithms:
+    \begin{itemize}
+    \item \alert{hill-climbing}
+    \item \alert{enforced hill-climbing}
+    \item beam search
+    \item tabu search
+    \item genetic algorithms
+    \item simulated annealing
+    \item \dots
+    \end{itemize}
+  \end{overprint}
+\end{frame}
+
+\begin{frame}{Heuristic search: idea}
+  \begin{center}
+    \begin{tikzpicture}[scale=.9]
+      \node[circle, draw, fill=gray, minimum height=5mm,
+        label=above:$\hilite{\text{goal}}$] (Goal) at (9,0) {}; 
+      \node[circle,draw, inner sep=0.5mm,
+        label=above:$\hilite{\text{init}}$] (N0) at (0,0) {};
+      \node[circle,draw, inner sep=0.5mm] (N00) at (2,-1.5) {};
+      \node[circle,draw, inner sep=0.5mm] (N01) at (2,1.5) {};
+      \node[circle,draw, inner sep=0.5mm] (N000) at (4,-2.25) {};
+      \node[circle,draw, inner sep=0.5mm] (N001) at (4,-0.75) {};
+      \node[circle,draw, inner sep=0.5mm] (N010) at (4,0.75) {};
+      \node[circle,draw, inner sep=0.5mm] (N011) at (4,2.25) {};
+
+      \draw[->,red, thick] (N0) -- (N00);
+      \draw[->,blue, thick] (N0) -- (N01);
+      \draw[->,red, thick] (N00) -- (N000);
+      \draw[->,blue, thick] (N00) -- (N001);
+      \draw[->,blue, thick] (N01) -- (N010);
+      \draw[->,blue, thick] (N01) -- (N011);
+      
+      \draw[dashed, violet] (N000) -- node[above,sloped] {
+        \scriptsize distance estimate} (Goal);
+      \draw[dashed, violet] (N001) -- node[above,sloped] {
+        \scriptsize distance estimate} (Goal);
+      \draw[dashed, violet] (N010) -- node[above,sloped] {
+        \scriptsize distance estimate} (Goal);
+      \draw[dashed, violet] (N011) -- node[above,sloped] {
+        \scriptsize distance estimate} (Goal);
+    \end{tikzpicture}
+  \end{center}
+\end{frame}
+
+\begin{frame}{Required ingredients for heuristic search}
+  A \alert{heuristic search algorithm} requires one more operation \\
+  in addition to the definition of a search space.
+
+  \begin{definition}[heuristic function]
+    Let $\Sigma$ be the set of nodes of a given search space.
+
+    A \alert{heuristic function} or \alert{heuristic} (for that search
+    space) is a function $h: \Sigma \to \mathbb N_0 \cup \{\infty\}$.
+  \end{definition}
+
+  The value $h(\sigma)$ is called the \alert{heuristic estimate} or
+  \alert{heuristic value} of heuristic $h$ for node $\sigma$. It is
+  supposed to estimate the distance from $\sigma$ to the nearest goal
+  node.
+\end{frame}
+
+\begin{frame}{What exactly is a heuristic estimate?}
+  What does it mean that $h$ ``estimates the goal distance''?
+  \begin{itemize}
+  \item For most heuristic search algorithms, $h$ does not need to
+    have any strong properties for the algorithm to work (= be
+    correct and complete).
+  \item However, the \alert{efficiency} of the algorithm closely
+    relates to how accurately $h$ reflects the actual goal distance.
+  \item For some algorithms, like \astar, we can prove strong formal
+    relationships between properties of $h$ and properties of the
+    algorithm (optimality, dominance, run-time for bounded error,
+    \dots)
+  \item For other search algorithms, ``it works well in practice'' is
+    often as good an analysis as one gets.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Heuristics applied to nodes or states?}
+  \begin{itemize}
+  \item Most texts apply heuristic functions to \alert{states}, not
+    \alert{nodes}.
+  \item This is slightly \alert{less general} than our definition:
+    \begin{itemize}
+    \item Given a state heuristic $h$, we can define an
+      equivalent node heuristic as $h'(\sigma) :=
+      h(\textit{state}(\sigma))$.
+    \item The opposite is not possible. (Why not?)
+    \end{itemize}
+  \item There is good justification for only allowing state-defined
+    heuristics: why should the estimated distance to the goal depend
+    on \alert{how} we ended up in a given state $s$?
+  \item We call heuristics which don't just depend on
+    $\textit{state}(\sigma)$ \alert{pseudo-heuristics}.
+  \item In practice there are sometimes good reasons to have the
+    heuristic value depend on the generating path of $\sigma$ \\
+    (\eg, the \alert{landmark pseudo-heuristic}, Richter et al.\ 2008).
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Perfect heuristic}
+  Let $\Sigma$ be the set of nodes of a given search space.
+
+  \begin{definition}[optimal/perfect heuristic]
+    The \alert{optimal} or \alert{perfect heuristic} of a search space
+    is the heuristic $\alert{h^*}$ which maps each search node
+    $\sigma$ to the length of a shortest path from
+    $\textit{state}(\sigma)$ to any goal state.
+  \end{definition}
+  \hilite{Note:} $h^*(\sigma) = \infty$ iff no goal state is reachable
+  from $\sigma$.
+\end{frame}
+
+\begin{frame}{Properties of heuristics}
+  A heuristic $h$ is called
+  \begin{itemize}
+  \item \alert{safe} if
+    $h^*(\sigma) = \infty$ for all $\sigma \in \Sigma$
+    with $h(\sigma) = \infty$
+  \item \alert{goal-aware} if
+    $h(\sigma) = 0$ for all goal nodes $\sigma \in \Sigma$
+  \item \alert{admissible} if
+    $h(\sigma) \le h^*(\sigma)$ for all nodes $\sigma \in \Sigma$
+  \item \alert{consistent} if
+    $h(\sigma) \le h(\sigma') + 1$ for all nodes
+    $\sigma, \sigma' \in \Sigma$ \\
+    such that $\sigma'$ is a successor of $\sigma$
+  \end{itemize}
+
+  \medskip
+
+  Relationships?
+\end{frame}
+
+\subsection[Systematic search]{Systematic heuristic search algorithms}
+
+\begin{frame}{Greedy best-first search}
+  \begin{block}{Greedy best-first search (with duplicate detection)}
+    \small
+    $\textit{open} := \textbf{new}~\text{min-heap}~\text{ordered by}~
+    (\sigma \mapsto h(\sigma))$ \\
+    $\textit{open}.\text{insert}(\text{make-root-node}(\hilite{\text{init}()}))$
+    \\
+    $\textit{closed} := \emptyset$ \\
+    \textbf{while not} $\textit{open}.\text{empty}()$: \\
+    {}\qquad $\sigma = \textit{open}.\text{pop-min}()$ \\
+    {}\qquad \textbf{if} $\textit{state}(\sigma) \notin
+    \textit{closed}$: \\
+    {}\qquad\qquad $\textit{closed} := \textit{closed} \cup
+    \{\textit{state}(\sigma)\}$ \\
+    {}\qquad\qquad \textbf{if}
+    $\hilite{\text{is-goal}}(\text{state}(\sigma))$: \\
+    {}\qquad\qquad\qquad \textbf{return} $\text{extract-solution}(\sigma)$
+    \\
+    {}\qquad\qquad \textbf{for each} $\langle o, s \rangle \in
+    \hilite{\text{succ}}(\textit{state}(\sigma))$: \\
+    {}\qquad\qquad\qquad $\sigma' := \text{make-node}(\sigma, o, s)$
+    \\
+    {}\qquad\qquad\qquad \textbf{if} $h(\sigma') < \infty$: \\
+    {}\qquad\qquad\qquad\qquad $\textit{open}.\text{insert}(\sigma')$ \\
+    \textbf{return} unsolvable
+  \end{block}
+\end{frame}
+
+\begin{frame}{Properties of greedy best-first search}
+  \begin{itemize}
+  \item one of the three most commonly used algorithms for satisficing
+    planning
+  \item \alert{complete} for safe heuristics
+    (due to duplicate detection)
+  \item \alert{suboptimal} unless $h$ satisfies some very strong
+    assumptions (similar to being perfect)
+  \item invariant under all strictly monotonic transformations of $h$
+    (\eg, scaling with a positive constant or adding a constant)
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{\astar}
+  \begin{block}{{\astar} (with duplicate detection and reopening)}
+    \small
+    $\textit{open} := \textbf{new}~\text{min-heap}~\text{ordered by}~
+    (\sigma \mapsto g(\sigma) + h(\sigma))$ \\
+    $\textit{open}.\text{insert}(\text{make-root-node}(\hilite{\text{init}()}))$
+    \\
+    $\textit{closed} := \emptyset$ \\
+    $\textit{distance} := \emptyset$ \\
+    \textbf{while not} $\textit{open}.\text{empty}()$: \\
+    {}\qquad $\sigma = \textit{open}.\text{pop-min}()$ \\
+    {}\qquad \textbf{if} $\textit{state}(\sigma) \notin
+    \textit{closed}$ \textbf{or}
+    $g(\sigma) < \textit{distance}(\textit{state}(\sigma))$: \\
+    {}\qquad\qquad $\textit{closed} := \textit{closed} \cup
+    \{\textit{state}(\sigma)\}$ \\
+    {}\qquad\qquad $\textit{distance}(\textit{state}(\sigma)) := g(\sigma)$ \\
+    {}\qquad\qquad \textbf{if}
+    $\hilite{\text{is-goal}}(\text{state}(\sigma))$: \\
+    {}\qquad\qquad\qquad \textbf{return} $\text{extract-solution}(\sigma)$
+    \\
+    {}\qquad\qquad \textbf{for each} $\langle o, s \rangle \in
+    \hilite{\text{succ}}(\textit{state}(\sigma))$: \\
+    {}\qquad\qquad\qquad $\sigma' := \text{make-node}(\sigma, o, s)$
+    \\
+    {}\qquad\qquad\qquad \textbf{if} $h(\sigma') < \infty$: \\
+    {}\qquad\qquad\qquad\qquad $\textit{open}.\text{insert}(\sigma')$ \\
+    \textbf{return} unsolvable
+  \end{block}
+\end{frame}
+
+\begin{frame}<all:1-5>{{\astar} example}
+  \framesubtitle{Example}
+  \begin{center}
+    \begin{tikzpicture}
+      \node[circle, draw, fill=gray, label=above:$\gamma$, minimum height=5mm] (Goal) at (9,0) {};
+      
+      \visible<1->{\node[circle, fill=black, inner sep=0.5mm, label=below:$I$, label=above:0+3] (N0) at (0,0) {};}
+      \only<1>{
+	\node[circle, draw, fill=white, inner sep=0.5mm] at (0,0) {};
+	\draw[dashed,violet] (N0) -- node[above,sloped] {3} (Goal);
+      }
+      \visible<2->{
+	\node[circle, fill=black, inner sep=0.5mm, label=above:1+3] (N00) at (2,-1.5) {};
+	\node[circle, fill=black, inner sep=0.5mm, label=above:1+2] (N01) at (2,1.5) {};
+	\draw[->, blue, thick] (N0) -- (N00);
+	\draw[->, red, thick] (N0) -- (N01);}
+      \visible<3->{
+	\node[circle, draw, inner sep=0.5mm, label=above:2+7] (N010) at (4,0.75) {};
+	\node[circle, draw, inner sep=0.5mm, label=above:2+6] (N011) at (4,2.25) {};
+	\draw[->, blue, thick] (N01) -- (N010);
+	\draw[->, red, thick] (N01) -- (N011);
+	\draw[dashed,violet] (N010) -- node[above,sloped] {7} (Goal);
+	\draw[dashed,violet] (N011) -- node[above,sloped] {6} (Goal);
+      }
+      \visible<4->{
+	\node[circle, draw, inner sep=0.5mm, label=above:2+5] (N000) at (4,-0.75) {};
+	\node[circle, draw, fill=black, inner sep=0.5mm, label=above:2+2] (N001) at (4,-2.25) {};
+	\draw[->, blue, thick] (N00) -- (N001);
+	\draw[->, red, thick] (N00) -- (N000);
+	\draw[dashed,violet] (N000) -- node[above,sloped] {5} (Goal);
+      }
+      \visible<5->{
+	\node[circle, draw, inner sep=0.5mm, label=above:3+5] (N0010) at (6,-1.5) {};
+	\node[circle, draw, fill=black, inner sep=0.5mm, label=below:3+1] (N0011) at (6,-3) {};
+	\draw[->, red, thick] (N001) -- (N0010);
+	\draw[->, blue, thick] (N001) -- (N0011);
+	\draw[dashed,violet] (N0010) -- node[above,sloped] {5} (Goal);
+      }
+      \visible<6->{
+	\node[circle, draw, fill=black, inner sep=0.5mm, label=below:4+8] (N00111) at (8,-2.25) {};
+	\draw[->, red, thick] (N0011) -- (Goal);
+	\draw[->, blue, thick] (N0011) -- (N00111);
+	\draw[dashed,violet] (N00111) -- node[below] {8} (Goal);
+      }
+      \only<2>{
+	\node[circle, draw, fill=white, inner sep=0.5mm] at (2,1.5) {};
+	\draw[dashed,violet] (N01) -- node[above,sloped] {2} (Goal);
+      }
+      \only<2-3>{
+	\node[circle, draw, fill=white, inner sep=0.5mm] at (2,-1.5) {};
+	\draw[dashed,violet] (N00) -- node[above,sloped] {3} (Goal);
+      }
+      \only<4>{
+	\node[circle, draw, fill=white, inner sep=0.5mm] at (4,-2.25) {};
+	\draw[dashed,violet] (N001) -- node[above,sloped] {2} (Goal);
+      }
+      \only<5>{
+	\node[circle, draw, fill=white, inner sep=0.5mm] at (6,-3) {};
+	\draw[dashed,violet] (N0011) -- node[above,sloped] {1} (Goal);
+      }
+    \end{tikzpicture}
+  \end{center}
+\end{frame}
+
+\begin{frame}{Terminology for \astar}
+  \begin{itemize}
+  \item \alert{$f$ value} of a node: defined by $f(\sigma) :=
+    g(\sigma) + h(\sigma)$
+  \item \alert{generated nodes:} nodes inserted into \textit{open}
+    at some point
+  \item \alert{expanded nodes:} nodes $\sigma$ popped from
+    \textit{open} for which the test against \textit{closed} and
+    \textit{distance} succeeds
+  \item \alert{reexpanded nodes:} expanded nodes for which
+    $\textit{state}(\sigma) \in \textit{closed}$ upon expansion
+    (also called \alert{reopened} nodes)
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Properties of \astar}
+  \begin{itemize}
+  \item the most commonly used algorithm for optimal planning
+  \item rarely used for satisficing planning
+  \item \alert{complete} for safe heuristics (even without duplicate
+    detection)
+  \item \alert{optimal} if $h$ is admissible (even without duplicate
+    detection)
+    %% Note: A previous version said ``admissible and/or consistent''
+    %% here, but this is wrong. Consistency without admissibility is
+    %% not good enough for optimality. This can be seen from the
+    %% state space s1 <-- s2 --> s3 --> s4 where s1 and s4 are goals,
+    %% h(s1) = h(s2) = 2, h(s3) = 1, h(s4) = 0, and s2 is the initial
+    %% state. This is consistent, but not admissible, and it causes
+    %% A* to find the suboptimal solution s2 --> s3 --> s4 instead of
+    %% the optimal s2 --> s1.
+  \item never reopens nodes if $h$ is consistent
+  \end{itemize}
+  
+  \bigskip
+
+  \textblue{Implementation notes:}
+  \begin{itemize}
+  \item in the heap-ordering procedure, it is considered a good idea
+    to break ties in favour of lower $h$ values
+  \item can simplify algorithm if we know that we only
+    have to deal with consistent heuristics
+  \item common, hard to spot bug: test membership in \textit{closed}
+    at the wrong time
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Weighted \astar}
+  \begin{block}{Weighted {\astar} (with duplicate detection and reopening)}
+    \small
+    $\textit{open} := \textbf{new}~\text{min-heap}~\text{ordered by}~
+    (\sigma \mapsto g(\sigma) + \alert{W} \cdot h(\sigma))$ \\
+    $\textit{open}.\text{insert}(\text{make-root-node}(\hilite{\text{init}()}))$
+    \\
+    $\textit{closed} := \emptyset$ \\
+    $\textit{distance} := \emptyset$ \\
+    \textbf{while not} $\textit{open}.\text{empty}()$: \\
+    {}\qquad $\sigma = \textit{open}.\text{pop-min}()$ \\
+    {}\qquad \textbf{if} $\textit{state}(\sigma) \notin
+    \textit{closed}$ \textbf{or}
+    $g(\sigma) < \textit{distance}(\textit{state}(\sigma))$: \\
+    {}\qquad\qquad $\textit{closed} := \textit{closed} \cup
+    \{\textit{state}(\sigma)\}$ \\
+    {}\qquad\qquad $\textit{distance}(\sigma) := g(\sigma)$ \\
+    {}\qquad\qquad \textbf{if}
+    $\hilite{\text{is-goal}}(\text{state}(\sigma))$: \\
+    {}\qquad\qquad\qquad \textbf{return} $\text{extract-solution}(\sigma)$
+    \\
+    {}\qquad\qquad \textbf{for each} $\langle o, s \rangle \in
+    \hilite{\text{succ}}(\textit{state}(\sigma))$: \\
+    {}\qquad\qquad\qquad $\sigma' := \text{make-node}(\sigma, o, s)$
+    \\
+    {}\qquad\qquad\qquad \textbf{if} $h(\sigma') < \infty$: \\
+    {}\qquad\qquad\qquad\qquad $\textit{open}.\text{insert}(\sigma')$ \\
+    \textbf{return} unsolvable
+  \end{block}
+\end{frame}
+
+\begin{frame}{Properties of weighted \astar}
+  The \alert{weight} $W \in \mathbb R^+_0$ is a parameter of the
+  algorithm.
+  \begin{itemize}
+  \item for $W = 0$, behaves like breadth-first search
+  \item for $W = 1$, behaves like \astar
+  \item for $W \to \infty$, behaves like greedy best-first search
+   \end{itemize}
+
+  \bigskip
+  
+  Properties:
+  \begin{itemize}
+  \item one of the most commonly used algorithms for satisficing
+    planning
+  \item for $W > 1$, can prove similar properties to \astar,
+    replacing \alert{optimal} with \alert{bounded suboptimal}: generated
+    solutions are at most a factor $W$ as long as optimal ones
+  \end{itemize}
+\end{frame}
+
+\subsection[Local search]{Heuristic local search algorithms}
+
+\begin{frame}{Hill-climbing}
+  \begin{block}{Hill-climbing}
+    $\sigma := \text{make-root-node}(\hilite{\text{init}}())$ \\
+    \textbf{forever}: \\
+    {}\qquad \textbf{if}
+    $\hilite{\text{is-goal}}(\text{state}(\sigma))$: \\
+    {}\qquad\qquad \textbf{return} $\text{extract-solution}(\sigma)$
+    \\
+    {}\qquad $\Sigma' := \{\,\text{make-node}(\sigma, o, s) \mid
+      \langle o, s\rangle \in
+      \text{\hilite{succ}}(\text{state}(\sigma))\,\}$ \\
+    {}\qquad $\sigma := \text{an element of}~\Sigma'
+    \text{~minimizing~} h$ (random tie breaking)
+  \end{block}
+
+  \begin{itemize}
+  \item can easily get stuck in \alert{local minima} where
+    immediate improvements of $h(\sigma)$ are not possible
+  \item many variations: tie-breaking strategies, restarts
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Enforced hill-climbing}
+  \begin{block}{Enforced hill-climbing: procedure \text{improve}}
+    \textbf{def} $\textit{improve}(\sigma_0)$: \\
+    \small
+    {}\qquad\textit{queue} := \textbf{new} \text{fifo-queue} \\
+    {}\qquad$\textit{queue}.\text{push-back}(\sigma_0)$ \\
+    {}\qquad$\textit{closed} := \emptyset$ \\
+    {}\qquad\textbf{while not} $\textit{queue}.\text{empty}()$: \\
+    {}\qquad\qquad $\sigma = \textit{queue}.\text{pop-front}()$ \\
+    {}\qquad\qquad \textbf{if} $\textit{state}(\sigma) \notin
+      \textit{closed}$: \\
+    {}\qquad\qquad\qquad $\textit{closed} := \textit{closed} \cup
+      \{\textit{state}(\sigma)\}$ \\
+    {}\qquad\qquad\qquad \textbf{if} $h(\sigma) < h(\sigma_0)$: \\
+    {}\qquad\qquad\qquad\qquad \textbf{return} $\sigma$
+    \\
+    {}\qquad\qquad\qquad \textbf{for each} $\langle o, s \rangle \in
+    \hilite{\text{succ}}(\textit{state}(\sigma))$: \\
+    {}\qquad\qquad\qquad\qquad $\sigma' := \text{make-node}(\sigma, o, s)$ \\
+    {}\qquad\qquad\qquad\qquad $\textit{queue}.\text{push-back}(\sigma')$ \\
+    {}\qquad\textbf{fail}
+  \end{block}
+
+  $\leadsto$ breadth-first search for more promising node than
+  $\sigma_0$
+\end{frame}
+
+\begin{frame}{Enforced hill-climbing (ctd.)}
+  \begin{block}{Enforced hill-climbing}
+    $\sigma := \text{make-root-node}(\hilite{\text{init}}())$ \\
+    \textbf{while not} $\hilite{\text{is-goal}}(\text{state}(\sigma))$: \\
+    {}\qquad $\sigma := \text{improve}(\sigma)$ \\
+    {}\textbf{return} $\text{extract-solution}(\sigma)$
+  \end{block}
+
+  \begin{itemize}
+  \item one of the three most commonly used algorithms for satisficing
+    planning
+  \item can fail if procedure improve fails (when the goal is
+    unreachable from $\sigma_0$)
+  \item complete for \alert{undirected} search spaces (where the
+    successor relation is symmetric) if $h(\sigma) = 0$ for all goal
+    nodes and only for goal nodes
+  \end{itemize}
+\end{frame}
+
+\section*{Summary}
+
+\begin{frame}{Summary}
+  \begin{itemize}
+  \item distinguish: \alert{planning states}, \alert{search states},
+    \alert{search nodes}
+    \begin{itemize}
+    \item \alert{planning state}: situation in the world
+      modelled by the task
+    \item \alert{search state}: subproblem remaining to be solved
+      \begin{itemize}
+      \item In \alert{state-space search} (usually progression
+        search), \\ planning states and search states are identical.
+      \item In regression search, search states usually describe
+        \\ sets of states (``subgoals'').
+      \end{itemize}
+    \item \alert{search node:} search state + info on ``how we got
+      there''
+    \end{itemize}
+  \item search algorithms mainly differ in \alert{order of node expansion}
+    \begin{itemize}
+    \item \alert{uninformed} vs.\ \alert{informed} (\alert{heuristic})
+      search
+    \item \alert{local} vs.\ \alert{systematic} search
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Summary (ctd.)}
+  \begin{itemize}
+  \item \alert{heuristics:} estimators for ``distance to goal node''
+    \begin{itemize}
+    \item usually: the more accurate, the better performance
+    \item desiderata: \alert{safe}, \alert{goal-aware},
+      \alert{admissible}, \alert{consistent}
+    \item the ideal: \alert{perfect heuristic $h^*$}
+    \end{itemize}
+  \item most common algorithms for \alert{satisficing planning}:
+    \begin{itemize}
+    \item \alert{greedy best-first search}
+    \item \alert{weighted \astar}
+    \item \alert{enforced hill-climbing}
+    \end{itemize}
+  \item most common algorithm for \alert{optimal planning}:
+    \begin{itemize}
+    \item \alert{\astar}
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\end{document}

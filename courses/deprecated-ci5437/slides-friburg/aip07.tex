@@ -1,0 +1,665 @@
+\documentclass{gkibeamer}
+
+\input{macros}
+
+\begin{document}
+\lectureno{7}
+\subtitle{Planning as search: relaxed planning tasks}
+\date{November 18th, 2011}
+\maketitles
+
+\section[Obtaining heuristics]{How to obtain a heuristic}
+\subsection[STRIPS heuristic]{The STRIPS heuristic}
+
+\begin{frame}{A simple heuristic for deterministic planning}
+  STRIPS (Fikes \& Nilsson, 1971) used the number of state
+  variables that differ in current state $s$ and a
+  STRIPS goal $a_1 \land \dots \land a_n$:
+  \[ h(s) := |\{ i \in \{1, \dots, n\} \mid s \not\models a_i
+      \}|. \]
+
+  \hilite{Intuition:} more true goal literals $\leadsto$ closer to the
+  goal
+
+  \medskip
+
+  $\leadsto$ \alert{STRIPS heuristic (a.k.a.\ goal-count heuristic)} (properties?)
+
+  \bigskip
+
+  \hilite{Note:} From now on, for convenience we usually write
+  heuristics as functions of states (as above), not nodes.
+
+  Node heuristic $h'$ is defined from state heuristic $h$ as
+  $h'(\sigma) := h(\textit{state}(\sigma))$.
+\end{frame}
+
+\begin{frame}{Criticism of the STRIPS heuristic}
+  What is wrong with the STRIPS heuristic?
+  \begin{itemize}
+  \item quite \alert{uninformative}: \\
+    the range of heuristic values in a given task is small; \\
+    typically, most successors have the same estimate
+  \item very sensitive to \alert{reformulation}: \\
+    can easily transform any planning task into an equivalent one
+    where $h(s) = 1$ for all non-goal states (how?)
+  \item ignores almost all \alert{problem structure}: \\
+    heuristic value does not depend on the set of operators!
+  \end{itemize}
+
+  $\leadsto$ need a better, principled way of coming up with
+  heuristics
+\end{frame}
+
+\subsection{Relaxation and abstraction}
+
+\begin{frame}{Coming up with heuristics in a principled way}
+  \begin{block}{General procedure for obtaining a heuristic}
+    Solve an easier version of the problem.
+  \end{block}
+
+  Two common methods:
+  \begin{itemize}
+  \item \alert{relaxation:} consider \alert{less constrained} version
+    of the problem
+  \item \alert{abstraction:} consider \alert{smaller} version of real
+    problem
+  \end{itemize}
+
+  Both have been very successfully applied in planning. \\
+  We consider both in this course, beginning with \alert{relaxation}.
+\end{frame}
+
+\begin{frame}{Relaxing a problem}
+  How do we relax a problem?
+
+ \begin{example}[Route planning for a road network]
+   The road network is formalized as a weighted graph over points in
+   the Euclidean plane. The weight of an edge is the \alert{road
+   distance} between two locations.
+ \end{example}
+
+ A relaxation \alert{drops constraints} of the original problem.
+
+ \begin{example}[Relaxation for route planning]
+ 
+   Use the \alert{Euclidean distance} $\sqrt{|x_1 - x_2|^2 + |y_1 -
+   y_2|^2}$ as a heuristic for the road distance between
+   $\langle x_1, y_1\rangle$ and $\langle x_2, y_2\rangle$
+
+   This is \alert{a lower bound} on the road distance ($\leadsto$
+   admissible).
+ \end{example}
+
+ $\leadsto$ We drop the constraint of having to travel on roads.
+\end{frame}
+
+\newcommand<>{\city}[3]{
+  \pgfnodecircle{#1}[fill]{\pgfxy(#3,#2)}{1.10mm}
+  \pgfputat{\pgfrelative{\pgfxy(0,-0.15)}{\pgfnodecenter{#1}}}
+	   {\pgfbox[left,center]{\small\alert#4{#1}}}}
+\newcommand<>{\citya}[3]{\pgfnodecircle{#1}[fill]{\pgfxy(#3,#2)}{1.10mm}
+  \pgfputat{\pgfrelative{\pgfxy(0,0.15)}{\pgfnodecenter{#1}}}
+	   {\pgfbox[left,center]{\small\alert#4{#1}}}}
+\newcommand<>{\cityl}[3]{\pgfnodecircle{#1}[fill]{\pgfxy(#3,#2)}{1.10mm}
+  \pgfputat{\pgfrelative{\pgfxy(-0.15,0.0)}{\pgfnodecenter{#1}}}
+	   {\pgfbox[right,center]{\small\alert#4{#1}}}}
+
+\begin{frame}{{\astar} using the Euclidean distance heuristic}
+ \begin{pgfpicture}{11.0cm}{119cm}{21cm}{126cm}
+   \pgfsetxvec{\pgfpoint{1.5cm}{0cm}}
+   \pgfsetyvec{\pgfpoint{0cm}{2.5cm}}
+   \pgfsetlinewidth{0.7pt}
+   
+   %% Apparently, some of these coordinates were originally taken
+   %% from a map, but at least some (Wurzburg?) were moved around
+   %% a bit for visual clarity.
+   \cityl<all:3,4>{Frankfurt}{50.12}{8.68}
+   \city<all:1>{Freiburg}{47.98}{7.85}
+   \cityl<all:2>{Karlsruhe}{49.00}{8.40}
+   \city<all:7>{Munich}{48.13}{11.58}
+   \citya<all:6,7,8>{Nuremberg}{49.45}{11.1}
+   \city<all:0>{Passau}{48.57}{13.43}
+   \citya<all:0>{Regensburg}{49.02}{12.10}
+   \citya<all:3>{Stuttgart}{48.80}{9.20}
+   \city<all:4,5,6>{Ulm}{48.40}{9.97}
+   \citya<all:5>{Wurzburg}{50.00}{9.9}
+
+   \alert<all:8>{\pgfnodeconnline{Freiburg}{Karlsruhe}}
+   \alert<all:8>{\pgfnodeconnline{Karlsruhe}{Frankfurt}}
+   \pgfnodeconnline{Karlsruhe}{Stuttgart}
+   \pgfnodeconnline{Stuttgart}{Ulm}
+   \pgfnodeconnline{Ulm}{Munich}
+   \pgfnodeconnline{Munich}{Passau}
+   \pgfnodeconnline{Munich}{Regensburg}
+   \pgfnodeconnline{Regensburg}{Passau}
+   \pgfnodeconnline{Nuremberg}{Regensburg}
+   \alert<all:8>{\pgfnodeconnline{Wurzburg}{Nuremberg}}
+   \alert<all:8>{\pgfnodeconnline{Frankfurt}{Wurzburg}}
+
+   \pgfnodelabelrotated{Freiburg}{Karlsruhe}[0.5][1pt]{
+     \pgfbox[center,base]{\footnotesize 120 km}}
+   \pgfnodelabelrotated{Karlsruhe}{Frankfurt}[0.5][1pt]{
+     \pgfbox[center,base]{\footnotesize 120 km}}
+   \pgfnodelabelrotated{Karlsruhe}{Stuttgart}[0.5][1pt]{
+     \pgfbox[center,base]{\footnotesize 100 km}}
+   \pgfnodelabelrotated{Stuttgart}{Ulm}[0.5][1pt]{
+     \pgfbox[center,base]{\footnotesize 100 km}}
+   \pgfnodelabelrotated{Ulm}{Munich}[0.5][1pt]{
+     \pgfbox[center,base]{\footnotesize 100 km}}
+   \pgfnodelabelrotated{Munich}{Passau}[0.5][1pt]{
+     \pgfbox[center,base]{\footnotesize 120 km}}
+   \pgfnodelabelrotated{Munich}{Regensburg}[0.5][1pt]{
+     \pgfbox[center,base]{\footnotesize 80 km}}
+   \pgfnodelabelrotated{Regensburg}{Passau}[0.5][1pt]{
+     \pgfbox[center,base]{\footnotesize 160 km}}
+   \pgfnodelabelrotated{Nuremberg}{Regensburg}[0.5][1pt]{
+     \pgfbox[center,base]{\footnotesize 100 km}}
+   \pgfnodelabelrotated{Frankfurt}{Wurzburg}[0.5][1pt]{
+     \pgfbox[center,base]{\footnotesize 100 km}}
+   \pgfnodelabelrotated{Wurzburg}{Nuremberg}[0.75][1pt]{
+     \pgfbox[center,base]{\footnotesize 120 km}}
+   
+   \pgfsetdash{{3pt}{3pt}}{0pt}
+   \color{violet}
+
+   \visible<all:1>{
+     \pgfnodeconnline{Freiburg}{Nuremberg}
+     \pgfnodelabelrotated{Freiburg}{Nuremberg}[0.8][2pt]{
+       \pgfbox[center,base]{\footnotesize\textblue{200 km}}}
+     \pgfnodelabelrotated{Freiburg}{Nuremberg}[0.8][-2pt]{
+       \pgfbox[center,top]{\footnotesize 200 km}}
+   }
+   \visible<all:2>{
+     \pgfnodeconnline{Karlsruhe}{Nuremberg}
+     \pgfnodelabelrotated{Karlsruhe}{Nuremberg}[0.5][2pt]{
+       \pgfbox[center,base]{\footnotesize\textblue{270 km}}}
+     \pgfnodelabelrotated{Karlsruhe}{Nuremberg}[0.5][-2pt]{
+       \pgfbox[center,top]{\footnotesize 150 km}}
+   }
+   \visible<all:3,4>{
+     \pgfnodeconnline{Frankfurt}{Nuremberg}
+     \pgfnodelabelrotated{Frankfurt}{Nuremberg}[0.5][2pt]{
+       \pgfbox[center,base]{\footnotesize\textblue{420 km}}}
+     \pgfnodelabelrotated{Frankfurt}{Nuremberg}[0.5][-2pt]{
+       \pgfbox[center,top]{\footnotesize 180 km}}
+   }
+   \visible<all:3>{
+     \pgfnodeconnline{Stuttgart}{Nuremberg}
+     \pgfnodelabelrotated{Stuttgart}{Nuremberg}[0.6][2pt]{
+       \pgfbox[center,base]{\footnotesize\textblue{340 km}}}
+     \pgfnodelabelrotated{Stuttgart}{Nuremberg}[0.6][-2pt]{
+       \pgfbox[center,top]{\footnotesize 120 km}}
+   }
+   \visible<all:4,5,6>{
+     \pgfnodeconnline{Ulm}{Nuremberg}
+     \pgfnodelabelrotated{Ulm}{Nuremberg}[0.5][2pt]{
+       \pgfbox[center,base]{\footnotesize\textblue{450 km}}}
+     \pgfnodelabelrotated{Ulm}{Nuremberg}[0.5][-2pt]{
+       \pgfbox[center,top]{\footnotesize 130 km}}
+   }
+   \visible<all:5>{
+     \pgfnodeconnline{Wurzburg}{Nuremberg}
+     \pgfnodelabelrotated{Wurzburg}{Nuremberg}[0.25][2pt]{
+       \pgfbox[center,base]{\footnotesize\textblue{440 km}}}
+     \pgfnodelabelrotated{Wurzburg}{Nuremberg}[0.25][-2pt]{
+       \pgfbox[center,top]{\footnotesize 100 km}}
+   }
+   \visible<all:7>{
+     \pgfnodeconnline{Nuremberg}{Munich}
+     \pgfnodelabelrotated{Nuremberg}{Munich}[0.5][2pt]{
+       \pgfbox[center,base]{\footnotesize\textblue{540 km}}}
+     \pgfnodelabelrotated{Nuremberg}{Munich}[0.5][-2pt]{
+       \pgfbox[center,top]{\footnotesize 120 km}}
+   }
+   \visible<all:6->{\pgfputat{\pgfxy(11.1,49.75)}{
+       \pgfbox[left,center]{\footnotesize\textblue{460 km}}}}
+ \end{pgfpicture}
+\end{frame}
+
+\section{Relaxed planning tasks}
+\subsection{Definition}
+
+\begin{frame}{Relaxed planning tasks: idea}
+  In \alert{positive normal form} (remember?), good and bad effects
+  are easy to distinguish:
+  \begin{itemize}
+  \item Effects that make state variables true are good \\
+    (\alert{add effects}).
+  \item Effects that make state variables false are bad \\
+    (\alert{delete effects}).
+  \end{itemize}
+  
+  Idea for the heuristic: Ignore all delete effects.
+\end{frame}
+
+\begin{frame}{Relaxed planning tasks}
+  \begin{definition}[relaxation of operators]
+    The \alert{relaxation} $\relaxation{o}$ of an operator
+    $o = \langle \chi, e\rangle$ in positive normal form is the operator
+    which is obtained by replacing all negative effects $\neg a$
+    within $e$ by the do-nothing effect $\top$.
+  \end{definition}
+  
+  \begin{definition}[relaxation of planning tasks]
+    The \alert{relaxation} $\relaxation{\Pi}$ of a planning task
+    $\Pi = \langle A, I, O, \gamma\rangle$ in positive normal form is the
+    planning task $\relaxation{\Pi} := \langle A, I,
+    \{\relaxation{o} \mid o \in O\}, \gamma\rangle$.
+  \end{definition}
+  
+  \begin{definition}[relaxation of operator sequences]
+    The \alert{relaxation} of an operator sequence $\pi = o_1 \dots
+    o_n$ is the operator sequence $\relaxation{\pi} :=
+    \relaxation{o_1} \dots \relaxation{o_n}$.
+  \end{definition}
+\end{frame}
+
+\begin{frame}{Relaxed planning tasks: terminology}
+  \begin{itemize}
+  \item Planning tasks in positive normal form without delete effects
+    are called \alert{relaxed planning tasks}.
+  \item Plans for relaxed planning tasks are called \alert{relaxed
+    plans}.
+  \item If $\Pi$ is a planning task in positive normal form and
+    $\relaxation{\pi}$ is a plan for $\relaxation{\Pi}$, then
+    $\relaxation{\pi}$ is called a \alert{relaxed plan for $\Pi$}.
+  \end{itemize}
+\end{frame}
+
+\subsection{The relaxation lemma}
+
+\begin{frame}{Dominating states}
+  The \alert{on-set} $\onset{s}$ of a state $s$ is the set of
+  true state variables in $s$, i.e.\ $\onset{s} = s^{-1}(\{1\})$.
+  
+  A state $s'$ \alert{dominates} another state $s$ iff
+  $\onset{s} \subseteq \onset{s'}$.
+
+  \begin{lemma}[domination]
+    Let $s$ and $s'$ be valuations of a set of propositional variables
+    $A$ and let $\chi$ be a propositional formula over $A$ which does not
+    contain negation symbols.
+    
+    If $s \models \chi$ and $s'$ dominates $s$, then $s' \models \chi$.
+  \end{lemma}
+
+  \begin{proofstart}
+    Proof by induction over the structure of $\chi$.
+    \begin{itemize}
+    \item Base case $\chi = \top$: then $s' \models \top$.
+    \item Base case $\chi = \bot$: then $s \not\models \bot$.
+    \end{itemize}
+  \end{proofstart}
+\end{frame}
+
+\begin{frame}{Dominating states (ctd.)}
+  \begin{proofend}
+    \begin{itemize}
+    \item Base case $\chi = a \in A$: assume $s \models a$ and
+      $\mathit{on}(s) \subseteq \mathit{on}(s')$. With $a \in
+      \mathit{on}(s)$ we get $a \in \mathit{on}(s')$, hence $s'
+      \models a$.
+    \item Inductive case $\chi = \chi_1 \wedge \chi_2$: by induction
+      hypothesis, our claim holds for the proper subformulas $\chi_1$
+      and $\chi_2$ of $\chi$.
+      \begin{eqnarray*}
+        s\phantom{'} \models \chi & \Longleftrightarrow & s\phantom{'} \models
+        \chi_1 \wedge \chi_2\\ 
+        & \Longleftrightarrow & s\phantom{'} \models \chi_1 \text{
+          and } s\phantom{'} \models \chi_2\\ 
+        & \stackrel{\textrm{I.H. (twice)}}{\Longrightarrow} &
+        s' \models \chi_1 \text{ and } s' \models \chi_2\\
+        & \Longleftrightarrow & s' \models \chi_1 \wedge \chi_2\\
+        & \Longleftrightarrow & s' \models \chi.
+      \end{eqnarray*}
+    \item Inductive case $\chi = \chi_1 \vee \chi_2$: Analogous.
+    \end{itemize}
+  \end{proofend}
+\end{frame}
+
+\begin{frame}{The relaxation lemma}
+  For the rest of this chapter, we assume that all planning
+  tasks are in positive normal form.
+  \begin{lemma}[relaxation]
+    Let $s$ be a state, let $s'$ be a state that dominates $s$, \\
+    and let $\pi$ be an operator sequence which is applicable in $s$.
+    
+    Then $\relaxation{\pi}$ is applicable in $s'$ and
+    $\applyplan{\relaxation{\pi}}{s'}$ dominates
+    $\applyplan{\pi}{s}$.
+
+    Moreover, if $\pi$ leads to a goal state from $s$, then
+    $\relaxation{\pi}$ leads to a goal state from $s'$.
+  \end{lemma}
+  
+  \begin{proofstart}
+    The ``moreover'' part follows from the rest by the domination
+    lemma. Prove the rest by induction over the length of $\pi$.
+
+    \pause
+    \smallskip
+
+    \textblue{Base case:} $\pi = \epsilon$
+
+    $\applyplan{\relaxation{\pi}}{s'} = s'$
+    dominates $\applyplan{\pi}{s} = s$ by assumption.
+  \end{proofstart}
+\end{frame}
+
+\begin{frame}{The relaxation lemma (ctd.)}
+  \begin{proofend}
+    \textblue{Inductive case:} $\pi = o_1\dots o_{n+1}$
+
+    By the induction hypothesis,
+    $\relaxation{o_1}\dots\relaxation{o_n}$
+    is applicable in $s'$, and
+    $t' = \applyplan{\relaxation{o_1}\dots\relaxation{o_n}}{s'}$
+    dominates
+    $t = \applyplan{o_1 \dots o_n}{s}$.
+    
+    \pause
+    \smallskip
+    
+    Let $o := o_{n+1} = \langle \chi,e\rangle$
+    and $\relaxation{o} = \langle \chi, e^+\rangle$.
+    By assumption, $o$ is applicable in $t$, and thus
+    $t \models \chi$. By the domination lemma, we get $t' \models \chi$
+    and hence $\relaxation{o}$ is applicable in $t'$.
+    Therefore, $\relaxation{\pi}$ is applicable in $s'$.
+    
+    \pause
+    \smallskip
+    
+    Because $o$ is in positive normal form, all effect conditions
+    satisfied by $t$ are also satisfied by $t'$ (by the domination
+    lemma). Therefore, $(\changes{e}{t} \cap A) \subseteq
+    \changes{e^+}{t'}$ (where $A$ is the set of state variables, or
+    positive literals).
+   
+    \pause
+    \smallskip
+    
+    We get
+    $\onset{\applyplan{\pi}{s}}
+    \subseteq \onset{t} \cup (\changes{e}{t} \cap A)
+    \subseteq \onset{t'} \cup \changes{e^+}{t'}
+    = \onset{\applyplan{\relaxation{\pi}}{s'}}$,
+    and thus
+    $\applyplan{\relaxation{\pi}}{s'}$ dominates
+    $\applyplan{\pi}{s}$.
+  \end{proofend}
+\end{frame}
+
+\begin{frame}{Consequences of the relaxation lemma}
+  \begin{corollary}[relaxation leads to dominance and preserves plans]
+    Let $\pi$ be an operator sequence which is applicable in state
+    $s$.
+    
+    Then $\relaxation{\pi}$ is applicable in $s$ and
+    $\applyplan{\relaxation{\pi}}{s}$ dominates
+    $\applyplan{\pi}{s}$.
+
+    If $\pi$ is a plan for $\Pi$, then $\relaxation{\pi}$ is a plan
+    for $\relaxation{\Pi}$.
+  \end{corollary}
+
+  \begin{proof}
+    Apply relaxation lemma with $s' = s$.
+  \end{proof}
+
+  \begin{itemize}
+  \item[$\leadsto$] Relaxations of plans are relaxed plans.
+  \item[$\leadsto$] Relaxations are no harder to solve than the
+    original task.
+  \item[$\leadsto$] Optimal relaxed plans are never longer
+    than optimal plans for original tasks.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Consequences of the relaxation lemma (ctd.)}
+  \begin{corollary}[relaxation preserves dominance]
+    Let $s$ be a state, let $s'$ be a state that dominates $s$, \\
+    and let $\relaxation{\pi}$ be a relaxed operator sequence
+    applicable in $s$.
+    
+    Then $\relaxation{\pi}$ is applicable in $s'$ and
+    $\applyplan{\relaxation{\pi}}{s'}$ dominates
+    $\applyplan{\relaxation{\pi}}{s}$.
+  \end{corollary}
+
+  \begin{proof}
+    Apply relaxation lemma with $\relaxation{\pi}$ for $\pi$,
+    noting that $\relaxation{(\relaxation{\pi})} = \relaxation{\pi}$.
+  \end{proof}
+
+  \begin{itemize}
+  \item[$\leadsto$] If there is a relaxed plan starting from state
+    $s$, the same plan can be used starting from a dominating state
+    $s'$.
+  \item[$\leadsto$] Making a transition to a dominating state never
+    hurts in relaxed planning tasks.
+  \end{itemize}
+\end{frame}
+
+\subsection{Greedy algorithm}
+
+\begin{frame}{Monotonicity of relaxed planning tasks}
+  We need one final property before we can provide an algorithm for
+  solving relaxed planning tasks.
+  \begin{lemma}[monotonicity]
+    Let $\relaxation{o} = \langle \chi, \relaxation{e}\rangle$ be a
+    relaxed operator and let $s$ be a state in which $\relaxation{o}$
+    is applicable.
+    
+    Then $\applyop{\relaxation{o}}{s}$ dominates $s$.
+  \end{lemma}
+
+  \begin{proof}
+    Since relaxed operators only have positive effects,
+    we have
+    $\onset{s} \subseteq \onset{s} \cup \changes{\relaxation{e}}{s} = 
+    \onset{\applyop{\relaxation{o}}{s}}$.
+  \end{proof}
+
+  \begin{itemize}
+  \item[$\leadsto$] Together with our previous results, this means
+    that making a transition in a relaxed planning task \alert{never}
+    hurts.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Greedy algorithm for relaxed planning tasks}
+  The relaxation and monotonicity lemmas suggest the following
+  algorithm for solving relaxed planning tasks:
+  \begin{block}{Greedy planning algorithm for
+      $\langle A, I, \relaxation{O}, \gamma\rangle$}
+    $s := I$ \\
+    $\relaxation{\pi} := \epsilon$ \\
+    \textbf{forever}: \\
+    {}\qquad \textbf{if} $s \models \gamma$: \\
+    {}\qquad\qquad \textbf{return} $\relaxation{\pi}$ \\
+    {}\qquad \textbf{else if} there is an operator $\relaxation{o} \in
+    \relaxation{O}$ applicable in $s$ \\
+    {}\qquad \phantom{\textbf{else if}} with
+    $\applyop{\relaxation{o}}{s} \neq s$: \\
+    {}\qquad\qquad Append such an operator $\relaxation{o}$ to $\relaxation{\pi}$. \\
+    {}\qquad\qquad $s := \applyop{\relaxation{o}}{s}$ \\
+    {}\qquad \textbf{else}: \\
+    {}\qquad\qquad \textbf{return} unsolvable
+  \end{block}
+\end{frame}
+
+\begin{frame}{Correctness of the greedy algorithm}
+  The algorithm is \alert{sound}:
+  \begin{itemize}
+  \item If it returns a plan, this is indeed a correct solution.
+  \item If it returns ``unsolvable'', the task is indeed unsolvable
+    \begin{itemize}
+    \item Upon termination, there clearly is no relaxed plan from
+      $s$.
+    \item By iterated application of the monotonicity lemma, $s$
+      dominates $I$.
+    \item By the relaxation lemma, there is no solution from $I$.
+    \end{itemize}
+  \end{itemize}
+  
+  \bigskip
+  
+  What about \alert{completeness} (termination) and \alert{runtime}?
+  \begin{itemize}
+  \item Each iteration of the loop adds at least one atom to
+    $\onset{s}$.
+  \item This guarantees termination after at most $|A|$ iterations.
+  \item Thus, the algorithm can clearly be implemented to run in
+    polynomial time.
+    \begin{itemize}
+    \item A good implementation runs in $O(\|\Pi\|)$.
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\subsection{Optimality}
+
+\begin{frame}{Using the greedy algorithm as a heuristic}
+  We can apply the greedy algorithm within heuristic search:
+  \begin{itemize}
+  \item In a search node $\sigma$, solve the relaxation of the
+    planning task with $\textit{state}(\sigma)$ as the initial state.
+  \item Set $h(\sigma)$ to the length of the generated relaxed plan.
+  \end{itemize}
+  
+  \medskip
+
+  Is this an \alert{admissible} heuristic?
+  \begin{itemize}
+  \item Yes if the relaxed plans are \alert{optimal} (due to the
+    plan preservation corollary).
+  \item However, usually they are not, because our greedy planning
+    algorithm is very poor.
+  \end{itemize}
+
+  (What about safety? Goal-awareness? Consistency?)
+\end{frame}
+
+\begin{frame}{The set cover problem}
+  To obtain an admissible heuristic, we need to generate optimal
+  relaxed plans. Can we do this efficiently?
+
+  \medskip
+
+  This question is related to the following problem:
+  \begin{problem}[set cover]
+    \textblue{Given:} a finite set $U$, a collection of subsets
+    $C = \{C_1, \dots, C_n\}$ with $C_i \subseteq U$ for all
+    $i \in \{1, \dots, n\}$, and a natural number $K$.
+    
+    \smallskip
+
+    \textblue{Question:} Does there exist a set cover of size at most
+    $K$, \ie, a subcollection $S = \{S_1, \dots, S_m\} \subseteq C$
+    with $S_1 \cup \dots \cup S_m = U$ and $m \leq K$?
+  \end{problem}
+  
+  \medskip
+
+  The following is a classical result from complexity theory:
+  \begin{theorem}[Karp 1972]
+    The set cover problem is NP-complete.
+  \end{theorem}
+\end{frame}
+
+\begin{frame}{Hardness of optimal relaxed planning}
+  \begin{theorem}[optimal relaxed planning is hard]
+    The problem of deciding whether a given relaxed planning task
+    has a plan of length at most $K$ is NP-complete.
+  \end{theorem}
+
+  \begin{proofstart}
+    For \textblue{membership in NP}, guess a plan and verify.
+    It is sufficient to check plans of length at most $|A|$, so this
+    can be done in nondeterministic polynomial time.
+
+    \medskip
+    
+    For \textblue{hardness}, we reduce from the set cover problem.
+  \end{proofstart}
+\end{frame}
+
+\begin{frame}{Hardness of optimal relaxed planning (ctd.)}
+  \begin{proofend}
+    Given a set cover instance $\langle U, C, K\rangle$, we generate
+    the following relaxed planning task
+    $\relaxation{\Pi} = \langle A, I, \relaxation{O}, \gamma\rangle$:
+    \begin{itemize}
+    \item $A = U$
+    \item $I = \{a \mapsto 0 \mid a \in A\}$
+    \item $\relaxation{O} =
+      \{\langle \top, \bigwedge_{a \in C_i} a \rangle
+      \mid C_i \in C\}$
+    \item $\gamma = \bigwedge_{a \in U} a$
+    \end{itemize}
+
+    If $S$ is a set cover, the corresponding operators form a plan.
+    Conversely, each plan induces a set cover by taking the subsets
+    corresponding to the operators. Clearly, there exists a plan of
+    length at most $K$ iff there exists a set cover of size $K$.
+
+    \smallskip
+
+    Moreover, $\relaxation{\Pi}$ can be generated from the set cover
+    instance in polynomial time, so this is a polynomial reduction.
+  \end{proofend}
+\end{frame}
+
+\subsection{Discussion}
+
+\begin{frame}{Using relaxations in practice}
+  How can we use relaxations for heuristic planning in practice?
+
+  \medskip
+
+  Different possibilities:
+  \begin{itemize}
+  \item Implement an \alert{optimal planner} for relaxed planning
+    tasks and use its solution lengths as an estimate, even though it
+    is NP-hard.
+
+    $\leadsto$ \alert{{\hplus} heuristic}
+  \item Do not actually solve the relaxed planning task, but compute
+    an estimate of its difficulty in a different way.
+
+    $\leadsto$ \alert{{\hmax} heuristic}, \alert{{\hadd} heuristic},
+    \alert{{\hlmcut} heuristic}
+  \item Compute a solution for relaxed planning tasks which is not
+    necessarily optimal, but ``reasonable''.
+
+    $\leadsto$ \alert{{\hff} heuristic}
+  \end{itemize}
+\end{frame}
+
+\section*{Summary}
+
+\begin{frame}{Summary}
+  \begin{itemize}
+  \item Two general methods for coming up with heuristics:
+    \begin{itemize}
+    \item \alert{relaxation}: solve a \alert{less constrained}
+      problem
+    \item \alert{abstraction}: solve a \alert{small} problem
+    \end{itemize}
+  \item Here, we consider the \alert{delete relaxation}, which
+    requires tasks in positive normal form and ignores delete
+    effects.
+  \item Delete-relaxed tasks have a \alert{domination} property: \\
+    it is always beneficial to make more fluents true.
+  \item They also have a \alert{monotonicity} property: \\
+    applying operators leads to dominating states.
+  \item Because of these two properties, \alert{finding some relaxed
+    plan} greedily is \alert{easy} (polynomial).
+  \item For an informative heuristic, we would ideally want to find \\
+    \alert{optimal relaxed plans}. This is \alert{NP-complete}.
+  \end{itemize}
+\end{frame}
+
+\end{document}

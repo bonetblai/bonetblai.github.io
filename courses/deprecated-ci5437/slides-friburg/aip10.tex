@@ -1,0 +1,1341 @@
+\documentclass{gkibeamer}
+
+\input{macros}
+
+\newcommand{\cliques}{\ensuremath{\textrm{cliques}}}
+
+\newcommand{\bigarrow}[2]{%
+  \begin{pgfscope}
+    \pgfsetlinewidth{2pt}
+    \pgfsetendarrow{\pgfarrowsingle{1pt}}
+    \pgfline{\pgfxy(#1)}{\pgfrelative{\pgfxy(#1)}{\pgfxy(#2,0)}}
+  \end{pgfscope}
+}
+
+\newcommand{\borderrect}[3]{%
+  {\color{#1}\pgfrect[fill]{\pgfxy(#2)}{\pgfxy(#3)}}%
+  {\color{black}\pgfrect[stroke]{\pgfxy(#2)}{\pgfxy(#3)}}%
+}
+
+\newcommand{\tile}[3][orange!30]{
+  \pgfputat{\pgfxy(#2)}{
+    \borderrect{#1}{-0.5,-0.5}{1,1}
+    \pgfbox[center,center]{#3}
+  }
+}
+
+\newcommand{\abstractedtile}[1]{
+  \tile[orange!20]{#1}{}
+}
+
+\newcommand{\abstractedtileanimated}[3][orange!30]{
+  \only<all:1>{\tile[#1]{#2}{#3}}
+  \only<all:2->{\abstractedtile{#2}}
+}
+
+
+
+
+
+
+\input{abstraction-pictures}
+%%\author[M.~Helmert, G.~R\"oger]{Malte Helmert and Gabriele R\"oger}
+%% abstraction pictures by Gabi
+
+\begin{document}
+
+\lectureno{10}
+\subtitle{Planning as search: abstractions}
+\date{December 6th, 2011}
+\maketitles
+
+\section{Abstractions: informally}
+\subsection{Introduction}
+
+\begin{frame}{Coming up with heuristics in a principled way}
+  \begin{block}{General procedure for obtaining a heuristic}
+    Solve an easier version of the problem.
+  \end{block}
+
+  Two common methods:
+  \begin{itemize}
+  \item \alert{relaxation:} consider \alert{less constrained} version
+    of the problem
+  \item \alert{abstraction:} consider \alert{smaller} version of real
+    problem
+  \end{itemize}
+
+  In previous chapters, we have studied \alert{relaxation}, which has
+  been very successfully applied to \alert{satisficing planning}.
+
+  \smallskip
+
+  Now, we study \alert{abstraction}, which is one of the most
+  prominent techniques for \alert{optimal planning}.
+\end{frame}
+
+\begin{frame}{Abstracting a transition system}
+  Abstracting a transition system means \alert{dropping some
+    distinctions} between states, while \alert{preserving the
+  transition behaviour} as much as possible.
+
+  \begin{itemize}
+  \item An abstraction of a transition system $\mathcal T$ is defined
+    by an \alert{abstraction mapping $\alpha$} that defines which
+    states of $\mathcal T$ should be distinguished and which ones
+    should not.
+  \item From $\mathcal T$ and $\alpha$, we compute an \alert{abstract
+    transition system $\mathcal T'$} which is similar to $\mathcal T$,
+    but smaller.
+  \item The \alert{abstract goal distances} (goal distances in
+    $\mathcal T'$) are used as heuristic estimates for goal distances
+    in $\mathcal T$.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Abstracting a transition system: example}
+  \begin{example}[15-puzzle]
+    A \alert{15-puzzle} state is given by a permutation
+    $\langle b, t_1, \dots, t_{15}\rangle$ of $\{1, \dots, 16\}$,
+    where $b$ denotes the blank position and the other components
+    denote the positions of the 15 tiles.
+
+    \smallskip
+
+    One possible \alert{abstraction mapping} ignores the precise
+    location of tiles 8--15, \ie, two states are distinguished iff
+    they differ in the position of the blank or one of the tiles 1--7:
+    \[\alpha(\langle b, t_1, \dots, t_{15}\rangle) =
+      \langle b, t_1, \dots, t_7\rangle\]
+
+    \medskip
+
+    The heuristic values for this abstraction correspond to the cost
+    of moving tiles 1--7 to their goal positions.
+  \end{example}
+\end{frame}
+
+\begin{frame}{Abstraction example: 15-puzzle}
+  \begin{center}
+    \begin{pgfpicture}{-0.5cm}{-0.5cm}{9.5cm}{3.5cm}
+      \abstractedtileanimated{0,3}{9}
+      \tile{1,3}{2}
+      \abstractedtileanimated{2,3}{12}
+      \tile{3,3}{6}
+      \tile{0,2}{5}
+      \tile{1,2}{7}
+      \abstractedtileanimated{2,2}{14}
+      \abstractedtileanimated{3,2}{13}
+      \tile{0,1}{3}
+      \tile{1,1}{4}
+      \tile{2,1}{1}
+      \abstractedtileanimated{3,1}{11}
+      \abstractedtileanimated{0,0}{15}
+      \abstractedtileanimated{1,0}{10}
+      \abstractedtileanimated{2,0}{8}
+      \tile[black]{3,0}{}
+      %
+      \bigarrow{4,1.5}{1}
+      %
+      \tile{6,3}{1}
+      \tile{7,3}{2}
+      \tile{8,3}{3}
+      \tile{9,3}{4}
+      \tile{6,2}{5}
+      \tile{7,2}{6}
+      \tile{8,2}{7}
+      \abstractedtileanimated{9,2}{8}
+      \abstractedtileanimated{6,1}{9}
+      \abstractedtileanimated{7,1}{10}
+      \abstractedtileanimated{8,1}{11}
+      \abstractedtileanimated{9,1}{12}
+      \abstractedtileanimated{6,0}{13}
+      \abstractedtileanimated{7,0}{14}
+      \abstractedtileanimated{8,0}{15}
+      \tile[black]{9,0}{}
+    \end{pgfpicture}
+  \end{center}
+  \begin{overprint}
+    \onslide<all:1>
+    \alert{real state space}
+    \begin{itemize}
+    \item $16! = 20922789888000 \approx 2 \cdot 10^{13}$ states
+    \item $\frac{16!}{2} = 10461394944000 \approx 10^{13}$ reachable
+      states
+    \end{itemize}
+    \onslide<all:2>
+    \alert{abstract state space}
+    \begin{itemize}
+    \item $16 \cdot 15 \cdot \ldots \cdot 9 = 518918400 \approx 5
+      \cdot 10^8$ states
+    \item $16 \cdot 15 \cdot \ldots \cdot 9 = 518918400 \approx 5
+      \cdot 10^8$ reachable states
+    \end{itemize}
+  \end{overprint}
+\end{frame}
+
+\begin{frame}{Computing the abstract transition system}
+  Given $\mathcal T$ and $\alpha$, how do we compute $\mathcal T'$?
+
+  \begin{block}{Requirement}
+    We want to obtain an \alert{admissible heuristic}. 
+
+    Hence, $h^*(\alpha(s))$ (in the abstract state space $\mathcal T'$)
+    should never overestimate $h^*(s)$ (in the concrete state space
+    $\mathcal T$).
+  \end{block}
+
+  \medskip
+
+  An easy way to achieve this is to ensure that \alert{all solutions
+    in $\mathcal T$ also exist in $\mathcal T'$}:
+  \begin{itemize}
+  \item If $s$ is a goal state in $\mathcal T$, then $\alpha(s)$ is a
+    goal state in $\mathcal T'$.
+  \item If $\mathcal T$ has a transition from $s$ to $t$, then
+    $\mathcal T'$ has a transition from $\alpha(s)$ to $\alpha(t)$.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Computing the abstract transition system: example}
+  \begin{example}[15-puzzle]
+    In the running example:
+    \begin{itemize}
+    \item $\mathcal T$ has the unique goal state
+      $\langle 16, 1, 2, \dots, 15\rangle$.
+      \begin{itemize}
+      \item[$\leadsto$] $\mathcal T'$ has the unique goal state
+        $\langle 16, 1, 2, \dots, 7\rangle$.
+      \end{itemize}
+    \item Let $x$ and $y$ be neighboring positions in the $4 \times 4$
+      grid. \\
+      $\mathcal T$ has a transition from
+      $\langle x, t_1, \dots, t_{i-1}, y, t_{i+1}, \dots,
+      t_{15}\rangle$ \\
+      to $\langle y, t_1, \dots, t_{i-1}, x, t_{i+1}, \dots,
+      t_{15}\rangle$ for all $i \in \{1, \dots, 15\}$.
+      \begin{itemize}
+      \item[$\leadsto$]
+        $\mathcal T'$ has a transition from
+        $\langle x, t_1, \dots, t_{i-1}, y, t_{i+1}, \dots,
+        t_7\rangle$ \\
+        to $\langle y, t_1, \dots, t_{i-1}, x, t_{i+1}, \dots,
+        t_7\rangle$ for all $i \in \{1, \dots, 7\}$.
+      \item[$\leadsto$]
+        Moreover, $\mathcal T'$ has a transition from
+        $\langle x, t_1, \dots, t_7\rangle$ to 
+        $\langle y, t_1, \dots, t_7\rangle$ if
+        $y \notin \{t_1, \dots, t_7\}$.
+      \end{itemize}
+    \end{itemize}
+  \end{example}
+\end{frame}
+
+\subsection{Practical requirements}
+
+\begin{frame}{Practical requirements for abstractions}
+  To be useful in practice, an abstraction heuristic must be efficiently
+  computable. This gives us two requirements for $\alpha$:
+  \begin{itemize}
+  \item For a given state $s$, the \alert{abstract state}
+    $\alpha(s)$ must be efficiently computable.
+  \item For a given abstract state $\alpha(s)$, the \alert{abstract
+    goal distance} $h^*(\alpha(s))$ must be efficiently computable.
+  \end{itemize}
+
+  \medskip
+
+  There are different ways of achieving these requirements:
+  \begin{itemize}
+  \item \alert{pattern database heuristics}
+    (Culberson \& Schaeffer, 1996)
+  \item \alert{merge-and-shrink abstractions}
+    (Dr\"ager, Finkbeiner \& Podelski, 2006)
+  \item \alert{structural patterns}
+    (Katz \& Domshlak, 2008b)
+    \begin{itemize}
+    \item not covered in this course
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Practical requirements for abstractions: example}
+  \begin{example}[15-puzzle]
+    In our running example, $\alpha$ can be very efficiently
+    computed: \\
+    just project the given $16$-tuple to its first $8$
+    components.
+
+    \medskip
+
+    To compute abstract goal distances efficiently during search, most
+    common algorithms precompute \alert{all abstract goal distances}
+    prior to search by performing a backward breadth-first search from
+    the goal state(s). The distances are then stored in a table
+    (requires about 495 MB of RAM).
+
+    During search, computing $h^*(\alpha(s))$ is just a table lookup.
+  \end{example}
+
+  This heuristic is an example of a \alert{pattern database
+    heuristic}.
+\end{frame}
+
+\subsection{Multiple abstractions}
+
+\begin{frame}{Multiple abstractions}
+  \begin{itemize}
+  \item One important practical question is how to come up with
+    a suitable abstraction mapping $\alpha$.
+  \item Indeed, there is usually a \alert{huge number of
+    possibilities}, and it is important to pick good abstractions
+    (\ie, ones that lead to informative heuristics).
+  \item However, it is generally \alert{not necessary to commit to a
+    single abstraction}.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Combining multiple abstractions}
+  \alert{Maximizing} several abstractions:
+  \begin{itemize}
+  \item Each abstraction mapping gives rise to an admissible
+    heuristic.
+  \item By computing the \alert{maximum} of several admissible
+    heuristics, we obtain another admissible heuristic which
+    \alert{dominates} the component heuristics.
+  \item Thus, we can always compute several abstractions and maximize
+    over the individual abstract goal distances.
+  \end{itemize}
+
+  \medskip
+
+  \alert{Adding} several abstractions:
+  \begin{itemize}
+  \item In some cases, we can even compute the \alert{sum} of
+    individual estimates and still stay admissible.
+  \item Summation often leads to \alert{much higher estimates} than
+    maximization, so it is \alert{important to understand when it is
+      admissible}.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Maximizing several abstractions: example}
+  \begin{example}[15-puzzle]
+    \begin{itemize}
+    \item mapping to tiles 1--7 was arbitrary \\
+      $\leadsto$ can use \alert{any subset} of tiles
+    \item with the same amount of memory required for the tables for
+      the mapping to tiles 1--7, we could store the tables for
+      \alert{nine different abstractions} to six tiles and the blank
+    \item use \alert{maximum} of individual estimates
+    \end{itemize}
+  \end{example}
+\end{frame}
+
+\begin{frame}<all:1-3>{Adding several abstractions: example}
+  \begin{center}
+    \begin{pgfpicture}{-0.5cm}{-0.5cm}{9.5cm}{3.5cm}
+      \abstractedtileanimated{0,3}{9}
+      \tile{1,3}{2}
+      \abstractedtileanimated{2,3}{12}
+      \tile{3,3}{6}
+      \tile{0,2}{5}
+      \tile{1,2}{7}
+      \abstractedtileanimated{2,2}{14}
+      \abstractedtileanimated{3,2}{13}
+      \tile{0,1}{3}
+      \tile{1,1}{4}
+      \tile{2,1}{1}
+      \abstractedtileanimated{3,1}{11}
+      \abstractedtileanimated{0,0}{15}
+      \abstractedtileanimated{1,0}{10}
+      \abstractedtileanimated{2,0}{8}
+      \only<all:1-2>{\tile[black]{3,0}{}}
+      \only<all:3>{\abstractedtile{3,0}}
+      %
+      \tile{6,3}{9}
+      \abstractedtileanimated{7,3}{2}
+      \tile{8,3}{12}
+      \abstractedtileanimated{9,3}{6}
+      \abstractedtileanimated{6,2}{5}
+      \abstractedtileanimated{7,2}{7}
+      \tile{8,2}{14}
+      \tile{9,2}{13}
+      \abstractedtileanimated{6,1}{3}
+      \abstractedtileanimated{7,1}{4}
+      \abstractedtileanimated{8,1}{1}
+      \tile{9,1}{11}
+      \tile{6,0}{15}
+      \tile{7,0}{10}
+      \tile{8,0}{8}
+      \only<all:1-2>{\tile[black]{9,0}{}}
+      \only<all:3>{\abstractedtile{9,0}}
+    \end{pgfpicture}
+  \end{center}
+  \begin{itemize}
+  \item \alert{1st abstraction:} ignore precise location of 8--15
+    \only<all:3>{\alert{and blank}}
+  \item \alert{2nd abstraction:} ignore precise location of 1--7
+    \only<all:3>{\alert{and blank}}
+  \item[$\leadsto$]
+    \only<all:1>{Is the \alert{sum} of the abstraction heuristics
+      \alert{admissible}?}
+    \only<all:2->{The \alert{sum} of the abstraction heuristics is
+      \alert{\only<all:2>{not }admissible}.}
+  \end{itemize}
+\end{frame}
+
+\subsection{Outlook}
+
+\begin{frame}{Our plan for the next lectures}
+  In the following, we take a deeper look at abstractions and their
+  use for admissible heuristics.
+  \begin{itemize}
+  \item In the rest of \alert{this chapter}, we \alert{formally
+    introduce} abstractions and abstraction heuristics and study
+    some of their most important properties.
+  \item In the \alert{following chapters}, we discuss some particular
+    classes of abstraction heuristics in detail, namely \alert{pattern
+      database heuristics} and \alert{merge-and-shrink abstractions}.
+  \end{itemize}
+\end{frame}
+
+\section{Abstractions: formally}
+\subsection{Transition systems}
+
+\begin{frame}{Transition systems}
+  \hilite{Reminder from Chapter 2:}
+  \begin{definition}[transition system]
+    A \alert{transition system} is a 5-tuple $\mathcal T = \langle S,
+    L, T, s_0, S_\star\rangle$ where
+    \begin{itemize}
+    \item $S$ is a finite set of \alert{states},
+    \item $L$ is a finite set of (transition) \alert{labels},
+    \item $T \subseteq S \times L \times S$ is the \alert{transition
+      relation},
+    \item $s_0 \in S$ is the \alert{initial state}, and
+    \item $S_\star \subseteq S$ is the set of \alert{goal states}.
+    \end{itemize}
+    We say that $\mathcal T$ \alert{has the transition} $\langle s, \ell,
+    s'\rangle$ if $\langle s, \ell, s'\rangle \in T$.
+
+    We also write this \alert{$s \xrightarrow{\ell} s'$}, or \alert{$s
+      \rightarrow s'$} when not interested in $\ell$.
+  \end{definition}
+\end{frame}
+
+\begin{frame}{Transition systems: example}
+  \begin{center}
+    \picfulltransitiongraphnolabels
+  \end{center}
+  \hilite{Note:} To reduce clutter, our figures usually omit arc
+  labels and collapse transitions between identical states. However,
+  these are important for the formal definition of the transition
+  system.
+\end{frame}
+
+\begin{frame}{Transition systems of FDR planning tasks}
+  \begin{definition}[induced transition system of an FDR planning task]
+    Let $\Pi = \langle V, I, O, \gamma\rangle$ be an FDR planning task.
+
+    The \alert{induced transition system of $\Pi$}, in symbols \alert{$\mathcal
+    T(\Pi)$}, is the transition system $\mathcal T(\Pi) =
+    \langle S, L, T, s_0, S_\star\rangle$, where
+    \begin{itemize}
+    \item $S$ is the set of states over $V$,
+    \item $L = O$,
+    \item $T = \{\langle s, o, t\rangle \in
+      S \times L \times S \mid
+      \applyop{o}{s} = t\}$,
+    \item $s_0 = I$, and
+    \item $S_\star = \{s \in S \mid s \models \gamma\}$.
+    \end{itemize}
+  \end{definition}
+\end{frame}
+
+\begin{frame}{Example task: one package, two trucks}
+  \begin{example}[one package, two trucks]
+    Consider the following FDR planning task $\langle V, I, O,
+    \gamma\rangle$:
+    \begin{itemize}
+     \item $V = \{p, t_{\val{A}}, t_{\val{B}}\}$ with
+       \begin{itemize}
+       \item $\mathcal D_p = \{\val{L}, \val{R}, \val{A}, \val{B}\}$
+       \item $\mathcal D_{t_{\val{A}}} = \mathcal D_{t_{\val{B}}} = \{\val{L},
+         \val{R}\}$
+       \end{itemize}
+     \item $I = \{
+       p \mapsto \val{L},
+       t_{\val{A}} \mapsto \val{R},
+       t_{\val{B}} \mapsto \val{R}\}$
+     \item
+       \begin{tightalign}[t]
+         O ={} &
+       \{ \text{pickup}_{i,j} \mid i \in \{\val{A}, \val{B}\}, j \in
+           \{\val{L}, \val{R}\}\} \\ {}\cup{} &
+       \{\text{drop}_{i,j} \mid i \in \{\val{A}, \val{B}\}, j \in
+           \{\val{L}, \val{R}\}\} \\ {}\cup{} &
+       \{\text{move}_{i,j,j'} \mid i \in \{\val{A}, \val{B}\}, j, j' \in
+           \{\val{L}, \val{R}\}, j \neq j'\}\text{, where}
+       \end{tightalign}
+       \begin{itemize}
+       \item $\text{pickup}_{i,j} = \langle
+         t_i = j \land p = j,
+         p := i\rangle$
+       \item $\text{drop}_{i,j} = \langle
+         t_i = j \land p = i,
+         p := j\rangle$
+       \item $\text{move}_{i,j,j'} = \langle
+         t_i = j, t_i := j'
+         \rangle$
+       \end{itemize}
+    \item $\gamma = (p = \val{R})$
+    \end{itemize}
+  \end{example}
+\end{frame}
+
+\begin{frame}{Transition system of example task}
+  \begin{center}
+    \picfulltransitiongraph
+  \end{center}
+  \begin{itemize}
+  \item State $\{p \mapsto i, t_{\val{A}} \mapsto j, t_{\val{B}} \mapsto
+    k\}$ is depicted as $ijk$.
+  \item Transition labels are again not shown. For example, the
+    transition from LLL to ALL has the label $\text{pickup}_{\val{A},
+      \val{L}}$.
+  \end{itemize}
+\end{frame}
+
+\subsection{Abstractions}
+
+\begin{frame}{Abstractions}
+  \begin{definition}[abstraction, abstraction mapping]
+    Let $\mathcal T = \langle S, L, T, s_0, S_\star\rangle$ and
+    $\mathcal T' = \langle S', L', T', s'_0, S'_\star\rangle$ \\
+    be transition systems with the same label set $L = L'$, \\
+    and let $\alpha: S \to S'$ be a \alert{surjective} function.
+
+    \smallskip
+
+    We say that $\mathcal T'$ is \alert{an abstraction of $\mathcal
+      T$ with abstraction mapping $\alpha$} (or: \alert{abstraction
+      function $\alpha$}) if
+    \begin{itemize}
+    \item $\alpha(s_0) = s'_0$,
+    \item for all $s \in S_\star$, we have $\alpha(s) \in S'_\star$, and
+    \item for all $\langle s, \ell, t\rangle \in T$, we have
+      $\langle \alpha(s), \ell, \alpha(t)\rangle \in T'$.
+    \end{itemize}
+  \end{definition}
+\end{frame}
+
+\begin{frame}{Abstractions: terminology}
+  Let $\mathcal T$ and $\mathcal T'$ be transition systems and
+  $\alpha$ a function such that $\mathcal T'$ is an abstraction of
+  $\mathcal T$ with abstraction mapping $\alpha$.
+  \begin{itemize}
+  \item $\mathcal T$ is called the \alert{concrete transition system}.
+  \item $\mathcal T'$ is called the \alert{abstract transition
+    system}.
+  \item Similarly: \alert{concrete/abstract state space},
+    \alert{concrete/abstract transition}, etc.
+  \end{itemize}
+  We say that:
+  \begin{itemize}
+  \item \alert{$\mathcal T'$ is an abstraction of $\mathcal T$}
+    (without mentioning $\alpha$)
+  \item \alert{$\alpha$ is an abstraction mapping on $\mathcal T$}
+    (without mentioning $\mathcal T'$)
+  \end{itemize}
+
+  \medskip
+
+  \hilite{Note:} For a given $\mathcal T$ and $\alpha$, there can be
+  multiple abstractions $\mathcal T'$, and for a given $\mathcal T$
+  and $\mathcal T'$, there can be multiple abstraction mappings
+  $\alpha$.
+\end{frame}
+
+\begin{frame}{Abstraction: example}
+  \begin{center}
+    %% TODO: It would be nice if the states didn't jump around
+    %%       when abstracting, but that appears to be a bit of work.
+    \only<all:1>{\alert{concrete transition system}
+
+      \picfulltransitiongraph}
+    \only<all:2>{\alert{abstract transition system}
+
+      \picexampleabstraction}
+  \end{center}
+  \only<all:2>{\hilite{Note:} Most arcs represent many parallel
+    transitions.}
+\end{frame}
+
+\begin{frame}{Induced abstractions}
+  \begin{definition}[induced abstractions]
+    Let $\mathcal T = \langle S, L, T, s_0, S_\star\rangle$ be a transition
+    system, and let $\alpha: S \to S'$ be a surjective function.
+
+    \smallskip
+
+    The \alert{abstraction (of $\mathcal T$) induced by $\alpha$},
+    in symbols $\mathcal T^\alpha$, is the transition system $\mathcal
+    T^\alpha = \langle S', L, T', s'_0, S'_\star\rangle$ defined by:
+    \begin{itemize}
+    \item $T' = \{\langle \alpha(s), \ell, \alpha(t)\rangle \mid
+      \langle s, \ell, t\rangle \in T\}$
+    \item $s'_0 = \alpha(s_0)$
+    \item $S'_\star = \{ \alpha(s) \mid s \in S_\star \}$
+    \end{itemize}
+  \end{definition}
+  \hilite{Note:} It is easy to see that $\mathcal T^\alpha$ is
+  an abstraction of $\mathcal T$. It is the ``\alert{smallest}''
+  abstraction of $\mathcal T$ with abstraction mapping $\alpha$.
+\end{frame}
+
+\begin{frame}{Induced abstractions: terminology}
+  Let $\mathcal T$ and $\mathcal T'$ be transition systems and
+  $\alpha$ be a function such that $\mathcal T' = \mathcal T^\alpha$
+  (\ie, $\mathcal T'$ is the abstraction of $\mathcal T$ induced by
+  $\alpha$).
+  \begin{itemize}
+  \item $\alpha$ is called a \alert{strict homomorphism}
+    from $\mathcal T$ to $\mathcal T'$, and \\
+    $\mathcal T'$ is called a \alert{strictly homomorphic abstraction} of
+    $\mathcal T$.
+  \item If $\alpha$ is bijective, it is called an \alert{isomorphism}
+    between $\mathcal T$ and $\mathcal T'$, and
+    the two transition systems are called \alert{isomorphic}.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Strictly homomorphic abstractions: example}
+  \begin{center}
+    \only<all:1>{\picexampleabstraction}
+    \only<all:2>{\picexampleabstraction[\verticalgoalvertex]}
+  \end{center}
+
+  \only<all:1>{This abstraction is a strictly homomorphic abstraction of the
+    concrete transition system $\mathcal T$.}
+
+  \only<all:2>{If we add any goal states or transitions, it is still
+    \\ an abstraction of $\mathcal T$, but no longer a strictly
+    homomorphic one.}
+\end{frame}
+
+\subsection{Abstraction heuristics}
+
+\begin{frame}{Abstraction heuristics}
+  \begin{definition}[abstraction heuristic induced by an abstraction]
+    Let $\Pi$ be an FDR planning task with state space $S$, and let
+    $\mathcal A$ be an abstraction of $\mathcal T(\Pi)$ with
+    abstraction mapping $\alpha$.
+
+    \smallskip
+
+    The \alert{abstraction heuristic induced by $\mathcal A$ and
+      $\alpha$}, \alert{$h^{\mathcal A, \alpha}$}, is the heuristic
+    function $h^{\mathcal A, \alpha}: S \to \mathbb N_0 \cup
+    \{\infty\}$ which maps each state $s \in S$ to
+    $h^*_{\mathcal A}(\alpha(s))$ (the goal distance of $\alpha(s)$ in
+    $\mathcal A$).
+  \end{definition}
+  \hilite{Note:} $h^{\mathcal A, \alpha}(s) = \infty$ if no goal state
+  of $\mathcal A$ is reachable from $\alpha(s)$
+
+  \begin{definition}[abstraction heur.\ induced by strict homomorphism]
+    Let $\Pi$ be an FDR planning task and $\alpha$ a
+    strict homomorphism on $\mathcal T(\Pi)$.
+    The \alert{abstraction heuristic induced by $\alpha$},
+    \alert{$h^\alpha$}, is the abstraction heuristic induced by
+    $\mathcal T(\Pi)^\alpha$ and $\alpha$, \ie, $h^\alpha := h^{\mathcal
+      T(\Pi)^\alpha, \alpha}$.
+  \end{definition}
+\end{frame}
+
+\begin{frame}{Abstraction heuristics: example}
+  \begin{center}%
+    \only<all:1>{\picexampleabstraction[\verticalgoalvertex]}%
+    \only<all:2>{\picexampleabstraction}%
+
+    \medskip
+
+    \alert{$h^{\only<all:1>{\mathcal A, }\alpha}(
+      \{p \mapsto \val{L}, t_\val{A} \mapsto \val{R},
+        t_\val{B} \mapsto \val{R}\}) = \only<all:1>{1}\only<all:2>{3}$}
+  \end{center}
+\end{frame}
+
+\begin{frame}{Consistency of abstraction heuristics}
+  \begin{theorem}[consistency and admissibility of $h^{\mathcal A, \alpha}$]
+    Let $\Pi$ be an FDR planning task, and let $\mathcal A$ be an
+    abstraction of $\mathcal T(\Pi)$ with abstraction mapping
+    $\alpha$.
+
+    Then $h^{\mathcal A, \alpha}$ is safe, goal-aware, admissible and
+    consistent.
+  \end{theorem}
+
+  \begin{proofstart}
+    We prove goal-awareness and consistency; \\
+    the other properties follow from these two.
+
+    \smallskip
+
+    Let $\mathcal T = \mathcal T(\Pi) = \langle S, L, T, s_0, S_\star\rangle$
+    and $\mathcal A = \langle S', L', T', s'_0, S'_\star\rangle$.
+
+    \smallskip
+
+    \pause
+
+    \hilite{Goal-awareness:} We need to show that $h^{\mathcal A,
+      \alpha}(s) = 0$ for all $s \in S_\star$, so let $s \in S_\star$.
+    Then $\alpha(s) \in S'_\star$ by the definition of abstractions and
+    abstraction mappings, and hence $h^{\mathcal A, \alpha}(s) =
+    h^*_{\mathcal A}(\alpha(s)) = 0$.
+  \end{proofstart}
+\end{frame}
+
+\begin{frame}{Consistency of abstraction heuristics (ctd.)}
+  \begin{proofend}
+    \hilite{Consistency:} Let $s, t \in S$ such that $t$ is a
+    successor of $s$. We need to prove that
+    $h^{\mathcal A, \alpha}(s) \le h^{\mathcal A, \alpha}(t) + 1$.
+
+    \pause
+    
+    Since $t$ is a successor of $s$, there exists an operator $o$ with
+    $\applyop{o}{s} = t$ and hence $\langle s, o, t\rangle \in T$.
+
+    \pause
+
+    By the definition of abstractions and abstraction mappings,
+    we get $\langle \alpha(s), o, \alpha(t)\rangle \in T'$ $\leadsto$
+    $\alpha(t)$ is a successor of $\alpha(s)$ in $\mathcal A$.
+
+    \pause
+
+    Therefore,
+    $h^{\mathcal A, \alpha}(s)
+    = h^*_{\mathcal A}(\alpha(s))
+    \le h^*_{\mathcal A}(\alpha(t)) + 1
+    = h^{\mathcal A, \alpha}(t) + 1$, where the inequality holds because
+    the shortest path from $\alpha(s)$ to the goal in $\mathcal A$
+    cannot be longer than the shortest path from $\alpha(s)$ to the
+    goal via $\alpha(t)$.
+  \end{proofend}
+\end{frame}
+
+\subsection[Additivity]{Additive abstraction heuristics}
+
+\begin{frame}{Orthogonality of abstraction mappings}
+  \begin{definition}[orthogonal abstraction mappings]
+    Let $\alpha_1$ and $\alpha_2$ be abstraction mappings on $\mathcal
+    T$.
+
+    \medskip
+
+    We say that $\alpha_1$ and $\alpha_2$ are \alert{orthogonal}
+    if for all transitions $\langle s, \ell, t\rangle$ of $\mathcal T$,
+    we have $\alpha_i(s) = \alpha_i(t)$ for at least one $i \in \{1, 2\}$.
+  \end{definition}
+\end{frame}
+
+\begin{frame}{Affecting transition labels}
+  \begin{definition}[affecting transition labels]
+    Let $\mathcal T$ be a transition system, and let $\ell$ be one of its
+    labels.
+
+    We say that $\ell$ \alert{affects $\mathcal T$} if $\mathcal
+    T$ has a transition $\langle s, \ell, t\rangle$ with $s \neq t$.
+  \end{definition}
+
+  \medskip
+
+  \begin{theorem}[affecting labels vs.\ orthogonality]
+    Let $\mathcal A_1$ be an abstraction of $\mathcal T$ with
+    abstraction mapping $\alpha_1$. \\
+    Let $\mathcal A_2$ be an abstraction of $\mathcal T$ with
+    abstraction mapping $\alpha_2$.
+
+    \smallskip
+
+    If no label of $\mathcal T$ affects both $\mathcal A_1$
+    and $\mathcal A_2$, then $\alpha_1$ and $\alpha_2$ are orthogonal.
+  \end{theorem}
+
+  (Easy proof omitted.)
+\end{frame}
+
+\begin{frame}{Orthogonal abstraction mappings: example}
+  \begin{center}
+    \begin{pgfpicture}{-0.5cm}{-0.5cm}{9.5cm}{3.5cm}
+      \abstractedtile{0,3}
+      \tile{1,3}{2}
+      \abstractedtile{2,3}
+      \tile{3,3}{6}
+      \tile{0,2}{5}
+      \tile{1,2}{7}
+      \abstractedtile{2,2}
+      \abstractedtile{3,2}
+      \tile{0,1}{3}
+      \tile{1,1}{4}
+      \tile{2,1}{1}
+      \abstractedtile{3,1}
+      \abstractedtile{0,0}
+      \abstractedtile{1,0}
+      \abstractedtile{2,0}
+      \only<all:1>{\tile[black]{3,0}{}}
+      \only<all:2>{\abstractedtile{3,0}}
+      %
+      \tile{6,3}{9}
+      \abstractedtile{7,3}
+      \tile{8,3}{12}
+      \abstractedtile{9,3}
+      \abstractedtile{6,2}
+      \abstractedtile{7,2}
+      \tile{8,2}{14}
+      \tile{9,2}{13}
+      \abstractedtile{6,1}
+      \abstractedtile{7,1}
+      \abstractedtile{8,1}
+      \tile{9,1}{11}
+      \tile{6,0}{15}
+      \tile{7,0}{10}
+      \tile{8,0}{8}
+      \only<all:1>{\tile[black]{9,0}{}}
+      \only<all:2>{\abstractedtile{9,0}}
+    \end{pgfpicture}
+  \end{center}
+  \alert{Are the abstraction mappings orthogonal?}
+\end{frame}
+
+\begin{frame}{Orthogonality and additivity}
+  \begin{theorem}[additivity for orthogonal abstraction mappings]
+    Let $h^{\mathcal A_1, \alpha_1}, \dots, h^{\mathcal A_n,
+    \alpha_n}$ be abstraction heuristics for the same planning task $\Pi$
+    such that $\alpha_i$ and $\alpha_j$ are orthogonal for all
+    $i \neq j$.
+
+    Then $\sum_{i=1}^n h^{\mathcal A_i, \alpha_i}$ is a safe,
+    goal-aware, admissible and consistent heuristic for $\Pi$.
+  \end{theorem}
+\end{frame}
+
+\begin{frame}<beamer:1-5|handout:1,3,5>{Orthogonality and additivity: example}
+  \begin{center}
+    \only<all:1>{\pictwopackages}
+    \only<beamer:2,3|handout:3>{\pictwopackagesabstractpackone}
+    \only<beamer:4,5|handout:5>{\pictwopackagesabstractpacktwo}
+
+    \bigskip
+
+    \only<all:1>{\alert{transition system $\mathcal T$}
+
+      state variables: first package, second package, truck}
+    \only<beamer:2,3|handout:3>{\alert{abstraction $\mathcal A_1$}
+
+      mapping: only consider state of first package}
+    \only<beamer:4,5|handout:5>{\alert{abstraction $\mathcal A_2$}
+      (orthogonal to $\mathcal A_1$)
+
+      mapping: only consider state of second package}
+  \end{center}
+\end{frame}
+
+\begin{frame}{Orthogonality and additivity: proof}
+  \begin{proofstart}
+    We prove goal-awareness and consistency; \\
+    the other properties follow from these two.
+
+    \smallskip
+
+    Let $\mathcal T = \mathcal T(\Pi) = \langle S, L, T, s_0, S_\star\rangle$.
+
+    \pause
+    \smallskip
+
+    \hilite{Goal-awareness:} For goal states $s \in S_\star$,
+    $\sum_{i=1}^n h^{\mathcal A_i, \alpha_i}(s) = \sum_{i=1}^n 0 = 0$
+    because all individual abstractions are goal-aware.
+  \end{proofstart}
+\end{frame}
+
+\begin{frame}{Orthogonality and additivity: proof (ctd.)}
+  \begin{proofmid}
+    \hilite{Consistency:} Let $s, t \in S$ such that $t$ is a
+    successor of $s$.
+
+    Let $L := \sum_{i=1}^n h^{\mathcal A_i, \alpha_i}(s)$ and
+    $R := \sum_{i=1}^n h^{\mathcal A_i, \alpha_i}(t)$.
+
+    We need to prove that $L \le R + 1$.
+
+    \pause
+    \smallskip
+
+    Since $t$ is a successor of $s$, there exists an operator $o$ with
+    $\applyop{o}{s} = t$ and hence $\langle s, o, t\rangle \in T$.
+
+    Because the abstraction mappings are orthogonal, $\alpha_i(s) \neq
+    \alpha_i(t)$ for \alert{at most one} $i \in \{1, \dots, n\}$.
+
+    \pause
+    \smallskip
+
+    \hilite{Case 1: $\alpha_i(s) = \alpha_i(t)$ for all $i \in
+      \{1, \dots, n\}$.}
+
+    \pause
+    \begin{tightalign}
+      \text{Then~} L & {} = \sum_{i=1}^n h^{\mathcal A_i, \alpha_i}(s) \\
+    & {} = \sum_{i=1}^n h^*_{\mathcal A_i}(\alpha_i(s)) \\
+    & {} = \sum_{i=1}^n h^*_{\mathcal A_i}(\alpha_i(t)) \\
+    & {} = \sum_{i=1}^n h^{\mathcal A_i, \alpha_i}(t) \\
+    & {} = R \le R + 1.
+    \end{tightalign}
+  \end{proofmid}
+\end{frame}
+
+\begin{frame}{Orthogonality and additivity: proof (ctd.)}
+  \begin{proofend}
+    \hilite{Case 2: $\alpha_i(s) \neq \alpha_i(t)$ for exactly one $i
+      \in \{1, \dots, n\}$.}
+
+    Let $k \in \{1, \dots, n\}$ such that $\alpha_k(s) \neq
+      \alpha_k(t)$.
+
+    \pause
+    \smallskip
+    \begin{tightalign}
+      \text{Then~} L & {} = \sum_{i=1}^n h^{\mathcal A_i, \alpha_i}(s) \\
+    & {} = \sum_{i \in \{1, \dots, n\} \setminus \{k\}}
+      h^*_{\mathcal A_i}(\alpha_i(s))
+      + h^{\mathcal A_k, \alpha_k}(s) \\
+    & {} \le \sum_{i \in \{1, \dots, n\} \setminus \{k\}}
+      h^*_{\mathcal A_i}(\alpha_i(t))
+      + h^{\mathcal A_k, \alpha_k}(t) + 1 \\
+    & {} = \sum_{i=1}^n h^{\mathcal A_i, \alpha_i}(t) + 1 \\
+    & {} = R + 1,
+    \end{tightalign}
+    where the inequality holds because $\alpha_i(s) = \alpha_i(t)$ for
+    all $i \neq k$ and $h^{\mathcal A_k, \alpha_k}$ is consistent.
+  \end{proofend}
+\end{frame}
+
+\subsection[Refinements]{Coarsenings and refinements}
+
+\begin{frame}{Abstractions of abstractions}
+  \begin{theorem}[transitivity of abstractions]
+    Let $\mathcal T$, $\mathcal T'$ and $\mathcal T''$ be transition
+    systems.
+
+    \begin{itemize}
+    \item If $\mathcal T'$ is an abstraction of $\mathcal T$ \\
+      and $\mathcal T''$ is an abstraction of $\mathcal T'$, \\
+      then $\mathcal T''$ is an abstraction of $\mathcal T$.
+    \item If $\mathcal T'$ is a strictly homomorphic abstraction of
+      $\mathcal T$ \\
+      and $\mathcal T''$ is a strictly homomorphic abstraction of
+      $\mathcal T'$, \\
+      then $\mathcal T''$ is a strictly homomorphic abstraction of
+      $\mathcal T$.
+    \end{itemize}
+  \end{theorem}
+\end{frame}
+
+%% The following three frames belong together, but we must put them
+%% into separate frames because \picprojectionpackagetruck uses
+%% overlay numbers 1 and 2 internally. There is probably a better way
+%% of doing this.
+\begin{frame}{Abstractions of abstractions: example}
+  \begin{center}
+    \picfulltransitiongraph
+
+    \bigskip
+
+    \alert{transition system $\mathcal T$}
+  \end{center}
+\end{frame}
+
+\begin{frame}{Abstractions of abstractions: example}
+  \begin{center}
+    \picprojectionpackagetruck
+
+    \bigskip
+
+    \alert{Transition system $\mathcal T'$ as an abstraction of
+      $\mathcal T$}
+  \end{center}
+\end{frame}
+
+\begin{frame}{Abstractions of abstractions: example}
+  \begin{center}
+    \only<all:1>{\picrefinement}
+    \only<all:2>{\picprojectionpackage}
+
+    \bigskip
+    
+    \alert{Transition system $\mathcal T''$ as an abstraction of
+      \only<all:1>{$\mathcal T'$}\only<all:2>{$\mathcal T$}}
+  \end{center}
+\end{frame}
+
+\begin{frame}{Abstractions of abstractions (proof)}
+  \begin{proofstart}
+    Let $\mathcal T = \langle S, L, T, s_0, S_\star\rangle$,
+    let $\mathcal T' = \langle S', L, T', s'_0, S'_\star\rangle$ be an
+    abstraction of $\mathcal T$ with abstraction mapping $\alpha$,
+    and let $\mathcal T'' = \langle S'', L, T'', s''_0, S''_\star\rangle$ be
+    an abstraction of $\mathcal T'$ with abstraction mapping
+    $\alpha'$.
+
+    \smallskip
+
+    We show that $\mathcal T''$ is an abstraction of $\mathcal T$ with
+    abstraction mapping $\beta := \alpha' \circ \alpha$, \ie, that
+    \begin{enumerate}
+    \item $\beta(s_0) = s''_0$,
+    \item for all $s \in S_\star$, we have $\beta(s) \in S''_\star$, and
+    \item for all $\langle s, \ell, t\rangle \in T$, we have $\langle
+      \beta(s), \ell, \beta(t)\rangle \in T''$.
+    \end{enumerate}
+
+    Moreover, we show that if $\alpha$ and $\alpha'$ are strict
+    homomorphisms, \\ then $\beta$ is also a strict homomorphism.
+
+    \medskip
+
+    \dots
+  \end{proofstart}
+\end{frame}
+
+\begin{frame}{Abstractions of abstractions: proof}
+  \begin{proofmid}
+    \hilite{1. $\beta(s_0) = s''_0$}
+    
+    Because $\mathcal T'$ is an abstraction of $\mathcal T$ with
+    mapping $\alpha$, we have $\alpha(s_0) = s'_0$. Because $\mathcal
+    T''$ is an abstraction of $\mathcal T'$ with mapping $\alpha'$, we
+    have $\alpha'(s'_0) = s''_0$.
+
+    Hence $\beta(s_0) = \alpha'(\alpha(s_0)) = \alpha'(s'_0) = s''_0$.
+
+    \medskip
+
+    \dots
+  \end{proofmid}
+\end{frame}
+
+\begin{frame}{Abstractions of abstractions: proof (ctd.)}
+  \begin{proofmid}
+    \hilite{2. For all $s \in S_\star$, we have $\beta(s) \in S''_\star$:}
+    
+    Let $s \in S_\star$. Because $\mathcal T'$ is an abstraction of
+    $\mathcal T$ with mapping $\alpha$, we have $\alpha(s) \in S'_\star$.
+    Because $\mathcal T''$ is an abstraction of $\mathcal T'$ with
+    mapping $\alpha'$ and $\alpha(s) \in S'_\star$, we have
+    $\alpha'(\alpha(s)) \in S''_\star$.
+
+    Hence $\beta(s) = \alpha'(\alpha(s)) \in S''_\star$.
+
+    \pause
+    \medskip
+
+    \hilite{Strict homomorphism if $\alpha$ and $\alpha'$
+      strict homomorphisms:}
+    
+    Let $s'' \in S''_\star$. Because $\alpha'$ is a strict
+    homomorphism, there exists a state $s' \in S'_\star$ such that
+    $\alpha'(s') = s''$. Because $\alpha$ is a strict homomorphism,
+    there exists a state $s \in S_\star$ such that $\alpha(s) = s'$.
+
+    Thus $s'' = \alpha'(\alpha(s)) = \beta(s)$ for some $s \in S_\star$.
+
+    \medskip
+
+    \dots
+  \end{proofmid}
+\end{frame}
+
+\begin{frame}{Abstractions of abstractions: proof (ctd.)}
+  \begin{proofend}
+    \hilite{3. For all $\langle s, \ell, t\rangle \in T$, we have
+      $\langle \beta(s), \ell, \beta(t)\rangle \in T''$}
+    
+    Let $\langle s, \ell, t\rangle \in T$. Because $\mathcal T'$ is an
+    abstraction of $\mathcal T$ with mapping $\alpha$, we have
+    $\langle \alpha(s), \ell, \alpha(t)\rangle \in T'$. 
+    Because $\mathcal T''$ is an abstraction of $\mathcal T'$ with
+    mapping $\alpha'$ and $\langle \alpha(s), \ell, \alpha(t)\rangle \in
+    T'$, we have $\langle \alpha'(\alpha(s)), \ell,
+    \alpha'(\alpha(t))\rangle \in T''$.
+
+    Hence $\langle \beta(s), \ell, \beta(t)\rangle =
+    \langle \alpha'(\alpha(s)), \ell, \alpha'(\alpha(t))\rangle \in T''$.
+
+    \pause
+    \medskip
+
+    \hilite{Strict homomorphism if $\alpha$ and $\alpha'$
+      strict homomorphisms:}
+
+    Let $\langle s'', \ell, t''\rangle \in T''$. Because $\alpha'$ is a
+    strict homomorphism, there exists a transition $\langle s', \ell, t'\rangle
+    \in T'$ such that $\alpha'(s') = s''$ and $\alpha'(t') = t''$.
+    Because $\alpha$ is a strict homomorphism, there exists a transition
+    $\langle s, \ell, t\rangle \in T$ such that $\alpha(s) = s'$ and
+    $\alpha(t) = t'$.
+
+    Thus $\langle s'', \ell, t''\rangle = \langle \alpha'(\alpha(s)), \ell,
+    \alpha'(\alpha(t))\rangle = \langle \beta(s), \ell, \beta(t)\rangle$
+    for some $\langle s, \ell, t\rangle \in T$.
+  \end{proofend}
+\end{frame}
+
+\begin{frame}{Coarsenings and refinements}
+  \hilite{Terminology:}
+  Let $\mathcal T$ be a transition system, \\
+  let $\mathcal T'$ be an abstraction of $\mathcal T$ with abstraction
+  mapping $\alpha$,
+  and \\ let $\mathcal T''$ be an abstraction of $\mathcal T'$ with
+  abstraction mapping $\alpha'$.
+
+  \smallskip
+
+  Then:
+  \begin{itemize}
+  \item $\langle \mathcal T'', \alpha' \circ \alpha\rangle$ is called a
+    \alert{coarsening} of $\langle \mathcal T', \alpha\rangle$, and
+  \item $\langle \mathcal T', \alpha\rangle$ is called a
+    \alert{refinement} of $\langle \mathcal T'', \alpha' \circ
+    \alpha\rangle$.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Heuristic quality of refinements}
+  \begin{theorem}[heuristic quality of refinements]
+    Let $h^{\mathcal A, \alpha}$ and $h^{\mathcal B, \beta}$
+    be abstraction heuristics for the same planning task $\Pi$
+    such that $\langle \mathcal A, \alpha\rangle$ is a refinement of
+    $\langle\mathcal B, \beta\rangle$.
+
+    Then $h^{\mathcal A, \alpha}$ dominates $h^{\mathcal B, \beta}$.
+  \end{theorem}
+
+  In other words, $h^{\mathcal A, \alpha}(s) \ge h^{\mathcal B,
+    \beta}(s)$ for all states $s$ of $\Pi$.
+
+  \pause
+
+  \begin{proofstart}
+    Since $\langle \mathcal A, \alpha\rangle$ is a refinement of
+    $\langle\mathcal B, \beta\rangle$, there exists a mapping
+    $\alpha'$ such that $\beta = \alpha' \circ \alpha$ and
+    $\mathcal B$ is an abstraction of $\mathcal A$ with abstraction
+    mapping $\alpha'$.
+
+    For any state $s$ of $\Pi$, we get
+    $h^{\mathcal B, \beta}(s)
+    = h^*_{\mathcal B}(\beta(s))
+    = h^*_{\mathcal B}(\alpha'(\alpha(s)))
+    = h^{\mathcal B, \alpha'}(\alpha(s))
+    \le h^*_{\mathcal A}(\alpha(s))
+    = h^{\mathcal A, \alpha}(s)$, where the inequality holds because
+    $h^{\mathcal B, \alpha'}$ is an admissible heuristic in the
+    transition system $\mathcal A$.
+  \end{proofstart}
+  %% TODO: We're abusing notation here when we write
+  %% h^{\mathcal B, \alpha'}(\alpha(s))$, because this is a heuristic
+  %% estimate with respect to to the transition system \mathcal A,
+  %% which is not the transition system for a planning task.
+  %% We have only defined abstraction heuristics for planning tasks
+  %% (which was a bad idea, but we're stuck with it for now). In
+  %% future courses, this should be cleaned up by defining abstraction
+  %% heuristics for transition systems in general, which doesn't
+  %% really change anything -- all the relevant definitions and
+  %% theorems don't depend on properties of planning tasks at all.
+\end{frame}
+
+%% TODO: This subsection probably belongs somewhere much earlier,
+%%       maybe even into Chapter 1.
+\subsection[Equivalence]{Equivalent transition systems}
+
+\begin{frame}{Isomorphic transition systems}
+  \begin{definition}[isomorphic transition systems]
+    Let $\mathcal T = \langle S, L, T, s_0, S_\star\rangle$ and
+    $\mathcal T' = \langle S', L', T', s'_0, S'_\star\rangle$ be transition
+    systems.
+
+    We say that \alert{$\mathcal T$ is isomorphic to
+      $\mathcal T'$}, in symbols \alert{$\mathcal T \sim \mathcal
+      T'$}, if there exist bijective functions $\varphi: S \to S'$
+    and $\psi: L \to L'$ such that:
+    \begin{itemize}
+    \item $\varphi(s_0) = s'_0$,
+    \item $s \in S_\star$ iff $\varphi(s) \in S'_\star$, and
+    \item $\langle s, \ell, t\rangle \in T$ iff $\langle \varphi(s),
+      \psi(\ell), \varphi(t)\rangle \in T'$.
+    \end{itemize}
+  \end{definition}
+\end{frame}
+
+\begin{frame}{Graph-equivalent transition systems}
+  \begin{definition}[graph-equivalent transition systems]
+    Let $\mathcal T = \langle S, L, T, s_0, S_\star\rangle$ and
+    $\mathcal T' = \langle S', L', T', s'_0, S'_\star\rangle$ be transition
+    systems.
+
+    We say that \alert{$\mathcal T$ is graph-equivalent to $\mathcal
+      T'$}, in symbols \alert{$\mathcal T \graphequiv \mathcal T'$},
+    if there exists a bijective function $\varphi: S \to S'$ such
+    that:
+    \begin{itemize}
+    \item $\varphi(s_0) = s'_0$,
+    \item $s \in S_\star$ iff $\varphi(s) \in S'_\star$, and
+    \item $\langle s, \ell, t\rangle \in T$ for some $\ell \in L$ iff
+      $\langle \varphi(s), \ell', \varphi(t)\rangle \in T'$ for some $\ell'
+      \in L'$.
+    \end{itemize}
+  \end{definition}
+  \hilite{Note:} There is no requirement that the labels of $\mathcal
+  T$ and $\mathcal T'$ correspond in any way. For example, it is
+  permitted that all transitions of $\mathcal T$ have different labels
+  and all transitions of $\mathcal T'$ have the same label.
+\end{frame}
+
+\begin{frame}{Isomorphism vs.\ graph equivalence}
+  \begin{itemize}
+  \item $(\sim)$ and $(\graphequiv)$ are equivalence relations.
+  \item Two isomorphic transition systems are interchangeable for all
+    practical intents and purposes.
+  \item Two graph-equivalent transition systems are interchangeable
+    for most intents and purposes. \\ In particular, their state
+    distances are identical, so they define the same abstraction
+    heuristic for corresponding abstraction functions.
+  \item Isomorphism implies graph equivalence, but not vice versa.
+  \end{itemize}
+\end{frame}
+
+\subsection[Practice]{Abstraction heuristics in practice}
+
+\begin{frame}{Using abstraction heuristics in practice}
+  In practice, there are conflicting goals for abstractions:
+  \begin{itemize}
+  \item we want to obtain an \alert{informative heuristic}, but
+  \item want to keep its \alert{representation small}.
+  \end{itemize}
+
+  \medskip
+
+  Abstractions have small representations if they have
+  \begin{itemize}
+  \item \alert{few abstract states} and
+  \item a \alert{succinct encoding for $\alpha$}.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Counterexample: one-state abstraction}
+  \begin{center}
+    \piconestateabstraction
+  \end{center}
+
+  \alert{One-state abstraction:} $\alpha(s) := \text{const}$.
+  \begin{itemize}
+  \item[$+$] \alert{very few abstract states}
+    and \alert{succinct encoding for $\alpha$}
+  \item[$-$] \alert{completely uninformative heuristic}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Counterexample: identity abstraction}
+  \begin{center}
+    \picfulltransitiongraph
+  \end{center}
+
+  \alert{Identity abstraction:} $\alpha(s) := s$.
+  \begin{itemize}
+  \item[$+$] \alert{perfect heuristic}
+    and \alert{succinct encoding for $\alpha$}
+  \item[$-$] \alert{too many abstract states}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Counterexample: perfect abstraction}
+  \begin{center}
+    \picperfectabstraction
+  \end{center}
+
+  \alert{Perfect abstraction:} $\alpha(s) := h^*(s)$. \\
+  \begin{itemize}
+  \item[$+$] \alert{perfect heuristic} and
+    usually \alert{few abstract states}
+  \item[$-$] usually \alert{no succinct encoding for $\alpha$}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Automatically deriving good abstraction heuristics}
+  \begin{block}{Abstraction heuristics for planning: main research
+      problem}
+    \alert{Automatically derive effective abstraction heuristics} \\
+    for planning tasks.
+  \end{block}
+
+  \begin{itemize}
+  \item[$\leadsto$] we will study two state-of-the-art approaches \\
+    in the next two chapters
+  \end{itemize}
+\end{frame}
+
+\section*{Summary}
+
+\begin{frame}{Summary}
+  \begin{itemize}
+  \item An \alert{abstraction} relates a transition system $\mathcal
+    T$ (\eg\ of a planning task) to another (usually smaller)
+    transition system $\mathcal T'$ via an \alert{abstraction mapping}
+    $\alpha$.
+  \item Abstraction \alert{preserves all important aspects} of
+    $\mathcal T$: \\ initial state, goal states and (labeled)
+    transitions.
+  \item Hence, they can be used to define \alert{heuristics} for the
+    original system $\mathcal T$: estimate the goal distance of $s$ in
+    $\mathcal T$ by the optimal goal distance of $\alpha(s)$ in
+    $\mathcal T'$.
+  \item Such \alert{abstraction heuristics} are \alert{safe},
+    \alert{goal-aware}, \alert{admissible} and \alert{consistent}.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Summary (ctd.)}
+  \begin{itemize}
+  \item \alert{Strictly homomorphic abstractions} are desirable as
+    they do not include ``unnecessary'' abstract goal states or
+    transitions (which could lower heuristic values).
+  \item Any surjection from the states of $\mathcal T$ to any set
+    induces a strictly homomorphic abstraction in a natural way.
+  \item Multiple abstraction heuristics can be added without losing
+    properties like admissibility if the underlying abstraction
+    mappings are \alert{orthogonal}.
+  \item One sufficient condition for orthogonality is that
+    abstractions are \alert{affected} by disjoint sets of labels.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Summary (ctd.)}
+  \begin{itemize}
+  \item The process of abstraction is \alert{transitive}: an
+    abstraction can be abstracted further to yield another
+    abstraction.
+  \item Based on this notion, we can define abstractions that are
+    \alert{coarsenings} or \alert{refinements} of others.
+  \item A refinement can never lead to a worse heuristic.
+  \item Practically useful abstractions are those which give
+    \alert{informative heuristics}, yet have a \alert{small
+      representation}.
+  \end{itemize}
+\end{frame}
+
+\end{document}

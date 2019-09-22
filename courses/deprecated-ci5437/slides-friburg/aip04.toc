@@ -1,0 +1,13 @@
+\beamer@endinputifotherversion {3.20pt}
+\beamer@sectionintoc {2}{Effect normal form}{3}{0}{1}
+\beamer@subsectionintoc {2}{1}{Equivalence of operators and effects}{4}{0}{1}
+\beamer@subsectionintoc {2}{2}{Definition}{6}{0}{1}
+\beamer@subsectionintoc {2}{3}{Example}{8}{0}{1}
+\beamer@sectionintoc {3}{Positive normal form}{9}{0}{2}
+\beamer@subsectionintoc {3}{1}{Motivation}{10}{0}{2}
+\beamer@subsectionintoc {3}{2}{Definition \& algorithm}{12}{0}{2}
+\beamer@subsectionintoc {3}{3}{Example}{15}{0}{2}
+\beamer@subsectionintoc {3}{4}{Advantage}{23}{0}{2}
+\beamer@sectionintoc {4}{STRIPS operators}{24}{0}{3}
+\beamer@subsectionintoc {4}{1}{Definition}{25}{0}{3}
+\beamer@subsectionintoc {4}{2}{Properties}{26}{0}{3}

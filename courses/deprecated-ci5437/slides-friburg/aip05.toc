@@ -1,0 +1,13 @@
+\beamer@endinputifotherversion {3.20pt}
+\beamer@sectionintoc {1}{Planning as (classical) search}{2}{0}{1}
+\beamer@subsectionintoc {1}{1}{Introduction}{3}{0}{1}
+\beamer@subsectionintoc {1}{2}{Classification of search-based planners}{7}{0}{1}
+\beamer@sectionintoc {2}{Progression}{14}{0}{2}
+\beamer@subsectionintoc {2}{1}{Overview}{15}{0}{2}
+\beamer@subsectionintoc {2}{2}{Example}{17}{0}{2}
+\beamer@sectionintoc {3}{Regression}{27}{0}{3}
+\beamer@subsectionintoc {3}{1}{Overview}{28}{0}{3}
+\beamer@subsectionintoc {3}{2}{Example}{31}{0}{3}
+\beamer@subsectionintoc {3}{3}{Regression for STRIPS tasks}{36}{0}{3}
+\beamer@subsectionintoc {3}{4}{Regression for general planning tasks}{39}{0}{3}
+\beamer@subsectionintoc {3}{5}{Practical issues}{76}{0}{3}

@@ -1,0 +1,17 @@
+\beamer@endinputifotherversion {3.20pt}
+\beamer@sectionintoc {1}{Pattern databases heuristics}{2}{0}{1}
+\beamer@subsectionintoc {1}{1}{Projections and pattern database heuristics}{3}{0}{1}
+\beamer@subsectionintoc {1}{2}{Examples}{7}{0}{1}
+\beamer@subsectionintoc {1}{3}{Overview}{11}{0}{1}
+\beamer@sectionintoc {2}{Implementing pattern database heuristics}{12}{0}{2}
+\beamer@subsectionintoc {2}{1}{Precomputation step}{13}{0}{2}
+\beamer@subsectionintoc {2}{2}{Lookup step}{22}{0}{2}
+\beamer@sectionintoc {3}{Additive patterns for planning tasks}{26}{0}{3}
+\beamer@subsectionintoc {3}{1}{The additivity criterion \& the canonical heuristic function}{27}{0}{3}
+\beamer@subsectionintoc {3}{2}{Algebraic simplification \& dominance pruning}{37}{0}{3}
+\beamer@sectionintoc {4}{Pattern selection}{45}{0}{4}
+\beamer@subsectionintoc {4}{1}{Pattern selection as local search}{46}{0}{4}
+\beamer@subsectionintoc {4}{2}{Search space}{49}{0}{4}
+\beamer@subsectionintoc {4}{3}{Estimating heuristic quality}{70}{0}{4}
+\beamer@sectionintoc {5}{Literature}{77}{0}{5}
+\beamer@subsectionintoc {5}{1}{References}{78}{0}{5}

@@ -1,0 +1,396 @@
+\documentclass{gkibeamer}
+
+\input{macros}
+\input{blocksworld}
+
+\begin{document}
+
+\lectureno{4}
+\subtitle{Normal forms}
+\date{November 4th, 2011}
+\maketitles
+
+
+\section*{Motivation}
+\begin{frame}{Motivation}
+  Similarly to normal forms in propositional logic (DNF, CNF, NNF,
+  \dots) we can define \alert{normal forms for effects, operators 
+  and planning tasks}.
+  \bigskip
+
+  This is useful because algorithms (and proofs) then only need to deal
+  with effects (resp. operators or tasks) in normal form.
+\end{frame}
+
+\section[Effect normal form]{Effect normal form}
+\subsection[Equivalences]{Equivalence of operators and effects}
+
+\begin{frame}{Equivalence of operators and effects}
+  \begin{definition}[equivalent effects]
+    Two effects $e$ and $e'$ over state variables $A$ are
+    \alert{equivalent}, written \alert{$e \equiv e'$}, if
+    for all states $s$ over $A$, $\changes{e}{s} = \changes{e'}{s}$.
+  \end{definition}
+
+  \begin{definition}[equivalent operators]
+    Two operators $o$ and $o'$ over state variables $A$ are
+    \alert{equivalent}, written \alert{$o \equiv o'$}, if
+    they are applicable in the same states, and for all states
+    $s$ where they are applicable, $\applyop{o}{s} = \applyop{o'}{s}$.
+  \end{definition}
+
+  \begin{theorem}
+    Let $o = \langle \chi, e\rangle$ and $o' = \langle \chi', e'\rangle$ be
+    operators with $\chi \equiv \chi'$ and $e \equiv e'$. Then
+    $o \equiv o'$.
+  \end{theorem}
+  \hilite{Note:} The converse is not true. (Why not?)
+  %% Equivalent operators must have equivalent preconditions, but not
+  %% equivalent effects: for example, [e]_s may differ from [e']_s on
+  %% states s where the precondition is unsatisfied. As a trivial
+  %% example, consider operators with unsatisfiable preconditions,
+  %% where the effect specification doesn't matter at all. (As another
+  %% difference, for literals implied by the precondition, it doesn't
+  %% matter whether they're listed in the effects or not.)
+\end{frame}
+
+\begin{frame}{Equivalence transformations for effects}
+  \begin{eqnarray}
+    e_1 \land e_2 & \equiv & e_2 \land e_1 \\
+    (e_1 \land e_2) \land e_3 & \equiv & e_1 \land (e_2 \land e_3) \\
+    \top \land e & \equiv & e \\
+    \chi \CEF e & \equiv & \chi' \CEF e \qquad \text{if~} \chi \equiv \chi' \\
+    \top \CEF e & \equiv & e \\
+    \bot \CEF e & \equiv & \top \\
+    \chi_1 \CEF (\chi_2 \CEF e) & \equiv & (\chi_1 \land \chi_2) \CEF e \\
+    \chi \CEF (e_1 \land \dots \land e_n) & \equiv &
+    (\chi \CEF e_1) \land \dots \land (\chi \CEF e_n) \\
+    (\chi_1 \CEF e) \land (\chi_2 \CEF e) & \equiv & (\chi_1 \lor \chi_2) \CEF e
+  \end{eqnarray}
+\end{frame}
+
+\subsection{Definition}
+\begin{frame}{Normal form for effects}
+  We can define a \alert{normal form for effects}:
+
+  \begin{itemize}
+  \item Nesting of conditionals, as in $a \CEF (b \CEF c)$, can be
+    eliminated.
+  \item Effects $e$ within a conditional effect $\varphi \CEF e$ can be
+    restricted to atomic effects ($a$ or $\neg a$).
+  \end{itemize}
+  %% TODO: Jan findet die Formulierung oben nicht so klar.
+  %% Gegenvorschlag: statt ``can be'' aktiver? "Nesting ... is
+  %% forbidden." "Within conditional effects ..., e *must be* an
+  %% atomic effect."?
+
+  Transformation to this effect normal form only gives a small polynomial size
+  increase. 
+  \medskip
+
+  \hilite{Compare:} transformation to CNF or DNF may increase formula
+  size exponentially.
+\end{frame}
+
+\begin{frame}{Normal form for operators and effects}
+  \begin{definition}
+    An operator $\langle \chi,e\rangle$ is in \alert{effect normal form (ENF)}
+    if for all occurrences of $\chi'\CEF e'$ in $e$ the effect $e'$ is either $a$
+    or $\neg a$ for some $a\in A$, and there is at most one occurrence of any
+    atomic effect in $e$.
+  \end{definition}
+  %% TODO: Jan findet diese ``at most one''-Formulierung ungenau.
+
+  \begin{theorem}
+    For every operator there is an equivalent one in effect normal form.
+  \end{theorem}
+
+  Proof is constructive: we can transform any operator into effect
+  normal form using the equivalence transformations for effects.
+\end{frame}
+
+\subsection{Example}
+\begin{frame}{Effect normal form example}
+  \begin{example}
+    \[
+      \begin{array}{r@{\,}c@{\,}l}
+        (a & \CEF & (b\land{} \\
+        && (c\CEF(\neg d\land e))))\land{} \\
+        (\neg b & \CEF & e)
+      \end{array}
+      \]
+    transformed to effect normal form is
+    \[
+      \begin{array}{r@{\,}c@{\,}l}
+        (a & \CEF & b)\land{} \\
+        ((a\land c) & \CEF & \neg d)\land{} \\
+        ((\neg b\lor(a\land c)) & \CEF & e)
+      \end{array}
+      \]
+  \end{example}
+\end{frame}
+
+\section{Positive normal form}
+\subsection{Motivation}
+
+\begin{frame}{Example: Freecell}
+\begin{center}
+    \includegraphics[width=6cm]{figures/freecell}
+\end{center}
+ \begin{example}[good and bad effects]
+   If we move a card $c$ to a free tableau position, the \alert{good
+     effect} is that the card formerly below $c$ is now available.
+
+   The \alert{bad effect} is that we lose one free tableau position.
+ \end{example}
+\end{frame}
+
+\begin{frame}{What is a good or bad effect?}
+  \hilite{Question:} Which operator effects are good, and which are
+  bad?
+
+  \medskip
+  
+  Difficult to answer in general, because it depends on
+  context:
+  \begin{itemize}
+  \item Locking the entrance door is \alert{good} if we want to keep
+    burglars out.
+  \item Locking the entrance door is \alert{bad} if we want to enter.
+  \end{itemize}
+
+  We will now consider a reformulation of planning tasks that makes
+  the distinction between good and bad effects obvious.
+\end{frame}
+
+\subsection{Definition \& algorithm}
+
+\begin{frame}{Positive normal form}
+  \begin{definition}[operators in positive normal form]
+    An operator $o = \langle \chi, e \rangle$ is in \alert{positive normal
+      form} if it is in effect normal form, no negation symbols appear in
+      $\chi$, and no negation symbols appear in any effect condition in $e$.
+  \end{definition}
+
+  \begin{definition}[planning tasks in positive normal form]
+    A planning task $\langle A,I,O,\gamma\rangle$ is in \alert{positive
+      normal form} if all operators in $O$ are in positive normal form
+    and no negation symbols occur in the goal $\gamma$.
+  \end{definition}
+\end{frame}
+
+\begin{frame}{Positive normal form: existence}
+  \begin{theorem}[positive normal form]
+    Every planning task $\Pi$ has an equivalent planning task $\Pi'$
+    in positive normal form.
+
+    Moreover, $\Pi'$ can be computed from $\Pi$ in polynomial time.
+  \end{theorem}
+
+  \hilite{Note:} Equivalence here means that the represented
+  transition systems of $\Pi$ and $\Pi'$, limited to the states that
+  can be reached from the initial state, are isomorphic.
+
+  \bigskip
+
+  We prove the theorem by describing a suitable algorithm. \\
+  (However, we do not prove its correctness or complexity.)
+\end{frame}
+
+\begin{frame}{Positive normal form: algorithm}
+ \begin{block}{Transformation of $\langle A, I, O, \gamma\rangle$ to
+     positive normal form}
+   Convert all operators $o \in O$ to effect normal form. \\
+   Convert all conditions to negation normal form (NNF). \\
+   \textbf{while} any condition contains a negative literal $\neg a$:
+   \\
+   {}\qquad Let $a$ be a variable which occurs negatively in a
+   condition. \\
+   {}\qquad $A := A \cup \{\hat{a}\}$ \text{~for some new state
+     variable $\hat{a}$} \\
+   {}\qquad $I(\hat{a}) := 1 - I(a)$ \\
+   {}\qquad Replace the effect $a$ by
+   $(a \land \neg \hat{a})$ in all operators $o \in O$. \\
+   {}\qquad Replace the effect $\neg a$ by
+   $(\neg a \land \hat{a})$ in all operators $o \in O$. \\
+   {}\qquad Replace $\neg a$ by $\hat{a}$ in all conditions. \\
+   Convert all operators $o \in O$ to effect normal form (again).
+ \end{block}
+
+ Here, \emph{all conditions} refers to all operator preconditions,
+ operator effect conditions and the goal.
+
+ %% Note: It appears that conversion to normal form at the start isn't
+ %% actually necessary; just converting the conditions to NNF should
+ %% be good enough even without normal form. So the algorithm can be
+ %% simplified by only converting to normal form at the end.
+ %%
+ %% It is not clear if we actually need normal form for anything, so
+ %% alternatively, we might define "positive form" to not require
+ %% normal form, and optionally define "positive normal form" as the
+ %% combination of positive form and normal form.
+\end{frame}
+
+\subsection{Example}
+
+\begin{frame}{Positive normal form: example}
+ \begin{example}[transformation to positive normal form]
+   \setmywidth{${} = \{\, \langle
+     \var{bike} \land \var{bike-unlocked},
+     \var{bike-locked} \land \neg \var{bike-unlocked}\rangle,$}
+   \begin{align*}
+     A & = \{\var{home}, \var{uni}, \var{lecture}, \var{bike},
+     \var{bike-locked}
+     \only<all:3-8>{\alert<all:3>{, \var{bike-unlocked}}}
+     \} \\
+     I & = \{\var{home} \mapsto 1, \var{bike} \mapsto 1,
+     \var{bike-locked} \mapsto 1, \\
+     & \phantom{ = \{\,} \var{uni} \mapsto 0, \var{lecture}
+     \mapsto 0
+     \only<all:3-8>{\alert<all:3>{, \var{bike-unlocked} \mapsto 0}}
+     \} \\
+     O & = \{
+     \langle
+     \var{home} \land \var{bike} \land
+     \only<all:-6>{\alert<all:2,6>{\neg\var{bike-locked}}}
+     \only<all:7-8>{\alert<all:7>{\var{bike-unlocked}}},
+     \neg \var{home} \land \var{uni}
+     \rangle, \\
+     & \phantom{= \{\,}
+     \langle
+     \var{bike} \land \var{bike-locked},
+     \alert<all:4-5>{\neg \var{bike-locked}}
+     \only<all:5-8>{\alert<all:5>{\land \var{bike-unlocked}}}
+     \rangle, \\
+     & \phantom{ = \{\,}
+     \langle
+     \var{bike} \land
+     \only<all:-6>{\alert<all:2,6>{\neg \var{bike-locked}}}
+     \only<all:7-8>{\alert<all:7>{\var{bike-unlocked}}},
+     \alert<all:4-5>{\var{bike-locked}}
+     \only<all:5-8>{\alert<all:5>{\land \neg\var{bike-unlocked}}}
+     \rangle, \\
+     & \phantom{ = \{\,}
+     \langle
+     \var{uni},
+     \var{lecture} \land
+     ((\var{bike} \land
+     \only<all:-6>{\alert<all:2,6>{\neg \var{bike-locked}}}
+     \only<all:7-8>{\alert<all:7>{\var{bike-unlocked}}}
+     )
+     \CEF \neg\var{bike})
+     \rangle
+     \} \\
+     \gamma & = \usemywidthmath{\var{lecture} \land \var{bike}}
+   \end{align*}
+ \end{example}
+ \begin{overprint}
+   \onslide<all:2>
+   \alert{Identify state variable $a$ occurring negatively
+     in conditions.}
+   \onslide<all:3>
+   \alert{Introduce new variable $\hat a$ with complementary initial
+     value.}
+   \onslide<all:4>
+   \alert{Identify effects on variable $a$.}
+   \onslide<all:5>
+   \alert{Introduce complementary effects for $\hat a$.}
+   \onslide<all:6>
+   \alert{Identify negative conditions for $a$.}
+   \onslide<all:7>
+   \alert{Replace by positive condition $\hat a$.}
+ \end{overprint}
+\end{frame}
+
+\subsection{Advantage}
+
+\begin{frame}{Why positive normal form is interesting}
+  In positive normal form, good and bad effects are easy to distinguish:
+  \begin{itemize}
+  \item Effects that make state variables true are good \\
+    (\alert{add effects}).
+  \item Effects that make state variables false are bad \\
+    (\alert{delete effects}).
+  \end{itemize}
+  \bigskip
+
+  This is of high relevance for some planning techniques that we will see 
+  later in this course.
+\end{frame}
+
+\section[STRIPS]{STRIPS operators}
+\subsection{Definition}
+\begin{frame}{STRIPS operators}
+  \begin{definition}
+    An operator $\langle \chi,e\rangle$ is a \alert{STRIPS operator} if
+    \begin{itemize}
+    \item $\chi$ is a conjunction of atoms, and
+    \item $e$ is a conjunction of atomic effects.
+    \end{itemize}
+  \end{definition}
+
+  Hence every STRIPS operator is of the form
+  \[
+    \langle a_1\land\dots\land a_n,\ \ l_1\land\dots\land l_m\rangle
+    \]
+  where $a_i$ are atoms and $l_j$ are atomic effects.
+  \medskip
+
+  \hilite{Note:} Sometimes we allow conjunctions of \alert{literals}
+    as preconditions. We denote this as \alert{STRIPS with negative
+    preconditions}.
+\end{frame}
+
+\subsection{Properties}
+\begin{frame}{Why STRIPS is interesting}
+  \begin{itemize}
+  \item STRIPS operators are \alert{particularly simple}, yet
+    expressive enough to capture general planning problems.
+  \item In particular, STRIPS planning is \alert{no easier} than
+    general planning problems.
+  \item Most algorithms in the planning literature are \alert{only
+    presented for STRIPS operators} (generalization is often, but not
+    always, obvious).
+  \end{itemize}
+  \begin{block}{STRIPS}
+    STanford Research Institute Planning System \\
+    (Fikes \& Nilsson, 1971)
+  \end{block}
+\end{frame}
+
+\begin{frame}{Transformation to STRIPS}
+  \begin{itemize}
+  \item Not every operator is equivalent to a STRIPS operator.
+  \item However, each operator can be transformed into a \alert{set}
+    of STRIPS operators whose ``combination'' is equivalent to the
+    original operator. (How?)
+  \item However, this transformation may exponentially increase the
+    number of required operators. There are planning tasks for which
+    such a blow-up is unavoidable.
+  \item There are polynomial transformations of planning tasks to
+    STRIPS, but these do not preserve the structure of the transition
+    system (\eg, length of shortest plans may change).
+  \end{itemize}
+\end{frame}
+
+\section*{Summary}
+\begin{frame}{Summary}
+  \begin{itemize}
+  \item \alert{Effect normal form} simplifies the structure of 
+    the operator effects: conditional effects contain only atomic effects, and
+    there is at most one occurrence of any atomic effect.
+  \item \alert{Positive normal form} allows to distinguish good
+    and bad effects.
+  \item The form of \alert{STRIPS operators} is even more restrictive than
+    effect normal form, forbidding complex preconditions and conditional
+    effects.
+  \item All three forms are expressive enough to capture general planning
+    problems.
+  \item Transformation to effect normal form and
+    positive normal form can be done with a small polynomial size increase.
+  \item Structure preserving transformations of planning tasks to 
+    STRIPS can increase the number of operators exponentially.
+  \end{itemize}
+\end{frame}
+
+\end{document}
