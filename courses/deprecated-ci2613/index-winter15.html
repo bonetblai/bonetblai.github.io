@@ -1,0 +1,200 @@
+<html>
+<head>
+  <title>CI2613</title>
+  <style type="text/css">
+    body { color:black; background-color:white; font-family:sans-serif; font-size:120%; }
+    td { color:black; background-color:white; font-family:sans-serif; font-size:110%; }
+    em { color:darkolivegreen; font-weight:900; }
+    italic { font-style: italic; }
+    code { color:#A90000; font-weight:500; font-size:180%; }
+    strong { color:#A90000; font-weight:900; }
+    h1 { color:#2c6b70; }
+    h2 { color:#2c6b70; }
+    h3 { color:#2c6b70; }
+  </style>
+</head>
+
+<!-- 
+Colors:
+#999999 
+#deb887 (burlywood)
+#faebd7 (antiquewhite)
+#f5f5dc (beige)
+#a9a9a9 (darkgray)
+#bdb76b (darkkhaki)
+#556b2f (darkolivegreen)
+#5f9ea0 (cadetblue)
+#fffff0	(ivory)
+#dcdcdc (gainsboro)
+#eee8aa (palegoldenrod)
+-->
+
+<body link="#000000" vlink="#000099" alink="#000000">
+<table>
+<tr>
+  <td VALIGN=CENTER WIDTH="100%"><h1><b>CI2613: Algoritmos y Estructuras de Datos III (Pregrado)</b></h1><p>
+
+    Blai Bonet <br>
+    Matem&aacute;ticas y Sistemas, 215-A<br>
+    Departamento de Computaci&oacute;n<br>
+    Universidad Sim&oacute;n Bol&iacute;var<br>
+    <br>
+    bonet AT ldc DOT usb DOT ve<br>
+    Tel: +58 (212) 906-3263<br>
+    Web: <a href="http://www.ldc.usb.ve/~bonet"><font color="#356b0f">http://www.ldc.usb.ve/~bonet</font></a>
+
+  </td>
+  <td>
+    <!-- aqui va el picture -->
+  </td>
+</tr>
+</table>
+
+<h3><a NAME="sinopsis"></a>Sinopsis</h3>
+
+Tercer curso de la cadena de algoritmos y estructuras de datos. Se enfoca en algoritmos y estructuras
+de datos para grafos. Se cubren los temas de representaci&oacute;n de grafos; b&uacute;squeda
+en amplitud y profundidad; &aacute;rbol cobertor m&iacute;nimo, algoritmos de
+Kruskal y de Prim; caminos de costo m&iacute;nimo, algoritmos de Bellman-Ford, de Dijkstra,
+de Floyd-Warshall, y de Johnson; flujo en redes, algoritmos de Ford-Fulkerson y de Edmonds-Karp.
+Tambi&eacute;n se estudian estructuras de datos para conjuntos disjuntos,
+heaps binomiales y Fibonacci, y nociones de an&aacute;lisis amortizado.
+En resumen, se estudian los cap&iacute;tulos 17, 19, 21 &mdash; 26 del libro de texto.
+
+<h3><a NAME="evaluacion"></a>Evaluaci&oacute;n</h3>
+
+<ul type="square">
+  <li><strong>Examen 1 (50%) el 22/01/2015 sobre lo visto hasta el 15/01/2015 (inclusivo).</strong></li>
+  <li><strong>Examen 2 (50%) el 12/03/2015 sobre lo visto hasta el 05/03/2015 (inclusivo).</strong></li>
+  <li><a href="notas/winter15/notas.html">Notas (Enero - Marzo 2015)</a></li>
+</ul>
+
+<h3><a NAME="cronograma"></a>Objetivos y Cronograma</h3>
+
+<center><table border="2" width="90%">
+  <col width="10%">
+  <col width="45%">
+  <col width="45%">
+  <tr>
+    <td align="center">Semana&nbsp;</td>
+    <td align="center">D&iacute;a I (Martes 3-4 en AUL-020)</td>
+    <td align="center">D&iacute;a II (Jueves 3-4 en AUL-020)</td>
+  </tr>
+
+
+  <tr>
+    <td align="center">I</td>
+    <td>9/12: Introducci&oacute;n. Notaci&oacute;n asint&oacute;tica.  Complejidad en tiempo y espacio. Algoritmos eficientes.</td>
+    <td>11/12: Conceptos b&aacute;sicos y representaci&oacute;n de grafos.  Atributos.  [&sect;22.1 + ap&eacute;ndice + otros]</td>
+  </tr>
+
+  <tr>
+    <td align="center">II</td>
+    <td>16/12: An&aacute;lisis amortizado. [&sect;17]</td>
+    <td>18/12: ED para cola de prioridad: heap binomial y Fibonacci. [&sect;19 + otros]</td>
+  </tr>
+
+  <tr>
+    <td align="center">III</td>
+    <td>6/1: B&uacute;squeda en amplitud (BFS). [&sect;22.2]</td>
+    <td>8/1: B&uacute;squeda en profundidad (DFS).
+             Ordenamiento topol&oacute;gico. [&sect;22.3 + &sect;22.4]</td>
+  </tr>
+
+  <tr>
+    <td align="center">IV</td>
+    <td>13/1: Componentes fuertemente conectadas. [&sect;22.5]</td>
+    <td>15/1: ED para conjuntos disjuntos. Componentes conexas. [&sect;21]</td>
+  </tr>
+
+  <tr>
+    <td align="center">V</td>
+    <td>20/1: Repaso para el examen.</td>
+    <td><strong>22/1: Examen 1 (50%)</strong></td>
+  </tr>
+
+  <tr>
+    <td align="center">VI</td>
+    <td><strong>27/1: No hay clases</strong></td>
+    <td><strong>29/1: No hay clases</strong></td>
+  </tr>
+
+  <tr>
+    <td align="center">VII</td>
+    <td>3/2: &Aacute;rbol cobertor m&iacute;nimo (MST). Algoritmos de Kruskal y de Prim. [&sect;23]</td>
+    <td>5/2: Caminos de costo m&iacute;nimo desde un v&eacute;rtice fuente fijo (SS/SP). [&sect;24.0 + &sect;24.5]</td>
+  </tr>
+
+  <tr>
+    <td align="center">VIII</td>
+    <td>10/2: Algoritmo de Bellman-Ford.  SS/SP en grafos dirigidos ac&iacute;clicos (DAGs). PERT. [&sect;24.1 + &sect;24.2]</td>
+    <td>12/2: Algoritmo de Dijkstra. [&sect;24.3]</td>
+  </tr>
+
+  <tr>
+    <td align="center">IX</td>
+    <td><strong>17/2: Feriado</strong></td>
+    <td>19/2: Aplicaciones: clustering, arbitraje, sistemas de diferencias, y alineaci&oacute;n de secuencias. [&sect;24.4 + otros]</td>
+  </tr>
+
+  <tr>
+    <td align="center">X</td>
+    <td>24/2: Caminos de costo m&iacute;nimo para todos los pares de v&eacute;rtices (AP/SP).
+        Programaci&oacute;n din&aacute;mica y multiplicaci&oacute;n de matrices. Algoritmo de Floyd-Warshall.
+        Algoritmo de Johnson para grafos dispersos. [&sect;25]</td>
+    <td>26/2: Redes y flujos. Problema de flujo m&aacute;ximo.
+        M&eacute;todo de Ford-Fulkerson. Redes y capacidades residuales.
+        Aumento de flujo. [&sect;26.1 + &sect;26.2]</td>
+  </tr>
+
+  <tr>
+    <td align="center">XI</td>
+    <td>3/3: Caminos de aumento. Cortes y cortes m&iacute;nimos.
+        Teorema de flujo m&aacute;ximo &mdash; corte m&iacute;nimo.
+        Algoritmo b&aacute;sico de Ford-Fulkerson.
+        Patolog&iacute;as de Ford-Fulkerson.
+        [&sect;26.2]</td>
+    <td>5/3: Algoritmo de Edmonds-Karp. Aplicaciones. [&sect;26.2 + otros]</td>
+  </tr>
+
+  <tr>
+    <td align="center">XII</td>
+    <td>10/3: Repaso para el examen.</td>
+    <td><strong>12/3: Examen 2 (50%)</strong></td>
+  </tr>
+
+</table></center>
+<!-- <strong color="red">[trabajo en progreso]</strong> -->
+
+<h3><a NAME="bibliografia"></a>Bibliograf&iacute;a</h3>
+
+<ul type="square">
+  <li>T. H. Cormen, C. E. Leiserson, R. L. Rivest y C. Stein. <em>Introduction to Algorithms.</em> MIT Press. (3ra edici&oacute;n)</li>
+  <li>(Consulta) O. Meza y M. Ortega. <em>Grafos y Algoritmos.</em> Equinoccio. Universidad Sim&oacute;n Bol&iacute;var.</li>
+    <li>Clases:
+        <a href="handouts/ci2613-basico.pdf">grafos</a>, 
+        <a href="handouts/ci2613-rep.pdf">representaci&oacute;n</a>, 
+        <a href="handouts/ci2613-amort.pdf">an&aacute;lisis amortizado</a>,
+        <a href="handouts/ci2613-heaps.pdf">heaps</a>,
+        <a href="handouts/ci2613-bfs.pdf">bfs</a>,
+        <a href="handouts/ci2613-dfs.pdf">dfs</a>,
+        <a href="handouts/ci2613-top.pdf">ordenamiento topol&oacute;gico</a>,
+        <a href="handouts/ci2613-scc.pdf">scc</a>,
+        <a href="handouts/ci2613-union.pdf">union/find</a>,
+        <a href="handouts/ci2613-mst.pdf">mst</a>,
+        <a href="handouts/ci2613-sssp.pdf">ss-sp</a>,
+        <a href="handouts/ci2613-bellman-ford.pdf">Bellman-Ford</a>,
+        <a href="handouts/ci2613-sssp-dags.pdf">ss-sp-dags</a>,
+        <a href="handouts/ci2613-dijkstra.pdf">Dijkstra</a>,
+        <a href="handouts/ci2613-aplicaciones.pdf">aplicaciones</a>,
+        <a href="handouts/ci2613-apsp.pdf">ap-sp</a>,
+        <a href="handouts/ci2613-johnson.pdf">Johnson</a>,
+        <a href="handouts/ci2613-maxflow.pdf">flujo</a>,
+        <a href="handouts/ci2613-matching.pdf">matching</a>.
+        </li>
+</ul>
+
+</body>
+<address>Last Modified 05 Mar 2015</address>
+</html>
+
