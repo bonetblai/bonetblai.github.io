@@ -1,0 +1,509 @@
+\documentclass{gkibeamer}
+\usepackage{url}
+
+\input{macros}
+
+\begin{document}
+
+\lectureno{1}
+\subtitle{Introduction}
+\date{October 25th, 2011}
+\maketitles
+
+\input{blocksworld}
+
+\section[About\dots]{About the course}
+
+\subsection{Coordinates}
+
+\begin{frame}{People}
+  \begin{block}{Lecturers}    
+    Prof.~Dr.~Bernhard Nebel
+    \begin{itemize}
+    \item \hilite{email:} \texttt{nebel@informatik.uni-freiburg.de}
+    \item \hilite{office:} room 052-00-029
+    \item \hilite{consultation:} by appointment (email)
+    \end{itemize}
+
+    \medskip
+
+    Robert Mattm\"uller
+    \begin{itemize}
+    \item \hilite{email:} \texttt{mattmuel@informatik.uni-freiburg.de}
+    \item \hilite{office:} room 052-00-045
+    \item \hilite{consultation:} by appointment (email)
+      or just drop by in the office
+    \end{itemize}
+  \end{block}
+\end{frame}
+
+\begin{frame}{People}
+  \begin{block}{Assistant}
+    Thomas Keller
+    \begin{itemize}
+    \item \hilite{email:} \texttt{tkeller@informatik.uni-freiburg.de}
+    \item \hilite{office:} room 052-00-030
+    \item \hilite{consultation:} by appointment (email)
+      or just drop by in the office
+    \end{itemize}
+  \end{block}
+
+  \medskip
+
+  \begin{block}{Tutor}
+    Yusra Alkhazraji
+    % Yusra Wahby
+    \begin{itemize}
+    % \item \hilite{email:} \texttt{yousra\_wahby@yahoo.com}
+    % \item \hilite{email:} \texttt{alkhazry@informatik.uni-freiburg.de}
+    \item \hilite{email:} \texttt{yusra.alkhazraji@uranus.uni-freiburg.de}
+    \end{itemize}
+  \end{block}
+\end{frame}
+
+\begin{frame}{Time \& place}
+  \begin{block}{Lectures}
+    \begin{itemize}
+    \item \hilite{time:} Tuesday 16:15-18:00, Friday 14:15-15:00
+    \item \hilite{place:} SR 101-01-018
+    \end{itemize}
+  \end{block}
+
+  \begin{block}{Exercises}
+    \begin{itemize}
+    \item \hilite{time:} Friday 15:15-16:00
+    \item \hilite{place:} SR 101-01-018
+    \end{itemize}
+  \end{block}
+\end{frame}
+
+\begin{frame}{Web site}
+  \begin{block}{Course web site}
+    {\footnotesize\url{http://gki.informatik.uni-freiburg.de/teaching/ws1112/aip/}}
+    \begin{itemize}
+    \item \hilite{main page:} course description
+    \item \hilite{lecture page:} slides
+    \item \hilite{exercise page:} assignments, model solutions,
+      software
+    \item \hilite{bibliography page:} literature references and
+      papers
+    \end{itemize}
+  \end{block}
+\end{frame}
+
+\begin{frame}{Teaching materials}
+  \begin{itemize}
+  \item no textbook, no script
+  \item slides handed out during lectures and available on the web
+  \item additional resources: bibliography page on web +
+    \alert{ask us!}
+  \end{itemize}
+
+  \bigskip
+
+  \hilite{Acknowledgments:}
+  \begin{itemize}
+  \item slides based on earlier courses by Jussi Rintanen, \\
+    Bernhard Nebel and Malte Helmert
+  \item many figures by Gabi R\"oger
+  \end{itemize}
+\end{frame}
+
+\subsection{Rules}
+
+\begin{frame}{Target audience}
+  \hilite{Students of Computer Science:}
+  \begin{itemize}
+  \item Master of Science, any year
+  \item Bachelor of Science, $\sim$3rd year
+  \end{itemize}
+
+  \bigskip
+
+  \hilite{Students of Applied Computer Science:}
+  \begin{itemize}
+  \item Master of Science, $\sim$2nd year
+  \end{itemize}
+
+  \bigskip
+
+  \hilite{Other students:}
+  \begin{itemize}
+  \item advanced study period ($\sim$4th year)
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Prerequisites}
+  Course prerequisites:
+  \begin{itemize}
+  \item \hilite{propositional logic:} syntax and semantics
+  \item \hilite{foundations of AI:} search, heuristic search
+  \item \hilite{computational complexity theory:} decision problems,
+    reductions, NP-completeness
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Credit points \& exam}
+  \begin{itemize}
+  \item 6 ECTS points
+  \item special lecture in concentration subject \\
+    \hilite{Artificial Intelligence and Robotics}
+  \item \hilite{oral exam} of about 30 minutes B.Sc.\ students
+  \item \hilite{written or oral exam} for M.Sc.\ students\\
+    (depending on their number)
+    %% NOTE: According to an email from Friederike Schneider received
+    %% March 15th, 2010, the duration for oral exams should be at most
+    %% 5 mins/ECTS point with the MSc regulations and the "old" BSc
+    %% regulations, and at most 10 mins/ECTS point with the "new" BSc
+    %% regulations.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Exercises}
+  \hilite{Exercises} (written assignments):
+  \begin{itemize}
+  \item handed out on Tuesdays (exception: sheet 1 handed out this
+    Friday instead of Tuesday next week because of All Saints' Day)
+  \item due Tuesday following week, before the lecture
+  \item discussed Friday that week
+  \item may be solved in groups of two students ($2 \neq 3$)
+  \item successful participation prerequisite for exam
+    admission
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Projects}
+  \hilite{Projects} (programming assignments):
+  \begin{itemize}
+  \item handed out every now and then\\
+    (probably three times over the course of the semester)
+  \item more time to work on than for exercises
+  \item may be solved in groups of two students ($2 = 2$)
+  \item language: Python
+  \item codebase: \url{https://bitbucket.org/malte/pyperplan}
+  \item solutions that obviously do not work: 0 marks
+    \begin{itemize}
+    \item may fix bugs uncovered by our testing \\
+      \alert{if still within submission deadline}
+    \end{itemize}
+  \item successful participation prerequisite for exam
+    admission
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Admission to exam}
+  \begin{itemize}
+  \item \hilite{points can be earned for ``reasonable'' solutions} to
+    exercises and projects (one project counts like two exercise
+    sheets).
+  \item at least \hilite{50\% of points prerequisite for admission to
+      final exam}.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Plagiarism}
+  \hilite{What is plagiarism?}
+  \begin{itemize}
+  \item passing off solutions as your own that are not based on your
+    ideas (work of other students, Internet, books, \dots)
+  \item \url{http://en.wikipedia.org/wiki/Plagiarism} \\
+    is a good intro
+  \end{itemize}
+
+  \medskip
+
+  \hilite{Consequence:} no admission to the final exam.
+  \begin{itemize}
+  \item We may (!) be generous on first offense.
+  \item Don't tell us ``We did the work together.''
+  \item Don't tell us ``I did not know this was not allowed.''
+  \end{itemize}
+\end{frame}
+
+\section{Introduction}
+\subsection{What is planning?}
+
+\begin{frame}{What is planning?}
+  \begin{block}{Planning}
+    \alert{``Planning is the art and practice of thinking before
+      acting.''}
+    
+    \hspace*{\fill}--- Patrik Haslum
+  \end{block}
+
+  \begin{itemize}
+  \item intelligent decision making: What actions to take?
+  \item general-purpose problem representation
+  \item algorithms for solving any problem expressible in the
+    representation
+  \item application areas:
+    \begin{itemize}
+    \item high-level planning for intelligent robots
+    \item autonomous systems: NASA Deep Space One, \dots
+    \item problem solving (single-agent games like Rubik's cube)
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Why is planning difficult?}
+  \begin{itemize}
+  \item solutions to classical planning problems are \alert{paths from
+    an initial state to a goal state} in the \alert{transition graph}
+    \begin{itemize}
+    \item efficiently solvable by Dijkstra's algorithm in
+      $O(|V|\log |V| + |E|)$ time
+    \item Why don't we solve all planning problems this way?
+    \end{itemize}
+  \item state spaces may be \alert{huge}: $10^{10}, 10^{100}, 10^{1000},
+    \dots$ states
+    \begin{itemize}
+    \item constructing the transition graph is infeasible!
+    \item planning algorithms try to \alert{avoid constructing whole
+      graph}
+    \end{itemize}
+  \item planning algorithms are often much more efficient than obvious
+    solution methods constructing the transition graph and using
+    \eg\ Dijkstra's algorithm
+  \end{itemize}
+\end{frame}
+
+\subsection{Problem classes}
+
+\begin{frame}{Different classes of problems}
+  \begin{itemize}
+  \item \hilite{dynamics:} \alert<all:2,5>{deterministic},
+    \alert<all:3,4,5>{nondeterministic} or
+    \alert<all:6,7>{probabilistic}
+  \item \hilite{observability:} \alert<all:2,3,6>{full},
+    \alert<all:4,7>{partial} or \alert<all:5>{none}
+  \item \hilite{horizon:} \alert<all:2,3,4,5,6,7>{finite} or
+    \alert<all:3,4,6,7>{infinite}
+  \item \dots
+  \end{itemize}
+
+  \begin{enumerate}
+  \item \alert<all:2>{classical planning}
+  \item \alert<all:3>{conditional planning with full observability}
+  \item \alert<all:4>{conditional planning with partial observability}
+  \item \alert<all:5>{conformant planning}
+  \item \alert<all:6>{Markov decision processes (MDP)}
+  \item \alert<all:7>{partially observable MDPs (POMDP)}
+  \end{enumerate}
+\end{frame}
+
+\subsection{Dynamics}
+
+\begin{frame}{Properties of the world: dynamics}
+
+  \begin{block}{Deterministic dynamics}
+    Action + current state \alert{uniquely} determine successor
+    state.
+  \end{block}
+
+  \begin{block}{Nondeterministic dynamics}
+    For each action and current state there may be \alert{several
+      possible} successor states.
+  \end{block}
+
+  \begin{block}{Probabilistic dynamics}
+    For each action and current state there is a \alert{probability
+      distribution} over possible successor states.
+  \end{block}
+  
+  \medskip
+
+  \hilite{Analogy:} deterministic versus nondeterministic automata
+\end{frame}
+
+\begin{frame}
+  \frametitle<all:1>{Deterministic dynamics example}
+  \frametitle<all:2>{Nondeterministic dynamics example}
+  \frametitle<all:3>{Probabilistic dynamics example}
+  Moving objects with
+  \only<all:1>{a}\only<all:2,3>{an \alert{unreliable}}
+  robotic hand: \\
+  move the green block onto the blue block.
+
+  \begin{center}
+    \begin{pgfpicture}{0mm}{0mm}{60mm}{55mm}
+      \pgfsetxvec{\pgfpoint{0.7cm}{0cm}}
+      \pgfsetyvec{\pgfpoint{0cm}{0.7cm}}
+      \pgfsetzvec{\pgfpoint{0.18cm}{0.18cm}}
+
+      \drawblock{red}{0}{3}{0}{1}
+      \drawblock{blue}{1}{3}{0}{1}
+      \drawblock{green}{0}{4}{0}{1}
+
+      \drawblock{red}{6}{0}{0}{1}
+      \drawblock{blue}{7}{0}{0}{1}
+      \drawblock{green}{7}{1}{0}{1}
+      
+      \only<all:2,3>{
+        \drawblock{red}{6}{6}{0}{1}
+        \drawblock{blue}{7}{6}{0}{1}
+        \drawblock{green}{6.5}{5.5}{0}{1}
+      }
+
+      \pgfsetendarrow{\pgfarrowtriangle{8pt}}
+      
+      \pgfline{\pgfxy(2.5,3.6)}{\pgfxy(5.5,1)}
+      \pgfputat{\pgfxy(4,2.7)}{\pgfbox[left,center]{\only<all:3>{$p=0.9$}}}
+      \only<all:2,3>{
+        \pgfline{\pgfxy(2.5,3.6)}{\pgfxy(5.5,6.0)}
+        \pgfputat{\pgfxy(4,4.5)}{\pgfbox[left,center]{\only<all:3>{$p=0.1$}}}
+      }
+    \end{pgfpicture}
+  \end{center}
+\end{frame}
+
+\subsection{Observability}
+
+\begin{frame}{Properties of the world: observability}
+  \begin{block}{Full observability}
+    Observations/sensing determine current world state
+    \alert{uniquely}.
+  \end{block}
+
+  \begin{block}{Partial observability}
+    Observations determine current world state \alert{only partially}:
+    \\
+    we only know that current state is one of several possible
+    ones.
+  \end{block}
+
+  \begin{block}{No observability}
+    There are \alert{no observations} to narrow down possible current
+    states. However, can use knowledge of \alert{action dynamics} to
+    deduce which states we might be in.
+  \end{block}
+
+  \hilite{Consequence}: If observability is not full, must
+  represent the \alert{knowledge} an agent has.
+\end{frame}
+
+
+
+\begin{frame}{What difference does observability make?}
+  \begin{center}
+    \begin{pgfpicture}{1.5cm}{-2cm}{8.5cm}{5cm}
+
+      \pgfputat{\pgfxy(1,4.5)}{\pgfbox[left,center]{Camera A}}
+      \pgfputat{\pgfxy(7,4.5)}{\pgfbox[left,center]{Camera B}}
+      \pgfputat{\pgfxy(4.5,0.7)}{\pgfbox[left,center]{Goal}}
+      
+      \pgfsetxvec{\pgfpoint{0.8cm}{0cm}}
+      \pgfsetyvec{\pgfpoint{0cm}{0.8cm}}
+      \pgfsetzvec{\pgfpoint{0.3cm}{0.3cm}}
+      
+      \drawblock{red}{1}{2}{2}{1}
+      \drawblock{blue}{2}{2}{2}{1}
+      \drawblock{green}{2}{3}{2}{1}
+      \drawblock{black}{2}{2}{0}{1}
+      
+      \pgfsetxvec{\pgfpoint{8mm}{0cm}}
+      \pgfsetyvec{\pgfpoint{0cm}{0cm}}
+      \pgfsetzvec{\pgfpoint{0cm}{8mm}}
+
+      \drawblock{red}{9}{2}{4}{1}
+      \drawblock{blue}{10}{2}{4}{1}
+      \drawblock{green}{10}{3}{4}{1}
+      \drawblock{black}{10}{2}{2}{1}
+      
+      \pgfsetxvec{\pgfpoint{0.8cm}{0cm}}
+      \pgfsetyvec{\pgfpoint{0cm}{0.8cm}}
+      \pgfsetzvec{\pgfpoint{0.3cm}{0.3cm}}
+      
+      \drawblock{red}{9}{2}{-11}{1}
+      \drawblock{blue}{10}{2}{-11}{1}
+      \drawblock{black}{9}{3}{-11}{1}
+      \drawblock{green}{10}{3}{-11}{1}
+    \end{pgfpicture}
+  \end{center}
+\end{frame}
+
+\subsection{Objectives}
+
+\begin{frame}{Different objectives}
+  \begin{enumerate}
+  \item Reach a goal state.
+    \begin{itemize}
+    \item \hilite{Example}: Earn 500 Euro.
+    \end{itemize}
+  \item Stay in goal states indefinitely (infinite horizon).
+    \begin{itemize}
+    \item \hilite{Example:} Never allow bank account balance to be
+      negative.
+    \end{itemize}
+  \item Maximize the probability of reaching a goal state.
+    \begin{itemize}
+    \item \hilite{Example:} To be able to finance buying a house by 2022
+      study hard and save money.
+    \end{itemize}
+  \item Collect the maximal \hilite{expected} rewards/minimal expected costs
+    (infinite horizon).
+    \begin{itemize}
+    \item \hilite{Example:} Maximize your future income.
+    \end{itemize}
+  \item ...
+  \end{enumerate}
+\end{frame}
+
+\subsection{Planning vs.\ game theory}
+
+\begin{frame}{Relation to games and game theory}
+  \begin{itemize}
+  \item Game theory addresses decision making in multi-agent setting:
+    ``Assuming that the other agents are rational, what do I have to
+    do to achieve my goals?''
+  \item Game theory is related to \alert{multi-agent planning}.
+  \item In this course we concentrate on \alert{single-agent
+    planning}.
+  \item Some of the techniques are also applicable to special cases of
+    multi-agent planning.
+    \begin{itemize}
+    \item \hilite{Example:} Finding a \alert{winning strategy} of a
+      game like chess. \\ In this case it is not necessary to
+      distinguish between \alert{an intelligent opponent} and \alert{a
+        randomly behaving opponent}.
+    \end{itemize}
+  \item Game theory in general is about \alert{optimal strategies}
+    which do not necessarily guarantee winning. For example card games
+    like poker do not have a winning strategy.
+  \end{itemize}
+\end{frame}
+
+\subsection{Summary}
+
+\begin{frame}{What do you learn in this course?}
+  \begin{itemize}
+    %% NOTE: Changed that since we mostly got rid of the
+    %% nondeterministic stuff.
+    %% \item ``big picture'' of different kinds of planning problems
+    %% \begin{itemize}
+    %% \item \alert{classification} according to dynamics, observability,
+    %%   objectives, \dots
+    %% \item \alert{computational complexity} for different problem classes
+    %% \end{itemize}
+  \item emphasis on \alert{classical} planning (``simplest'' case)
+  \item \alert{theoretical background} for planning
+    \begin{itemize}
+    \item formal \alert{problem definition}
+    \item basic \alert{theoretical notions} \\
+      (\eg, normal forms, progression, regression)
+    \item \alert{computational complexity} of planning
+    \end{itemize}
+  \item \alert{algorithms} for planning:
+    \begin{itemize}
+    \item based on \alert{heuristic search}
+    \item based on satisfiability testing (\alert{SAT})\\
+      (time permitting)
+    % \item based on exhaustive search with logic-based data structures
+    %   (\alert{BDDs})
+    \end{itemize}
+    Many of these techniques are applicable to problems outside AI as
+    well.
+  \item \alert{hands-on experience} with a classical planner
+    %(optional)
+  \end{itemize}
+\end{frame}
+\end{document}

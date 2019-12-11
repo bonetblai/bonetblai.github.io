@@ -1,0 +1,755 @@
+\documentclass{gkibeamer}
+
+\input{macros}
+\input{blocksworld}
+
+\begin{document}
+
+\lectureno{2}
+\subtitle{Transition systems and planning tasks}
+\date{October 25th, 2011}
+\maketitles
+
+\section{Transition systems}
+\subsection{Definition}
+
+\begin{frame}{Transition systems}
+  \begin{definition}[transition system]
+    A \alert{transition system} is a 5-tuple $\mathcal T = \langle S,
+    L, T, s_0, S_\star\rangle$ where
+    \begin{itemize}
+    \item $S$ is a finite set of \alert{states},
+    \item $L$ is a finite set of (transition) \alert{labels},
+    \item $T \subseteq S \times L \times S$ is the \alert{transition
+      relation},
+    \item $s_0 \in S$ is the \alert{initial state}, and
+    \item $S_\star \subseteq S$ is the set of \alert{goal states}.
+    \end{itemize}
+    We say that $\mathcal T$ \alert{has the transition} $\langle s, \ell,
+    s'\rangle$ if $\langle s, \ell, s'\rangle \in T$.
+
+    We also write this \alert{$s \xrightarrow{\ell} s'$}, or \alert{$s
+      \rightarrow s'$} when not interested in $\ell$.
+  \end{definition}
+
+  \hilite{Note:}
+  Transition systems are also called \alert{state spaces}.
+\end{frame}
+
+\begin{frame}{Transition systems: example}
+  Transition systems are often depicted as \alert{directed arc-labeled
+    graphs} with marks to indicate the initial state and goal states.
+  \begin{center}
+    \input{transitionsystem}
+  \end{center}
+\end{frame}
+
+\begin{frame}{Transition system terminology}
+  We use common graph theory terms for transition systems:
+  \begin{itemize}
+  \item $s'$ \alert{successor} of $s$ if $s \rightarrow s'$
+  \item $s$ \alert{predecessor} of $s'$ if $s \rightarrow s'$
+  \item $s'$ \alert{reachable} from $s$ if there exists a sequence of
+    transitions \\
+    $s^{0} \xrightarrow{\ell_1} s^{1}$, \dots,
+    $s^{n-1} \xrightarrow{\ell_n} s^{n}$
+    s.t.\ $s^{0} = s$ and $s^{n} = s'$%
+    \begin{itemize}
+    \item \hilite{Note:} $n = 0$ possible; then $s = s'$
+    \item $s^{0} \xrightarrow{\ell_1} s^{1}$, \dots, $s^{n-1}
+      \xrightarrow{\ell_n} s^{n}$ is called \alert{path} from $s$ to
+      $s'$
+    %\item $\ell_1, \dots, \ell_n$ is called \alert{path} from
+    %  $s$ to $s'$
+    \item $s^{0}, \dots, s^{n}$ is also called \alert{path} from
+      $s$ to $s'$
+    \item \alert{length} of that path is $n$
+    \end{itemize}
+  \item additional terms: \alert{strongly connected}, \alert{weakly
+    connected}, \alert{strong/weak connected components}, \dots
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Transition system terminology (ctd.)}
+  Some additional terminology:
+  \begin{itemize}
+  \item $s'$ \alert{reachable} (without reference state) means \\
+    reachable from initial state $s_0$
+  \item \alert{solution} or \alert{goal path} from $s$:
+    path from $s$ to some $s' \in S_\star$
+    \begin{itemize}
+    \item if $s$ is omitted, $s = s_0$ is implied
+    \end{itemize}
+  \item transition system \alert{solvable} if a goal path from $s_0$
+    exists
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Deterministic transition systems}
+  \begin{definition}[deterministic transition system]
+    A transition system with transitions $T$ is called
+    \alert{deterministic} \\
+    if for all states $s$ and labels $\ell$, there is \alert{at most one}
+    state $s'$ \\
+    with $s \xrightarrow{\ell} s'$.
+  \end{definition}
+
+  \hilite{Example:} previously shown transition system
+\end{frame}
+
+\subsection{Blocks world}
+
+\begin{frame}{Running example: blocks world}
+  \begin{itemize}
+  \item Throughout the course, we will often use the \alert{blocks
+    world} domain as an example.
+  \item In the blocks world, a number of differently coloured blocks
+    are arranged on our table.
+  \item Our job is to rearrange them according to a given goal.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Blocks world rules}
+  \begin{block}{Location on the table does not matter.}
+    \begin{center}
+      \begin{pgfpicture}{-5mm}{0mm}{55mm}{12mm}
+        \pgfputat{\pgfxy(2,0.5)}{\pgfbox[center,center]{\Large $\equiv$}}
+
+        \pgfsetxvec{\pgfpoint{0.5cm}{0cm}}
+        \pgfsetyvec{\pgfpoint{0cm}{0.5cm}}
+        \pgfsetzvec{\pgfpoint{0.15cm}{0.15cm}}
+        
+        \drawblock{red}{0}{0}{0}{1}
+        \drawblock{green}{0}{1}{0}{1}
+        \drawblock{blue}{1}{0}{0}{1}
+        
+        \drawblock{red}{6}{0}{0}{1}
+        \drawblock{green}{6}{1}{0}{1}
+        \drawblock{blue}{8}{0}{0}{1}
+      \end{pgfpicture}
+    \end{center}
+  \end{block}
+
+  \begin{block}{Location on a block does not matter.}
+    \begin{center}
+      \begin{pgfpicture}{-5mm}{0mm}{55mm}{17mm}
+        \pgfputat{\pgfxy(2,0.5)}{\pgfbox[center,center]{\Large $\equiv$}}
+        
+        \pgfsetxvec{\pgfpoint{0.5cm}{0cm}}
+        \pgfsetyvec{\pgfpoint{0cm}{0.5cm}}
+        \pgfsetzvec{\pgfpoint{0.15cm}{0.15cm}}
+        
+        \drawblock{red}{1}{0}{0}{1}
+        \drawblock{green}{1}{1}{0}{1}
+        \drawblock{blue}{1}{2}{0}{1}
+
+        \drawblock{red}{6}{0}{0}{1}
+        \drawblock{green}{6.4}{1}{0}{1}
+        \drawblock{blue}{6}{2}{0}{1}
+      \end{pgfpicture}
+    \end{center}
+  \end{block}
+\end{frame}
+
+\begin{frame}{Blocks world rules (ctd.)}
+  \begin{block}{At most one block may be below a block.}
+    \begin{center}
+      \begin{pgfpicture}{-2mm}{-3mm}{17mm}{16mm}
+        \pgfsetxvec{\pgfpoint{0.5cm}{0cm}}
+        \pgfsetyvec{\pgfpoint{0cm}{0.5cm}}
+        \pgfsetzvec{\pgfpoint{0.15cm}{0.15cm}}
+        
+        % only one block below another block
+        \drawblock{green}{0.5}{0}{0}{1}
+        \drawblock{blue}{1.5}{0}{0}{1}
+        \drawblock{red}{1}{1}{0}{1}
+        
+        \pgfsetxvec{\pgfpoint{1mm}{0cm}}
+        \pgfsetyvec{\pgfpoint{0cm}{1mm}}
+        
+        \pgfsetlinewidth{2pt}
+        \color{orange}
+        \pgfline{\pgfxy(-1,-2)}{\pgfxy(16,15)}
+        \pgfline{\pgfxy(-1,15)}{\pgfxy(16,-2)}
+      \end{pgfpicture}
+    \end{center}
+  \end{block}
+
+  \begin{block}{At most one block may be on top of a block.}
+    \begin{center}
+      \begin{pgfpicture}{-2mm}{-3mm}{17mm}{16mm}
+        \pgfsetxvec{\pgfpoint{0.5cm}{0cm}}
+        \pgfsetyvec{\pgfpoint{0cm}{0.5cm}}
+        \pgfsetzvec{\pgfpoint{0.15cm}{0.15cm}}
+        
+        % only one block on top of another block
+        \drawblock{red}{1}{0}{0}{1}
+        \drawblock{green}{0.5}{1}{0}{1}
+        \drawblock{blue}{1.5}{1}{0}{1}
+        
+        \pgfsetxvec{\pgfpoint{1mm}{0cm}}
+        \pgfsetyvec{\pgfpoint{0cm}{1mm}}
+        
+        \pgfsetlinewidth{2pt}
+        \color{orange}
+        \pgfline{\pgfxy(-1,-2)}{\pgfxy(16,15)}
+        \pgfline{\pgfxy(-1,15)}{\pgfxy(16,-2)}
+      \end{pgfpicture}
+    \end{center}
+  \end{block}
+\end{frame}
+
+\begin{frame}{Blocks world transition system for three blocks}
+  (Transition labels omitted for clarity.)
+  \begin{center}
+    \begin{pgfpicture}{-39mm}{-34.4mm}{39mm}{34.4mm}
+      \pgfnodebox{RsGsB}[virtual]{\pgfpolar{0}{0cm}}{\RsGsB}{2pt}{2pt}
+      
+      \pgfnodebox{RGsB}[virtual]{\pgfpolar{0}{17mm}}{\RGsB}{2pt}{2pt}
+      \pgfnodebox{RBsG}[virtual]{\pgfpolar{60}{17mm}}{\RBsG}{2pt}{2pt}
+      \pgfnodebox{BRsG}[virtual]{\pgfpolar{120}{17mm}}{\BRsG}{2pt}{2pt}
+      \pgfnodebox{RsBG}[virtual]{\pgfpolar{180}{17mm}}{\RsBG}{2pt}{2pt}
+      \pgfnodebox{RsGB}[virtual]{\pgfpolar{240}{17mm}}{\RsGB}{2pt}{2pt}
+      \pgfnodebox{GRsB}[virtual]{\pgfpolar{300}{17mm}}{\GRsB}{2pt}{2pt}
+      
+      \pgfnodebox{BRG}[virtual]{\pgfpolar{0}{34mm}}{\BRG}{2pt}{2pt}
+      \pgfnodebox{GRB}[virtual]{\pgfpolar{50}{34mm}}{\GRB}{2pt}{2pt}
+      \pgfnodebox{GBR}[virtual]{\pgfpolar{130}{34mm}}{\GBR}{2pt}{2pt}
+      \pgfnodebox{RBG}[virtual]{\pgfpolar{180}{34mm}}{\RBG}{2pt}{2pt}
+      \pgfnodebox{RGB}[virtual]{\pgfpolar{230}{34mm}}{\RGB}{2pt}{2pt}
+      \pgfnodebox{BGR}[virtual]{\pgfpolar{310}{34mm}}{\BGR}{2pt}{2pt}
+
+      \pgfsetendarrow{\pgfarrowtriangle{5pt}}
+      \pgfsetstartarrow{\pgfarrowtriangle{5pt}}
+      
+      \pgfnodeconnline{RsGsB}{RGsB}
+      \pgfnodeconnline{RsGsB}{RBsG}
+      \pgfnodeconnline{RsGsB}{BRsG}
+      \pgfnodeconnline{RsGsB}{RsBG}
+      \pgfnodeconnline{RsGsB}{RsGB}
+      \pgfnodeconnline{RsGsB}{GRsB}
+
+      \pgfnodeconnline{RGsB}{BRG}
+      \pgfnodeconnline{RBsG}{GRB}
+      \pgfnodeconnline{BRsG}{GBR}
+      \pgfnodeconnline{RsBG}{RBG}
+      \pgfnodeconnline{RsGB}{RGB}
+      \pgfnodeconnline{GRsB}{BGR}
+
+      \pgfnodeconnline{RGsB}{RBsG}
+      \pgfnodeconnline{BRsG}{RsBG}
+      \pgfnodeconnline{RsGB}{GRsB}
+    \end{pgfpicture}
+  \end{center}
+\end{frame}
+
+\begin{frame}{Blocks world computational properties}
+  \begin{small}
+    \begin{center}
+      \begin{tabular}{rr}
+        blocks & states \\ \hline
+        1 & 1 \\
+        2 & 3 \\
+        3 & 13 \\
+        4 & 73 \\
+        5 & 501 \\
+        6 & 4051 \\
+        7 & 37633 \\
+        8 & 394353 \\
+        9 & 4596553
+      \end{tabular}\qquad
+      \begin{tabular}{rr}
+        blocks & states \\ \hline
+        10 & 58941091 \\
+        11 & 824073141 \\
+        12 & 12470162233 \\
+        13 & 202976401213 \\
+        14 & 3535017524403 \\
+        15 & 65573803186921 \\
+        16 & 1290434218669921 \\
+        17 & 26846616451246353 \\
+        18 & 588633468315403843
+      \end{tabular}
+    \end{center}
+  \end{small}
+
+  \begin{itemize}
+  \item \alert{Finding a solution} is \alert{polynomial time} in the
+    number of blocks (move everything onto the table and then
+    construct the goal configuration).
+  \item Finding a \alert{shortest solution} is \alert{NP-complete}
+    (for a compact description of the problem).
+  \end{itemize}
+\end{frame}
+
+\section{Planning tasks}
+\subsection{State variables}
+
+\begin{frame}{Compact representations}
+  \begin{itemize}
+  \item Classical (\ie, deterministic) planning is in essence the
+    problem of finding solutions in \alert{huge} transition systems.
+  \item The transition systems we are usually interested in are \\
+    too large to explicitly enumerate all states or transitions.
+  \item Hence, the input to a planning algorithm must be given \\ in a
+    more \alert{concise} form.
+  \item In the rest of chapter, we discuss how to represent planning
+    tasks in a suitable way.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{State variables}
+  How to represent huge state sets without enumerating them?
+  \begin{itemize}
+  \item represent different aspects of the world in terms of different
+    \alert{state variables}
+  \item[$\leadsto$] a state is a \alert{valuation of state variables}
+  \item $n$ state variables with $m$ possible values each \\ induce
+    $m^n$ different states
+  \item[$\leadsto$] \alert{exponentially more compact} than ``flat''
+    representations
+  \item \hilite{Example:} $n$ variables suffice for blocks world with
+    $n$ blocks
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Blocks world with finite-domain state variables}
+  Describe blocks world state with three state variables:
+
+  \begin{itemize}
+  \item \var{location-of-A}: $\{\val{B},\val{C},\val{table}\}$
+  \item \var{location-of-B}: $\{\val{A},\val{C},\val{table}\}$
+  \item\var{location-of-C}: $\{\val{A},\val{B},\val{table}\}$
+  \end{itemize}
+
+  \begin{example}
+    \begin{minipage}[c]{6cm}
+      \begin{align*}
+        s(\var{location-of-A}) & = \val{table} \\
+        s(\var{location-of-B}) & = \val{A} \\
+        s(\var{location-of-C}) & = \val{table}
+      \end{align*}
+    \end{minipage}
+    \begin{minipage}[c]{2.5cm}
+      \begin{pgfpicture}{0mm}{0mm}{20mm}{20mm}
+        \pgfsetxvec{\pgfpoint{0.8cm}{0cm}}
+        \pgfsetyvec{\pgfpoint{0cm}{0.8cm}}
+        \pgfsetzvec{\pgfpoint{0.3cm}{0.3cm}}
+        
+        \drawblock{red}{0}{0}{0}{1}
+        \drawblock{blue}{0}{1}{0}{1}
+        \drawblock{green}{1}{0}{0}{1}
+        
+        \pgfputat{\pgfxyz(0.2,0.2,0)}{\pgfbox[left,left]{\huge A}}
+        \pgfputat{\pgfxyz(0.2,1.2,0)}{\pgfbox[left,left]{\huge B}}
+        \pgfputat{\pgfxyz(1.2,0.2,0)}{\pgfbox[left,left]{\huge C}}
+      \end{pgfpicture}
+    \end{minipage}
+  \end{example}
+
+  Not all valuations correspond to intended blocks world states.
+
+  \hilite{Example:} $s$ with $s(\var{location-of-A}) = \val{B}$,
+  $s(\var{location-of-B}) = \val{A}$.
+\end{frame}
+
+\begin{frame}{Boolean state variables}
+  \hilite{Problem:}
+  \begin{itemize}
+  \item How to \alert{succinctly} represent \alert{transitions} and
+    \alert{goal states}?
+  \end{itemize}
+  
+  \bigskip
+
+  \hilite{Idea:} Use \alert{propositional logic}
+  \begin{itemize}
+  \item \hilite{state variables:} propositional variables ($0$ or $1$)
+  \item \hilite{goal states:} defined by a propositional formula
+  \item \hilite{transitions:} defined by \alert{actions} given by
+    \begin{itemize}
+    \item \alert{precondition}: when is the action applicable?
+    \item \alert{effect}: how does it change the valuation?
+    \end{itemize}
+  \end{itemize}
+
+  \bigskip
+
+  \hilite{Note:} general finite-domain state variables can be
+  compactly encoded as Boolean variables
+\end{frame}
+
+\begin{frame}{Blocks world with Boolean state variables}
+  \begin{example}
+    \begin{minipage}[c]{6cm}
+      \begin{align*}
+        s(\var{A-on-B}) & = 0 \\
+        s(\var{A-on-C}) & = 0 \\
+        s(\var{A-on-table}) & = 1 \\
+        s(\var{B-on-A}) & = 1 \\
+        s(\var{B-on-C}) & = 0 \\
+        s(\var{B-on-table}) & = 0 \\
+        s(\var{C-on-A}) & = 0 \\
+        s(\var{C-on-B}) & = 0 \\
+        s(\var{C-on-table}) & = 1
+      \end{align*}
+    \end{minipage}
+    \begin{minipage}[c]{2.5cm}
+    \begin{pgfpicture}{0mm}{0mm}{20mm}{20mm}
+      \pgfsetxvec{\pgfpoint{0.8cm}{0cm}}
+      \pgfsetyvec{\pgfpoint{0cm}{0.8cm}}
+      \pgfsetzvec{\pgfpoint{0.3cm}{0.3cm}}
+        
+      \drawblock{red}{0}{0}{0}{1}
+      \drawblock{blue}{0}{1}{0}{1}
+      \drawblock{green}{1}{0}{0}{1}
+      
+      \pgfputat{\pgfxyz(0.2,0.2,0)}{\pgfbox[left,left]{\huge A}}
+      \pgfputat{\pgfxyz(0.2,1.2,0)}{\pgfbox[left,left]{\huge B}}
+      \pgfputat{\pgfxyz(1.2,0.2,0)}{\pgfbox[left,left]{\huge C}}
+    \end{pgfpicture}
+    \end{minipage}
+  \end{example}
+\end{frame}
+
+\subsection[Logic]{Propositional logic}
+
+\begin{frame}{Syntax of propositional logic}
+  \begin{definition}[propositional formula]
+    Let $A$ be a set of \alert{atomic propositions} (\hilite{here:}
+    state variables).
+
+    \smallskip
+
+    The \alert{propositional formulae} over $A$ are constructed by
+    finite application of the following rules:
+    \begin{itemize}
+    \item \alert{$\top$} and \alert{$\bot$} are propositional formulae
+      (\alert{truth} and \alert{falsity}).
+    \item For all $a \in A$, \alert{$a$} is a propositional formula
+      (\alert{atom}).
+    \item If $\varphi$ is a propositional formula, then so is
+      \alert{$\neg\varphi$}
+      (\alert{negation})
+    \item If $\varphi$ and $\psi$ are propositional formulas, then so
+      are \\
+      \alert{$(\varphi \lor \psi)$} (\alert{disjunction}) and
+      \alert{$(\varphi \land \psi)$} (\alert{conjunction}).
+    \end{itemize}
+  \end{definition}
+  \hilite{Note:} We often omit the word ``propositional''.
+\end{frame}
+
+\begin{frame}{Propositional logic conventions}
+  \hilite{Abbreviations:}
+  \begin{itemize}
+  \item \alert{$(\varphi \rightarrow \psi)$} is short for
+    $(\neg \varphi \lor \psi)$ (\alert{implication})
+  \item \alert{$(\varphi \leftrightarrow \psi)$} is short for
+    $((\varphi \rightarrow \psi) \land (\psi \rightarrow \varphi))$
+    (\alert{equivalence})
+  \item parentheses omitted when not necessary
+  \item $(\neg)$ binds more tightly than binary connectives
+  \item $(\land)$ binds more tightly than $(\lor)$ than
+    $(\rightarrow)$ than $(\leftrightarrow)$
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Semantics of propositional logic}
+  \begin{definition}[propositional valuation]
+    A \alert{valuation} of propositions $A$ is a function
+    $v: A \rightarrow \{0, 1\}$.
+
+    \medskip
+    
+    Define the notation \alert{$v \models \varphi$} ($v$
+    \alert{satisfies} $\varphi$; $v$ is a \alert{model} of $\varphi$;
+    \\ $\varphi$ is \alert{true} under $v$) for valuations $v$ and
+    formulae $\varphi$ by
+    \begin{itemize}
+    \item $v \models \top$
+    \item $v \not\models \bot$
+    \item $v \models a$ iff $v(a) = 1$, for $a \in A$.
+    \item $v \models \neg \varphi$ iff $v \not\models \varphi$
+    \item $v \models \varphi \lor \psi$ iff $v \models \varphi$ or
+      $v \models \psi$ 
+    \item $v \models \varphi \land \psi$ iff $v \models \varphi$
+      and $v \models \psi$ 
+    \end{itemize}
+  \end{definition}
+\end{frame}
+
+\begin{frame}{Propositional logic terminology}
+  \begin{itemize}
+  \item A propositional formula $\varphi$ is \alert{satisfiable} \\
+    if there is at least one valuation $v$ so that $v \models \varphi$.
+  \item Otherwise it is \alert{unsatisfiable}.
+  \item A propositional formula $\varphi$ is \alert{valid} or a
+    \alert{tautology} \\
+    if $v \models \varphi$ for all valuations $v$.
+  \item A propositional formula $\psi$ is a \alert{logical
+    consequence} of a propositional formula $\varphi$, written
+    \alert{$\varphi \models \psi$}, if $v \models \psi$ for all
+    valuations $v$ with $v \models \varphi$.
+  \item Two propositional formulae $\varphi$ and $\psi$ are
+    \alert{logically equivalent}, written \alert{$\varphi \equiv \psi$},
+    if $\varphi \models \psi$ and $\psi \models \varphi$.
+  \end{itemize}
+  \hilite{Question:} How to phrase these in terms of \hilite{models}?
+\end{frame}
+
+\begin{frame}{Propositional logic terminology (ctd.)}
+  \begin{itemize}
+  \item A propositional formula that is a proposition $a$ or \\
+    a negated proposition $\neg a$ for some $a \in A$ is a \alert{literal}.
+  \item A formula that is a disjunction of literals is a
+    \alert{clause}.
+
+    This includes \alert{unit clauses} $l$ consisting of a single
+    literal, \\
+    and the \alert{empty clause} $\bot$ consisting of zero literals.
+  \end{itemize}
+
+  \alert{Normal forms:} NNF, CNF, DNF
+\end{frame}
+
+\subsection{Operators}
+
+\begin{frame}{Operators}
+  Transitions for state sets described by propositions $A$ can be
+  concisely represented as \alert{operators} or \alert{actions}
+  $\langle \chi, e\rangle$ where
+  \begin{itemize}
+  \item the \alert{precondition} $\chi$ is a propositional formula
+    over $A$ describing the set of states in which the transition can
+    be taken (states in which a transition starts), and
+  \item the \alert{effect} $e$ describes how the resulting successor
+    states are obtained from the state where the transitions is taken
+    (where the transition goes).
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Example: blocks world operators}
+  \begin{exampleblock}{Blocks world operators}
+    To model blocks world operators conveniently, we use auxiliary
+    state variables $\CLEARA$, $\CLEARB$, and $\CLEARC$ to denote that
+    there is nothing on top of a given block.
+
+    \medskip
+
+    Then blocks world operators can be modeled as:
+    \small
+    \begin{itemize}
+    \item $\langle \CLEARA \land \AONTABLE \land \CLEARB,~ \AONB \land
+      \neg \AONTABLE \land \neg \CLEARB \rangle$
+    \item $\langle \CLEARA \land \AONTABLE \land\CLEARC,~ \AONC \land
+      \neg \AONTABLE \land \neg \CLEARC \rangle$
+    \item $\langle \CLEARA \land \AONB,~ \AONTABLE \land \neg \AONB
+      \land \CLEARB \rangle$
+    \item $\langle \CLEARA \land \AONC,~ \AONTABLE \land \neg \AONC
+      \land \CLEARC \rangle$
+    \item $\langle \CLEARA \land \AONB \land \CLEARC,~ \AONC \land
+      \neg \AONB \land \CLEARB \land \neg \CLEARC\rangle$
+    \item $\langle \CLEARA \land \AONC \land \CLEARB,~
+      \AONB \land \neg \AONC \land \CLEARC \land \neg \CLEARB\rangle$
+    \item \dots
+    \end{itemize}
+  \end{exampleblock}
+\end{frame}
+
+\begin{frame}{Effects (for deterministic operators)}
+  \begin{definition}[effects]
+    (Deterministic) \alert{effects} are recursively defined as follows:
+    \begin{itemize}
+    \item If $a \in A$ is a state variable, then \alert{$a$} and
+      \alert{$\neg a$} are effects (\alert{atomic effect}).
+    \item If $e_1, \dots, e_n$ are effects, then \alert{$e_1 \land
+      \dots \land e_n$} is an effect (\alert{conjunctive effect}).
+
+      The special case with $n=0$ is the empty effect $\top$.
+    \item If $\chi$ is a propositional formula and $e$ is an effect, then
+      \alert{$\chi \CEF e$} is an effect (\alert{conditional effect}).
+    \end{itemize}
+  \end{definition}
+  Atomic effects $a$ and $\neg a$ are best understood
+  as assignments $a := 1$ and $a := 0$, respectively.
+\end{frame}
+
+\begin{frame}{Effect example}
+  $\chi \CEF e$ means that change $e$ takes place if $\chi$ is true in the
+  current state.
+
+  \begin{example}
+    Increment 4-bit number $b_3b_2b_1b_0$ represented as four state
+    variables $b_0$, \dots, $b_3$:
+    \[
+      \begin{array}{r@{\,}c@{\,}l}
+        (\neg b_0 & \CEF
+        & b_0) \land {} \\
+        ((\neg b_1 \land b_0)
+        & \CEF & (b_1 \land \neg b_0)) \land {} \\
+        ((\neg b_2 \land b_1 \land b_0)
+        & \CEF & (b_2 \land \neg b_1 \land \neg b_0)) \land {} \\
+        ((\neg b_3 \land b_2 \land b_1 \land b_0)
+        & \CEF & (b_3 \land \neg b_2 \land \neg b_1 \land \neg b_0))
+      \end{array}
+      \]
+  \end{example}
+\end{frame}
+
+\begin{frame}{Operator semantics}
+  \begin{definition}[changes caused by an operator]
+    For each effect $e$ and state $s$, we define the \alert{change
+      set} of $e$ in $s$, written \alert{$\changes{e}{s}$}, as the
+    following set of literals:
+    \begin{itemize}
+    \item $\changes{a}{s} = \{a\}$ and $\changes{\neg a}{s} = \{\neg
+        a\}$ for atomic effects $a$, $\neg a$
+    \item $\changes{e_1 \land \dots \land e_n}{s} =
+      \changes{e_1}{s} \cup \dots \cup \changes{e_n}{s}$
+    \item $\changes{\chi \CEF e}{s} = \changes{e}{s}$ if $s \models \chi$ and
+      $\changes{\chi\CEF e}{s} = \emptyset$ otherwise
+    \end{itemize}
+  \end{definition}
+  %% TODO: Jan findet den Begriff "change set" nicht so gut, weil
+  %% einige davon ja keine Änderungen sind, sondern schon gelten
+  %% können. Also vielleicht ändern.
+
+  \begin{definition}[applicable operators]
+    Operator $\langle \chi,e\rangle$ is \alert{applicable in a state $s$}
+    iff $s \models \chi$ and $\changes{e}{s}$ is consistent
+    (\ie, does not contain two complementary literals).
+  \end{definition}
+\end{frame}
+
+\begin{frame}{Operator semantics (ctd.)}
+  \begin{definition}[successor state]
+    The \alert{successor state} $\applyop{o}{s}$ of $s$ with respect
+    to operator $o = \langle \chi,e\rangle$ is the state $s'$ with $s'
+    \models \changes{e}{s}$ and $s'(v) = s(v)$ for all state variables
+    $v$ not mentioned in $\changes{e}{s}$.
+    
+    This is defined only if $o$ is applicable in $s$.
+  \end{definition}
+
+  \begin{example}
+    Consider the operator
+    $\langle a, \neg a \land (\neg c \CEF \neg b)\rangle$ 
+    and the state $s = \{a \mapsto 1, b \mapsto 1, c \mapsto 1, d
+      \mapsto 1\}$.
+
+    The operator is applicable because $s \models a$ and $\changes{\neg
+      a \land (\neg c \CEF \neg b)}{s} = \{\neg a\}$ is consistent.
+      
+    Applying the operator results in the successor state
+    $\applyop{\langle a, \neg a \land (\neg c \CEF \neg b)
+      \rangle}{s} = \{a \mapsto 0, b \mapsto 1, c \mapsto 1, d \mapsto
+      1\}$.
+  \end{example}
+\end{frame}
+
+\subsection[Tasks]{Deterministic planning tasks}
+
+\begin{frame}{Deterministic planning tasks}
+  \begin{definition}[deterministic planning task]
+    A \alert{deterministic planning task} is a 4-tuple $\Pi = \langle
+    A,I,O, \gamma\rangle$ where
+    \begin{itemize}
+    \item $A$ is a finite set of \alert{state variables}
+      (propositions),
+    \item $I$ is a valuation over $A$ called the \alert{initial state},
+    \item $O$ is a finite set of \alert{operators} over $A$, and
+    \item $\gamma$ is a formula over $A$ called the \alert{goal}.
+    \end{itemize}
+  \end{definition}
+
+  \hilite{Note:}
+  \begin{itemize}
+  \item In the major part of this course, in which we talk about
+    deterministic planning tasks, we usually omit the word
+    ``deterministic''.
+  \item When we will talk about nondeterministic planning tasks later,
+    we will explicitly qualify them as ``nondeterministic''.
+%  \item In this course, we usually omit the word ``deterministic''
+%    since all our tasks are deterministic.
+%  \item In the general literature ``planning task'' often refers to
+%    broader problem classes, \eg\ including nondeterminism.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Mapping planning tasks to transition systems}
+  \begin{definition}[induced transition system of a planning task]
+    Every planning task $\Pi = \langle A,I,O,\gamma\rangle$ induces a
+    corresponding deterministic transition system $\alert{\mathcal T(\Pi)} =
+    \langle S, L, T, s_0, S_\star\rangle$:
+    \begin{itemize}
+    \item $S$ is the set of all valuations of $A$,
+    \item $L$ is the set of operators $O$,
+    \item $T = \{ \langle s, o, s'\rangle \mid
+      s \in S,~ o \text{~applicable in~}s,~ s' = \applyop{o}{s}\}$,
+    \item $s_0 = I$, and
+    \item $S_\star = \{ s \in S \mid s \models \gamma\}$
+    \end{itemize}
+  \end{definition}
+\end{frame}
+
+\begin{frame}{Planning tasks: terminology}
+  \begin{itemize}
+  \item Terminology for transitions systems is also applied to the
+    planning tasks that induce them.
+  \item For example, when we speak of the \alert{states of $\Pi$}, we
+    mean the states of $\mathcal T(\Pi)$.
+  \item A sequence of operators that forms a goal path of $\mathcal
+    T(\Pi)$ is called a \alert{plan} of $\Pi$.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Planning}
+  By \alert{planning}, we mean the following two algorithmic problems:
+
+  \medskip
+
+  \begin{definition}[satisficing planning]
+    \begin{tabular}{@{}ll@{}}
+      \hilite{Given:} & a planning task $\Pi$ \\
+      \hilite{Output:} & a plan for $\Pi$, or \textbf{unsolvable} if no
+      plan for $\Pi$ exists
+    \end{tabular}
+  \end{definition}
+
+  \medskip
+
+  \begin{definition}[optimal planning]
+    \begin{tabular}{@{}ll@{}}
+      \hilite{Given:} & a planning task $\Pi$ \\
+      \hilite{Output:} & a plan for $\Pi$ with minimal length among
+      all plans \\
+      & for $\Pi$, or \textbf{unsolvable} if no
+      plan for $\Pi$ exists
+    \end{tabular}
+  \end{definition}
+\end{frame}
+
+\section*{Summary}
+
+\begin{frame}{Summary}
+  \begin{itemize}
+  \item \alert{Transition systems} are a kind of directed graph
+    (typically huge) that encode how the state of the world can
+    change.
+  \item \alert{Planning tasks} are compact representations for
+    transition systems, suitable as input for planning algorithms.
+  \item Planning tasks are based on concepts from \alert{propositional
+    logic}, suitably enhanced to model state change.
+  \item \alert{States} of planning tasks are propositional valuations.
+  \item \alert{Operators} of planning tasks describe \alert{when}
+    (precondition) and \alert{how} (effect) to change the current
+    state of the world.
+  \item In \alert{satisficing planning}, we must find a solution to
+    planning tasks (or show that no solution exists).
+  \item In \alert{optimal planning}, we must additionally guarantee
+    that generated solutions are of the shortest possible length.
+  \end{itemize}
+\end{frame}
+
+\end{document}

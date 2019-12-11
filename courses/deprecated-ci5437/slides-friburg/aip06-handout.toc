@@ -1,0 +1,13 @@
+\beamer@endinputifotherversion {3.20pt}
+\beamer@sectionintoc {1}{Introduction to search algorithms for planning}{3}{0}{1}
+\beamer@subsectionintoc {1}{1}{Search nodes \& search states}{4}{0}{1}
+\beamer@subsectionintoc {1}{2}{Search for planning}{9}{0}{1}
+\beamer@subsectionintoc {1}{3}{Common procedures for search algorithms}{13}{0}{1}
+\beamer@sectionintoc {2}{Uninformed search algorithms}{17}{0}{2}
+\beamer@subsectionintoc {2}{1}{Breadth-first search without duplicate detection}{18}{0}{2}
+\beamer@subsectionintoc {2}{2}{Breadth-first search with duplicate detection}{20}{0}{2}
+\beamer@subsectionintoc {2}{3}{Random walk}{22}{0}{2}
+\beamer@sectionintoc {3}{Heuristic search algorithms}{23}{0}{3}
+\beamer@subsectionintoc {3}{1}{Heuristics: definition and properties}{24}{0}{3}
+\beamer@subsectionintoc {3}{2}{Systematic heuristic search algorithms}{32}{0}{3}
+\beamer@subsectionintoc {3}{3}{Heuristic local search algorithms}{44}{0}{3}

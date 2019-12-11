@@ -1,0 +1,1148 @@
+\documentclass{gkibeamer}
+
+\usepackage{tabularx}
+\usepackage{tikz}
+\usetikzlibrary{shapes}
+
+\input{macros}
+\input{blocksworld}
+
+\begin{document}
+
+\lectureno{5}
+\subtitle{Planning as search: progression and regression}
+\date{November 4th, 2011}
+\maketitles
+
+\section[Search]{Planning as (classical) search}
+\subsection{Introduction}
+
+\begin{frame}{What do we mean by search?}
+  \begin{itemize}
+  \item \alert{Search} is a very generic term.
+  \item[$\leadsto$] Every algorithm that tries out various
+    alternatives can be said to ``search'' in some way.
+  \item Here, we mean \alert{classical search} algorithms.
+    \begin{itemize}
+    \item \alert{Search nodes} are \alert{expanded} to
+      generate \alert{successor nodes}.
+    \item \hilite{Examples:} breadth-first search, \astar,
+      hill-climbing, \dots
+    \end{itemize}
+  \item To be brief, we just say \alert{search} in the following \\
+    (not ``classical search'').
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Do you know this stuff already?}
+  \begin{itemize}
+  \item We \alert{assume prior knowledge} of basic search algorithms:
+    \begin{itemize}
+    \item uninformed vs.\ informed
+    \item systematic vs.\ local
+    \end{itemize}
+  \item There will be a small refresher in the next chapter.
+  \item \hilite{Background:} Russell \& Norvig, Artificial
+    Intelligence -- \\ A Modern Approach, Ch.~3 (all of it), Ch.~4 (local
+    search)
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Search in planning}
+  \begin{itemize}
+  \item \alert{search:} one of the \alert{big success stories} of AI
+  \item many planning algorithms based on classical AI search \\
+    (we'll see some other algorithms later, though)
+  \item will be the focus of this and the following chapters \\
+    (the majority of the course)
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Satisficing or optimal planning?}
+  Must carefully distinguish two different problems:
+  \begin{itemize}
+  \item \alert{satisficing planning:} any solution is OK \\
+    (although shorter solutions typically preferred)
+  \item \alert{optimal planning:} plans must have shortest possible
+    length
+  \end{itemize}
+  
+  \bigskip
+
+  Both are often solved by search, but:
+  \begin{itemize}
+  \item details are \alert{very different}
+  \item almost \alert{no overlap} between good techniques for
+    satisficing planning and good techniques for optimal planning
+  \item many problems that are trivial for satisficing planners
+    are impossibly hard for optimal planners
+  \end{itemize}
+\end{frame}
+
+\subsection[Classification]{Classification of search-based planners}
+
+\begin{frame}{Planning by search}
+  How to apply search to planning?
+  $\leadsto$ \alert{many choices to make!}
+  
+  \begin{overlayarea}{\textwidth}{4.5cm}
+    \begin{block}{
+        \only<all:1>{Choice 1: Search direction}
+        \only<all:2>{Choice 2: Search space representation}
+        \only<all:3>{Choice 3: Search algorithm}
+        \only<all:4>{Choice 4: Search control}
+      }
+      \begin{itemize}
+        \only<all:1>{
+        \item \alert{progression:} forward from initial
+          state to goal
+        \item \alert{regression:} backward from goal
+          states to initial state
+        \item \alert{bidirectional search}
+        }
+        \only<all:2>{
+        \item search nodes are associated with \alert{states} \\
+          ($\leadsto$ \alert{state-space search})
+        \item search nodes are associated with \alert{sets of states}
+        }
+        \only<all:3>{
+        \item \alert{uninformed search:} \\
+          depth-first, breadth-first, iterative depth-first, \dots
+        \item \alert{heuristic search (systematic):} \\
+          greedy best-first, \astar, Weighted \astar, \idastar, \dots
+        \item \alert{heuristic search (local):} \\
+          hill-climbing, simulated annealing, beam search, \dots
+        }
+        \only<all:4>{
+        \item \alert{heuristics} for informed search algorithms
+        \item \alert{pruning techniques:} invariants, symmetry
+          elimination, partial-order reduction, helpful actions pruning, \dots
+        }
+      \end{itemize}
+    \end{block}
+  \end{overlayarea}
+\end{frame}
+
+\begin{frame}{Search-based satisficing planners}
+  \begin{block}{FF (Hoffmann \& Nebel, 2001)}
+    \begin{itemize}
+    \item \hilite{search direction:} forward search
+    \item \hilite{search space representation:} single states
+    \item \hilite{search algorithm:} enforced hill-climbing (informed
+      local)
+    \item \hilite{heuristic:} FF heuristic (inadmissible)
+    \item \hilite{pruning technique:} helpful actions (incomplete)
+    \end{itemize}
+  \end{block}
+  $\leadsto$ one of the best satisficing planners
+\end{frame}
+
+\begin{frame}{Search-based optimal planners}
+  \begin{block}{Fast Downward Stone Soup (Helmert et al., 2011)}
+    \begin{itemize}
+    \item \hilite{search direction:} forward search
+    \item \hilite{search space representation:} single states
+    \item \hilite{search algorithm:} \astar\ (informed
+      systematic)
+    \item \hilite{heuristic:} multiple admissible heuristics combined
+      into a heuristic portfolio (LM-cut, M\&S, blind, \dots)
+    \item \hilite{pruning technique:} none
+    \end{itemize}
+  \end{block}
+  $\leadsto$ one of the best optimal planners
+\end{frame}
+
+\begin{frame}{Our plan for the next lectures}
+  Choices to make:
+  \begin{enumerate}
+  \item search direction: progression/regression/both
+    \\ $\leadsto$ \alert{this chapter}
+  \item search space representation: states/sets of states
+    \\ $\leadsto$ \alert{this chapter}
+  \item search algorithm: uninformed/heuristic; systematic/local
+    \\ $\leadsto$ \alert{next chapter}
+  \item search control: heuristics, pruning techniques
+    \\ $\leadsto$ \alert{following chapters}
+  \end{enumerate}
+\end{frame}
+
+\section{Progression}
+\subsection{Overview}
+
+\begin{frame}{Planning by forward search: progression}
+  \alert{Progression:} Computing the successor state $\applyop{o}{s}$
+  of a state $s$ with respect to an operator $o$.
+
+  \medskip
+
+  \alert{Progression planners} find solutions by forward search:
+  \begin{itemize}
+  \item start from initial state
+  \item iteratively pick a previously generated state and
+    \alert{progress it} through an operator, generating a new state
+  \item solution found when a goal state generated
+  \end{itemize}
+
+  \medskip
+
+  \hilite{pro:} very easy and efficient to implement
+\end{frame}
+
+\begin{frame}{Search space representation in progression planners}
+  Two alternative search spaces for progression planners:
+  \begin{enumerate}
+  \item \alert{search nodes correspond to states}
+    \begin{itemize}
+    \item when the same state is generated along different paths, \\
+      it is not considered again (\alert{duplicate detection})
+    \item \hilite{pro:} save time to consider same state again
+    \item \hilite{con:} memory intensive (must maintain \alert{closed
+      list})
+    \end{itemize}
+  \item \alert{search nodes correspond to operator sequences}
+    \begin{itemize}
+    \item different operator sequences may lead to identical states
+      (\alert{transpositions}); search does not notice this
+    \item \hilite{pro:} can be very memory-efficient
+    \item \hilite{con:} much wasted work (often exponentially slower)
+    \end{itemize}
+  \end{enumerate}
+  $\leadsto$ first alternative usually preferable in planning \\
+  (\alert{unlike} many classical search benchmarks like 15-puzzle)
+\end{frame}
+
+\subsection{Example}
+
+\begin{frame}{Progression planning example (depth-first search)}
+  \hilite{Example} where search nodes correspond to operator sequences
+  \\ (no duplicate detection)
+  \begin{center}
+    \begin{tikzpicture}
+      \tikzstyle node style=[fill, circle]
+
+      \node[node style] (N00) at (0:6mm) {};
+      \node[node style] (N01) at (180:6mm) {};
+
+      \node[node style] (N02) at (0:22mm) {};
+      \node[node style] (N04) at (60:22mm) {};
+      \node[node style] (N05) at (120:22mm) {};
+      \node[node style] (N06) at (180:22mm) {};
+      
+      \node[node style] (N03) at (0:37mm) {};
+      \node[node style] (N07) at (30:37mm) {};
+      \node[node style] (N08) at (60:37mm) {};
+      \node[node style] (N09) at (90:37mm) {};
+      \node[node style] (N10) at (120:37mm)[label=110:$s_0$] {};
+      \node[node style] (N11) at (150:37mm) {};
+      \node[node style] (N12) at (180:37mm) {};
+
+      \tikzstyle blue arc=[->, thick, >=latex, blue]
+      \tikzstyle red arc=[->, thick, >=latex, red]
+
+      \uncover<all:1>{\draw[blue arc] (N02) -- (N04);}
+      \uncover<all:1>{\draw[blue arc] (N04) -- (N00);}
+      \uncover<all:1>{\draw[blue arc] (N03) -- (N02);}
+      \uncover<all:1>{\draw[blue arc] (N07) -- (N04);}
+      \uncover<all:1>{\draw[blue arc, bend left=40] (N08) to (N04);}
+      \uncover<all:1>{\draw[blue arc] (N09) -- (N04);}
+      \uncover<all:1,10>{\draw[blue arc] (N05) -- (N01);}
+      \uncover<all:1,5,9>{\draw[blue arc] (N12) -- (N11);}
+      \uncover<all:1>{\draw[blue arc] (N10) -- (N09);}
+      \uncover<all:1,6,7,8,9,10>{\draw[blue arc] (N11) -- (N05);}
+
+      \uncover<all:1>{\draw[red arc] (N02) -- (N00);}
+      \uncover<all:1>{\draw[red arc] (N07) -- (N03);}
+      \uncover<all:1>{\draw[red arc] (N04) -- (N08);}
+      \uncover<all:1>{\draw[red arc] (N08) -- (N07);}
+      \uncover<all:1>{\draw[red arc] (N09) -- (N05);}
+      \uncover<all:1>{\draw[red arc] (N01) -- (N06);}
+      \uncover<all:1,7,8,9>{\draw[red arc] (N05) -- (N06);}
+      \uncover<all:1,2,3,4,5,6,7,8,9,10>{\draw[red arc] (N10) -- (N11);}
+      \uncover<all:1,3,4,5>{\draw[red arc] (N11) -- (N06);}
+      \uncover<all:1,4,5,8,9>{\draw[red arc] (N06) -- (N12);}
+
+      \node[draw, ellipse, dashed, minimum height=8mm, minimum width=25mm] (goal) at (0,0) [label=below:$S_\star$] {};
+    \end{tikzpicture}
+  \end{center}
+\end{frame}
+
+\section{Regression}
+\subsection{Overview}
+
+\begin{frame}{Forward search vs.\ backward search}
+  Going through a transition graph in forward and backward directions
+  is \alert{not symmetric}:
+  \begin{itemize}
+  \item forward search starts from a \alert{single}
+    initial state; \\
+    backward search starts from a \alert{set} of goal states
+  \item when applying an operator $o$ in a state $s$ in forward
+    direction, there is a \alert{unique successor state} $s'$; \\
+    if we applied operator $o$ to end up in state $s'$, \\
+    there can be \alert{several possible predecessor states} $s$
+  \end{itemize}
+
+  $\leadsto$ most natural representation for backward search in
+  planning associates \alert{sets of states} with search nodes
+\end{frame}
+
+\begin{frame}{Planning by backward search: regression}
+  \alert{Regression:} Computing the possible predecessor states
+  $\regr{o}{G}$ of a set of states $G$ with respect to the last
+  operator $o$ that was applied.
+
+  \medskip
+
+  \alert{Regression planners} find solutions by backward search:
+  \begin{itemize}
+  \item start from set of goal states
+  \item iteratively pick a previously generated state set and \\
+    \alert{regress it} through an operator, generating a new state set
+  \item solution found when a generated state set includes the initial
+    state
+  \end{itemize}
+
+  \medskip
+
+  \hilite{Pro:} can handle many states simultaneously \\
+  \hilite{Con:} basic operations complicated and expensive
+\end{frame}
+
+\begin{frame}{Search space representation in regression planners}
+  identify state sets with \alert{logical formulae} (again):
+  \begin{itemize}
+  \item \alert{search nodes correspond to state sets}
+  \item each state set is represented by a \alert{logical formula}: \\
+    $\varphi$ represents $\{s \in S \mid s \models \varphi\}$
+  \item many basic search operations like detecting duplicates
+    are NP-hard or coNP-hard
+  \end{itemize}
+\end{frame}
+
+\subsection{Example}
+
+\begin{frame}{Regression planning example (depth-first search)}
+  \begin{center}
+    \begin{tikzpicture}
+      \tikzstyle node style=[fill, circle]
+
+      \uncover<all:1,2>{\node[node style] (N00) at (0:6mm) {};}
+      \uncover<all:1,2>{\node[node style] (N01) at (180:6mm) {};}
+
+      \uncover<all:1,4>{\node[node style] (N02) at (0:22mm) {};}
+      \uncover<all:1,3,5>{\node[node style] (N04) at (60:22mm) {};}
+      \uncover<all:1,3>{\node[node style] (N05) at (120:22mm) {};}
+      \uncover<all:1>{\node[node style] (N06) at (180:22mm) {};}
+
+      \uncover<all:1>{\node[node style] (N03) at (0:37mm) {};}
+      \uncover<all:1,4>{\node[node style] (N07) at (30:37mm) {};}
+      \uncover<all:1,4,5>{\node[node style] (N08) at (60:37mm) {};}
+      \uncover<all:1,4>{\node[node style] (N09) at (90:37mm) {};}
+      \uncover<all:1,5>{\node[node style] (N10) at (120:37mm)[label=110:$I$] {};}
+      \uncover<all:1,4>{\node[node style] (N11) at (150:37mm) {};}
+      \uncover<all:1>{\node[node style] (N12) at (180:37mm) {};}
+      
+      \tikzstyle blue arc=[->, thick, >=latex, blue]
+      \tikzstyle red arc=[->, thick, >=latex, red]
+
+      \uncover<all:1,3->{\draw[blue arc] (N04) -- (N00);}
+      \uncover<all:1,4->{\draw[blue arc] (N02) -- (N04);}
+      \uncover<all:1>{\draw[blue arc] (N03) -- (N02);}
+      \uncover<all:1,4->{\draw[blue arc] (N07) -- (N04);}
+      \uncover<all:1,4->{\draw[blue arc, bend left=40] (N08) to (N04);}
+      \uncover<all:1,4->{\draw[blue arc] (N09) -- (N04);}
+      \uncover<all:1,3->{\draw[blue arc] (N05) -- (N01);}
+      \uncover<all:1>{\draw[blue arc] (N12) -- (N11);}
+      \uncover<all:1>{\draw[blue arc] (N10) -- (N09);}
+      \uncover<all:1,4->{\draw[blue arc] (N11) -- (N05);}
+
+      \uncover<all:1>{\draw[red arc] (N02) -- (N00);}
+      \uncover<all:1>{\draw[red arc] (N07) -- (N03);}
+      \uncover<all:1,5->{\draw[red arc] (N04) -- (N08);}
+      \uncover<all:1,5->{\draw[red arc] (N08) -- (N07);}
+      \uncover<all:1>{\draw[red arc] (N09) -- (N05);}
+      \uncover<all:1>{\draw[red arc] (N01) -- (N06);}
+      \uncover<all:1>{\draw[red arc] (N05) -- (N06);}
+      \uncover<all:1,5->{\draw[red arc] (N10) -- (N11);}
+      \uncover<all:1>{\draw[red arc] (N11) -- (N06);}
+      \uncover<all:1>{\draw[red arc] (N06) -- (N12);}
+      
+      \node[draw, ellipse, dashed, minimum height=8mm, minimum width=25mm] (goal) at (0,0) [label=below:$\gamma$] {};
+      
+      %% depiction of the plan
+      \visible<all:2->{\node (P1) at (4,5.5) {$\gamma$};}
+      \visible<all:3->{\node (P2) at (2.5,5.5) {$\varphi_1$};}
+      \visible<all:3->{\node[anchor=west] at (-4.5,5.5) {$\varphi_1=\regr{\textblue{\longrightarrow}}{\gamma}$};}
+      \visible<all:4->{\node (P3) at (1,5.5) {$\varphi_2$};}
+      \visible<all:4->{\node[anchor=west] at (-4.5,5.0) {$\varphi_2=\regr{\textblue{\longrightarrow}}{\varphi_1}$};}
+      \visible<all:5->{\node (P4) at (-0.5,5.5) {$\varphi_3$};}
+      \visible<all:5->{\node[anchor=west] at (-4.5,4.5) {$\varphi_3=\regr{\textred{\longrightarrow}}{\varphi_2}, I\models\varphi_3$};}
+      
+      \visible<all:3->{\draw[blue arc] (P2)--(P1);}
+      \visible<all:4->{\draw[blue arc] (P3)--(P2);}
+      \visible<all:5->{\draw[red arc] (P4)--(P3);}
+    \end{tikzpicture}
+  \end{center}
+\end{frame}
+
+\subsection[STRIPS]{Regression for STRIPS tasks}
+
+\begin{frame}{Regression for STRIPS planning tasks}
+  \begin{definition}[STRIPS planning task]
+    A planning task is a \alert{STRIPS planning task} if all operators
+    are STRIPS operators and the goal is a conjunction of atoms.
+  \end{definition}
+
+  \medskip
+
+  Regression \alert{for STRIPS planning tasks} is very simple:
+  \begin{itemize}
+  \item Goals are conjunctions of atoms $a_1 \land \dots \land a_n$.
+  \item \alert{First step}: Choose an operator that makes
+    none of $a_1, \dots, a_n$ false.
+  \item \alert{Second step}: Remove goal atoms achieved by the
+    operator (if any) and add its preconditions.
+  \item[$\leadsto$] Outcome of regression is again conjunction of
+    atoms.
+  \end{itemize}
+  \hilite{Optimization:} only consider operators making some $a_i$
+  true
+\end{frame}
+
+\begin{frame}{STRIPS regression}
+  \begin{definition}[STRIPS regression]
+    Let $\varphi = \varphi_1 \land \dots \land \varphi_n$ be a
+    conjunction of atoms, and \\ let $o = \langle \chi, e\rangle$ be a
+    STRIPS operator which adds the atoms $a_1, \dots, a_k$ and deletes
+    the atoms $d_1, \dots, d_l$.
+
+    \medskip
+
+    The \alert{STRIPS regression} of $\varphi$ with respect to $o$ is
+    \[
+      \regrstrips{o}{\varphi} := \begin{cases}
+        \bot \qquad \text{if~} a_i = d_j \text{~for some~} i, j \\
+        \bot \qquad \text{if~} \varphi_i = d_j \text{~for some~} i, j \\
+        \chi \land \bigwedge (\{\varphi_1, \dots,
+        \varphi_n\} \setminus \{a_1, \dots, a_k\})
+        & \text{otherwise}
+      \end{cases}
+    \]
+  \end{definition}
+  \hilite{Note:} $\regrstrips{o}{\varphi}$ is again a conjunction of
+  atoms, or $\bot$.
+\end{frame}
+
+\begin{frame}{STRIPS regression example}
+  \begin{center}
+    \begin{pgfpicture}{5mm}{-2mm}{75mm}{15mm}
+      \pgfputat{\pgfxy(0,-0.5)}{\pgfbox[left,left]{\footnotesize
+          \alert{Note}: Predecessor states are in general not unique.}}
+      \pgfputat{\pgfxy(0,-0.9)}{\pgfbox[left,left]{\footnotesize
+          This picture is just for illustration purposes.}}
+      \pgfputat{\pgfxy(7,0)}{\pgfbox[center,right]{\RGB}}
+      \pgfputat{\pgfxy(6,0)}{\pgfbox[center,right]{$o_3$}}
+      \pgfputat{\pgfxy(5,0)}{\pgfbox[center,right]{\RsGB}}
+      \pgfputat{\pgfxy(4,0)}{\pgfbox[center,right]{$o_2$}}
+      \pgfputat{\pgfxy(3,0)}{\pgfbox[center,right]{\GRsB}}
+      \pgfputat{\pgfxy(2,0)}{\pgfbox[center,right]{$o_1$}}
+      \pgfputat{\pgfxy(1,0)}{\pgfbox[center,right]{\BGR}}
+    \end{pgfpicture}
+  \end{center}
+
+  \newcommand{\CLEARR}{\textred{\blacksquare}\var{clr}}
+  \newcommand{\CLEARG}{\textgreen{\blacksquare}\var{clr}}
+  \newcommand{\CLEARBl}{\textblue{\blacksquare}\var{clr}}
+  \newcommand{\RONTABLE}{\textred{\blacksquare}\var{onT}}
+  \newcommand{\GONTABLE}{\textgreen{\blacksquare}\var{onT}}
+  \newcommand{\BlONTABLE}{\textblue{\blacksquare}\var{onT}}
+  \newcommand{\RONG}{\textred{\blacksquare}\var{on}\textgreen{\blacksquare}}
+  \newcommand{\RONB}{\textred{\blacksquare}\var{on}\textblue{\blacksquare}}
+  \newcommand{\BONG}{\textblue{\blacksquare}\var{on}\textgreen{\blacksquare}}
+  \newcommand{\BONR}{\textblue{\blacksquare}\var{on}\textred{\blacksquare}}
+  \newcommand{\GONB}{\textgreen{\blacksquare}\var{on}\textblue{\blacksquare}}
+  \newcommand{\GONR}{\textgreen{\blacksquare}\var{on}\textred{\blacksquare}}
+  
+  \[
+  \begin{array}{@{}r@{\,}c@{\,}l@{\quad}l@{}}
+      o_1 & = & \langle \BONG \land \CLEARBl,
+      & \neg \BONG \land \BlONTABLE \land \CLEARG \rangle \\
+      o_2 & = & \langle \GONR \land \CLEARG \land \CLEARBl,
+      & \neg \CLEARBl \land \neg \GONR \land \GONB \land \CLEARR \rangle \\
+      o_3 & = & \langle \RONTABLE \land \CLEARR \land \CLEARG,
+      & \neg \CLEARG \land \neg \RONTABLE \land \RONG \rangle \\[\medskipamount]
+      \gamma & = & \RONG \land \GONB \\
+      \varphi_1 & = &
+      \multicolumn{2}{l}{
+        \regrstrips{o_3}{\gamma} =
+        \RONTABLE \land \CLEARR \land \CLEARG \land \GONB
+      } \\
+      \varphi_2 & = &
+      \multicolumn{2}{l}{
+        \regrstrips{o_2}{\varphi_1} =
+        \GONR \land \CLEARG \land \CLEARBl \land \RONTABLE
+      } \\
+      \varphi_3 & = &
+      \multicolumn{2}{l}{
+        \regrstrips{o_1}{\varphi_2} =
+        \BONG \land \CLEARBl \land \GONR \land \RONTABLE
+      }
+    \end{array}
+    \]
+\end{frame}
+
+\subsection[General case]{Regression for general planning tasks}
+
+\begin{frame}{Regression for general planning tasks}
+  \begin{itemize}
+  \item With disjunctions and conditional effects, things become more
+    tricky. How to regress $a \lor (b \land c)$ with respect to $\langle
+    q, d \CEF b\rangle$?
+  \item The story about goals and subgoals and fulfilling subgoals, as
+    in the STRIPS case, is no longer useful.
+  \item We present a general method for doing regression for any
+    formula and any operator.
+  \item Now we extensively use the idea of representing sets of states
+    as formulae.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Effect preconditions}
+  \begin{definition}[effect precondition]
+    The \alert{effect precondition $\eprecon{l}{e}$} for literal $l$
+    and effect $e$ is defined as follows:
+    \[
+      \begin{array}{rcl}
+        \eprecon{l}{l} & = & \top \\
+        \eprecon{l}{l'} & = & \bot \text{~if~} l \neq l'
+        \quad(\text{for literals~} l') \\
+        \eprecon{l}{e_1 \land \dots \land e_n} & = &
+        \eprecon{l}{e_1} \lor \dots \lor \eprecon{l}{e_n} \\
+        \eprecon{l}{\chi \CEF e} & = & \eprecon{l}{e} \land \chi \\
+      \end{array}
+    \]
+  \end{definition}
+  %% TODO: We might want to replace the right-hand side of the last
+  %% rule by c \land \eprecon{l}{e}, because then the relationship
+  %% between e and EPC_l(e) would be very clear syntactically:
+  %% replace l by \top, replace all other literals by \bot,
+  %% replace \land by \lor, replace \rhd by \land.
+  \hilite{Intuition:} $\eprecon{l}{e}$ describes the situations in which
+  effect $e$ causes literal $l$ to become true.
+\end{frame}
+
+\begin{frame}{Effect precondition examples}
+  \begin{example}
+    \[
+      \begin{array}{rcl}
+        \eprecon{a}{b \land c} & =
+        & \bot \lor \bot \equiv \bot \\
+        \eprecon{a}{a \land (b \CEF a)} & =
+        & \top \lor (\top \land b) \equiv \top \\
+        \eprecon{a}{(c \CEF a) \land (b \CEF a)} & = &
+        (\top \land c) \lor (\top \land b) \equiv c \lor b \\
+      \end{array}
+    \]
+  \end{example}
+\end{frame}
+
+\begin{frame}{Effect preconditions: connection to change sets}
+  \begin{lemma}[A]
+    Let $s$ be a state, $l$ a literal and $e$ an effect.
+
+    Then $l \in \changes{e}{s}$ if and only if $s \models
+    \eprecon{l}{e}$.
+  \end{lemma}
+
+  \begin{proofstart}
+    Induction on the structure of the effect $e$.
+    \pause
+
+    Base case 1, $e = l$:
+    $l \in \changes{l}{s} = \{l\}$ by definition,
+    and $s \models \eprecon{l}{l} = \top$ by definition.
+    Both sides of the equivalence are true.
+    \pause
+
+    Base case 2, $e = l'$ for some literal $l'\neq l$:
+    $l \notin \changes{l'}{s} = \{l'\}$ by definition,
+    and $s \not\models \eprecon{l}{l'} = \bot$ by definition.
+    Both sides are false.
+  \end{proofstart}
+\end{frame}
+
+\begin{frame}{Effect preconditions: connection to change sets}
+  \begin{proofend}
+    Inductive case 1, $e = e_1 \land \dots \land e_n$: \\
+    \begin{tabularx}{\textwidth}{l@{\,}X}
+      $l \in \changes{e}{s}$
+      & iff
+      $l \in \changes{e_1}{s} \cup \dots \cup \changes{e_n}{s}$
+      \hfill (\alert{Def $\changes{e_1 \land \dots \land e_n}{s}$}) \\
+      & iff
+      $l \in \changes{e'}{s}$ for some $e'\in \{e_1, \dots, e_n\}$ \\
+      & iff
+      $s \models \eprecon{l}{e'}$ for some $e' \in \{e_1, \dots, e_n\}$
+      \hfill (\alert{IH}) \\
+      & iff
+      $s \models \eprecon{l}{e_1} \lor \dots \lor \eprecon{l}{e_n}$ \\
+      & iff
+      $s \models \eprecon{l}{e_1 \land \dots \land e_n}$.
+      \hfill (\alert{Def $\textit{EPC}$})
+    \end{tabularx}
+    \pause
+    \medskip
+
+    Inductive case 2, $e = \chi \CEF e'$: \\
+    \begin{tabularx}{\textwidth}{l@{\,}X}
+      $l \in \changes{\chi \CEF e'}{s}$
+      & iff
+      $l \in \changes{e'}{s}$ and $s \models \chi$
+      \hfill (\alert{Def $\changes{\chi \CEF e'}{s}$}) \\
+      & iff
+      $s \models \eprecon{l}{e'}$ and $s \models \chi$
+      \hfill (\alert{IH}) \\
+      & iff
+      $s \models \eprecon{l}{e'} \land \chi$ \\
+      & iff
+      $s \models \eprecon{l}{\chi \CEF e'}$.
+      \hfill (\alert{Def $\textit{EPC}$})
+    \end{tabularx}
+  \end{proofend}
+\end{frame}
+
+\begin{frame}{Effect preconditions: connection to normal form}
+  \begin{block}{Remark: $\textit{EPC}$ vs.\ effect normal form}
+    Notice that in terms of $\eprecon{a}{e}$, any operator $\langle
+    \chi,e\rangle$ can be expressed in effect normal form as
+    \[
+      \left\langle \chi, \bigwedge_{a \in A} \left(\left(
+      \eprecon{a}{e} \CEF a \right) \land \left(
+      \eprecon{\neg a}{e} \CEF \neg a\right) \right) \right\rangle,
+    \]
+    where $A$ is the set of all state variables.
+  \end{block}
+\end{frame}
+
+\begin{frame}{Regressing state variables}
+  The formula
+  $\eprecon{a}{e} \lor (a \land \neg \eprecon{\neg a}{e})$
+  expresses \\
+  the \alert{value of state variable $a \in A$ after applying $o$} \\
+  in terms of \alert{values of state variables before applying $o$}.
+  
+  \bigskip
+    
+  Either:
+  \begin{itemize}
+  \item $a$ became true, or
+  \item $a$ was true before and it did not become false.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Regressing state variables: examples}
+  \begin{example}
+    Let $e = (b \CEF a) \land (c \CEF \neg a) \land b \land \neg d$.
+    \[
+      \begin{array}{l|l}
+        \text{variable~} x
+        & \eprecon{x}{e} \lor (x \land
+        \neg \eprecon{\neg x}{e}) \\ \hline
+        a & b \lor (a \land \neg c) \\
+        b & \top \lor(b \land \neg \bot) \equiv \top \\
+        c & \bot \lor(c \land \neg \bot) \equiv c \\
+        d & \bot \lor(d \land \neg \top) \equiv \bot
+      \end{array}
+    \]
+  \end{example}
+\end{frame}
+
+\begin{frame}{Regressing state variables: correctness}
+  \begin{lemma}[B]
+    Let $a$ be a state variable, $o = \langle \chi, e\rangle$
+    an operator, \\
+    $s$ a state, and $s' = \applyop{o}{s}$.
+
+    Then $s \models \eprecon{a}{e} \lor (a \land \neg \eprecon{\neg
+      a}{e})$ if and only if $s'\models a$.
+  \end{lemma}
+
+  \pause
+
+  \begin{proofstart}
+    \hilite{$(\Rightarrow)$:} Assume $s \models \eprecon{a}{e} \lor (a
+    \land \neg \eprecon{\neg a}{e})$.
+
+    Do a case analysis on the two disjuncts.
+    \pause
+
+    \begin{enumerate}
+    \item Assume that $s \models \eprecon{a}{e}$.
+      By Lemma A, we have $a \in \changes{e}{s}$ and hence $s' \models
+      a$.
+      \pause
+    \item Assume that $s \models a \land \neg \eprecon{\neg a}{e}$.
+      By Lemma A, we have $\neg a \notin \changes{e}{s}$.
+      Hence $a$ remains true in $s'$.
+    \end{enumerate}
+  \end{proofstart}
+\end{frame}
+
+\begin{frame}{Regressing state variables: correctness}
+  \begin{proofend}
+    \hilite{$(\Leftarrow)$:} We showed that if the formula is
+    \alert{true} in $s$, then $a$ is \alert{true} in $s'$.
+    For the second part, we show that if the formula is \alert{false}
+    in $s$, then $a$ is \alert{false} in $s'$. \pause
+
+    \begin{itemize}
+    \item So assume
+      $s \not\models \eprecon{a}{e} \lor (a \land \neg \eprecon{\neg
+      a}{e})$. \pause
+    \item Then $s \models \neg \eprecon{a}{e} \land (\neg a \lor
+      \eprecon{\neg a}{e})$ (de Morgan). \pause
+    \item Case distinction: $a$ is true or $a$ is false in $s$.
+      \pause
+      \begin{enumerate}
+      \item Assume that $s \models a$.
+        Now $s \models \eprecon{\neg a}{e}$ because $s \models \neg a
+        \lor \eprecon{\neg a}{e}$.
+
+        Hence by Lemma A $\neg a \in \changes{e}{s}$ and we get $s'
+        \not\models a$. \pause
+      \item Assume that $s\not\models a$.
+        Because $s \models \neg \eprecon{a}{e}$, by Lemma A
+        we get $a \notin \changes{e}{s}$ and hence $s' \not\models a$.
+      \end{enumerate}
+      \pause
+      Therefore in both cases $s' \not\models a$.
+    \end{itemize}
+  \end{proofend}
+\end{frame}
+
+\begin{frame}{Regression: general definition}
+  We base the definition of regression on formulae $\eprecon{l}{e}$.
+
+  \begin{definition}[general regression]
+    Let $\varphi$ be a propositional formula and $o = \langle \chi,
+    e\rangle$ an operator.
+
+    The \alert{regression of $\varphi$ with respect to $o$} is
+    \[ \regr{o}{\varphi} = \chi \land \varphi_{\text{r}} \land \kappa \]
+    where
+    \begin{enumerate}
+    \item $\varphi_{\text{r}}$ is obtained from $\varphi$ by replacing
+      each $a \in A$ by $\eprecon{a}{e} \lor
+      (a \land \neg \eprecon{\neg a}{e})$, and
+    \item $\kappa = \bigwedge_{a \in A} \neg (\eprecon{a}{e} \land 
+      \eprecon{\neg a}{e})$.
+    \end{enumerate}
+  \end{definition}
+
+  The formula $\kappa$ expresses that operators are only applicable in
+  states where their change sets are consistent.
+\end{frame}
+
+\begin{frame}{Regression examples}
+  \begin{itemize}
+  \item $\regr{\langle a,b\rangle}{b}
+    \equiv a \land (\top \lor (b \land \neg \bot)) \land \top
+    \equiv a$
+  \item $\regr{\langle a,b\rangle}{b \land c \land d}$ \\
+    $\equiv a \land (\top \lor (b \land \neg \bot)) \land (\bot \lor
+    (c \land \neg \bot)) \land (\bot \lor (d \land \neg \bot)) \land
+    \top$ \\
+    $\equiv a \land c \land d$
+  \item $\regr{\langle a, c \CEF b\rangle}{b}
+    \equiv a \land (c \lor (b \land \neg \bot)) \land \top
+    \equiv a \land (c \lor b)$
+  \item $\regr{\langle a,(c \CEF b) \land (b \CEF \neg b)\rangle}{b}
+    \equiv a \land (c \lor (b \land \neg b)) \land \neg (c \land b)$ \\
+    $\equiv a \land c \land \neg b$
+  \item $\regr{\langle a, (c \CEF b) \land (d \CEF \neg b)\rangle}{b}
+    \equiv a \land (c \lor (b \land \neg d)) \land \neg (c \land d)$ \\
+    $\equiv a \land (c \lor b) \land (c \lor \neg d) \land (\neg c
+    \lor \neg d)$ \\
+    $\equiv a \land (c \lor b) \land \neg d$
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Regression example: binary counter}
+  \[
+    \begin{array}{r@{\,}c@{\,}l}
+      (\neg b_0 & \CEF & b_0) \land{} \\
+      ((\neg b_1 \land b_0) & \CEF & (b_1 \land \neg b_0)) \land{} \\
+      ((\neg b_2 \land b_1 \land b_0) & \CEF & (b_2 \land \neg b_1
+      \land \neg b_0))
+    \end{array}
+  \]
+
+  \begin{small}
+    \[
+      \begin{array}{r@{\,}c@{\,}l}
+        \eprecon{b_2}{e} & = & \neg b_2 \land b_1 \land b_0 \\
+        \eprecon{b_1}{e} & = & \neg b_1 \land b_0 \\
+        \eprecon{b_0}{e} & = & \neg b_0 \\
+        \eprecon{\neg b_2}{e} & = & \bot \\
+        \eprecon{\neg b_1}{e} & = & \neg b_2 \land b_1 \land b_0 \\
+        \eprecon{\neg b_0}{e} & = &
+        (\neg b_1 \land b_0) \lor (\neg b_2 \land b_1 \land b_0)
+        \equiv (\neg b_1 \lor \neg b_2) \land b_0
+      \end{array}
+    \]
+  \end{small}
+  Regression replaces state variables as follows:
+  \[
+    \begin{array}{rcl}
+      b_2 & \text{by} &
+      (\neg b_2 \land b_1 \land b_0) \lor (b_2 \land \neg \bot)
+      \equiv \alert{(b_1 \land b_0) \lor b_2} \\
+      b_1 & \text{by} &
+      (\neg b_1 \land b_0)
+      \lor
+      (b_1 \land \neg (\neg b_2 \land b_1 \land b_0)) \\
+      && \equiv \alert{
+        (\neg b_1 \land b_0)
+        \lor
+        (b_1 \land(b_2 \lor \neg b_0))} \\
+      b_0 & \text{by} &
+      \neg b_0
+      \lor
+      (b_0 \land \neg ((\neg b_1 \lor \neg b_2) \land b_0))
+      \equiv \alert{\neg b_0 \lor (b_1 \land b_2)}
+    \end{array}
+    \]
+\end{frame}
+
+\begin{frame}{General regression: correctness}
+  \begin{theorem}[correctness of $\regr{o}{\varphi}$]
+    Let $\varphi$ be a formula,
+    $o$ an operator and
+    $s$ a state.
+
+    Then $s \models \regr{o}{\varphi}$
+    iff $o$ is applicable in $s$ and $\applyop{o}{s} \models \varphi$.
+  \end{theorem}
+  \pause
+
+  \begin{proofstart}
+    Let $o = \langle \chi, e\rangle$. Recall that $\regr{o}{\varphi} =
+    \chi \land \varphi_{\text{r}} \land \kappa$, where
+    $\varphi_{\text{r}}$ and $\kappa$ are as defined previously.
+
+    \medskip
+    \pause
+
+    If $o$ is inapplicable in $s$, then $s \not\models \chi \land
+    \kappa$, both sides of the ``iff'' condition are false, and we are
+    done. Hence, we only further consider states $s$ where $o$ is
+    applicable. Let $s' := \applyop{o}{s}$.
+
+    \medskip
+    \pause
+
+    We know that $s \models \chi \land \kappa$ (because $o$ is
+    applicable), so the ``iff'' condition we need to prove simplifies
+    to:
+    \[s \models \varphi_{\text{r}} \text{~iff~} s' \models \varphi.\]
+  \end{proofstart}
+\end{frame}
+
+\begin{frame}{General regression: correctness}
+  \begin{proofmid}
+    \hilite{To show:} $s \models \varphi_{\text{r}}$
+    iff $s' \models \varphi$.
+
+    \medskip
+    \pause
+
+    We show that for all formulae $\psi$, $s \models \psi_{\text{r}}$
+    iff $s' \models \psi$, where $\psi_{\text{r}}$ is $\psi$ with
+    every $a \in A$ replaced by $\eprecon{a}{e} \lor (a \land \neg
+    \eprecon{\neg a}{e})$.
+
+    \pause
+    \medskip
+
+    The proof is by structural induction on $\psi$.
+
+    \begin{description}[Induction hypothesis:]
+    \item[Induction hypothesis]
+      $s \models \psi_{\text{r}}$ if and only if $s' \models \psi$.
+      \pause
+    \item[Base cases 1 \& 2] $\psi = \top$ or $\psi = \bot$:
+      trivial, as $\psi_{\text{r}} = \psi$.
+      \pause
+    \item[Base case 3] $\psi = a$ for some $a \in A$: \\
+      Then $\psi_{\text{r}} = \eprecon{a}{e} \lor
+      (a \land \neg \eprecon{\neg a}{e})$. \\
+      By Lemma B, $s \models \psi_{\text{r}}$ iff $s' \models \psi$.
+    \end{description}
+  \end{proofmid}
+\end{frame}
+
+\begin{frame}{General regression: correctness}
+  \begin{proofend}
+    \begin{description}[Inductive case 3]
+    \item[Inductive case 1] $\psi = \neg \psi'$:
+      \vspace{-3mm}
+      \begin{align*}
+        s \models \psi_{\text{r}}
+        & \text{ iff } s \models (\neg \psi')_{\text{r}}
+        \text{ iff } s \models \neg(\psi'_{\text{r}})
+        \text{ iff } s \not\models \psi'_{\text{r}}\\
+        & \text{ iff (\alert{IH}) } s' \not\models \psi'
+        \text{ iff } s' \models \neg\psi'
+        \text{ iff } s' \models \psi
+      \end{align*}
+      \vspace{-8mm}
+      \pause
+    \item[Inductive case 2] $\psi = \psi' \lor \psi''$:
+      \vspace{-3mm}
+      \begin{align*}
+        s \models \psi_{\text{r}}
+        & \text{ iff } s \models (\psi' \lor \psi'')_{\text{r}}
+        \text{ iff } s \models \psi'_{\text{r}} \lor \psi''_{\text{r}}\\
+        & \text{ iff } s \models \psi'_{\text{r}} \text{ or } s \models \psi''_{\text{r}}\\
+        & \text{ iff (\alert{IH, twice}) } s' \models \psi' \text{ or } s' \models \psi''\\
+        & \text{ iff } s' \models \psi' \lor \psi''
+        \text{ iff } s' \models \psi
+      \end{align*}
+      \vspace{-8mm}
+      \pause
+    \item[Inductive case 3] $\psi = \psi' \land \psi''$: Very similar
+      to inductive case 2, just with $\land$ instead of $\lor$ and
+      ``and'' instead of ``or''.
+    \end{description}
+  \end{proofend}
+  %% TODO (Kommentare von Jan):
+  %% Folie 69: Ich finde den Beweis nicht ganz optimal:
+  %% Die Einführung von psi anstelle von phi erscheint mir
+  %% überflüssig.
+  %% "over subformulae psi' of" ebenso. Ich würde einfach schreiben:
+  %% The proof is by structural induction on phi. [erledigt (RM, 2011-11-10)]
+  %% Die inductive cases 2 und 3 sind aus zwei Gründen etwas unglücklich:
+  %% erstens ist hier auf einmal von einem psi'' die Rede wo doch vorher
+  %% nur von psi' die Rede war [hat sich mit der aenderung von oben erledigt
+  %% (RM, 2011-11-10)],
+  %% zweitens benutzt Du ' zum einen für
+  %% Subformeln von psi, zum zweiten für den Nachfolgerzustand s'. 
+\end{frame}
+
+\subsection{Practical issues}
+
+\begin{frame}{Emptiness and subsumption testing}
+  The following two tests are useful when performing regression
+  searches to avoid exploring unpromising branches:
+  
+  \begin{itemize}
+  \item Test that $\regr{o}{\varphi}$ does not represent the
+    empty set \\ (which would mean that search is in a dead end).
+    
+    For example, $\regr{\langle a, \neg p\rangle}{p}
+    \equiv a \land \bot \equiv \bot$.
+  \item Test that $\regr{o}{\varphi}$ does not represent a subset of
+    $\varphi$ \\
+    (which would make the problem harder than before).
+
+    For example, $\regr{\langle b, c\rangle}{a} \equiv a \land b$.
+  \end{itemize}
+
+  Both of these problems are \alert{NP-hard}.
+\end{frame}
+
+\begin{frame}{Formula growth}
+  The formula
+  $\regr{o_1}{\regr{o_2}{\dots \regr{o_{n-1}}{\regr{o_n}{\varphi}}}}$
+  may have size $O(|\varphi||o_1||o_2|\dots|o_{n-1}||o_n|)$, \ie,
+  the product of the sizes of $\varphi$ and the operators.
+
+  $\leadsto$ worst-case \alert{exponential} size $O(m^n)$
+
+  \begin{block}{Logical simplifications}
+    \begin{itemize}
+    \item $\bot \land \varphi \equiv \bot$,
+      $\top \land \varphi \equiv \varphi$,
+      $\bot \lor \varphi \equiv\varphi$,
+      $\top \lor \varphi \equiv\top$
+    \item $a \lor \varphi \equiv a \lor \varphi[\bot/a]$,
+      $\neg a \lor \varphi \equiv \neg a \lor \varphi[\top/a]$,
+      $a \land \varphi \equiv a \land \varphi[\top/a]$,
+      $\neg a \land \varphi \equiv \neg a \land \varphi[\bot/a]$
+    \item idempotency, absorption, commutativity, associativity,
+      $\dots$
+    \end{itemize}
+  \end{block}
+\end{frame}
+
+\begin{frame}{Restricting formula growth in search trees}
+  \begin{description}[Problem]
+  \item[Problem] very big formulae obtained by regression
+  \item[Cause] \alert{disjunctivity} in the (NNF) formulae
+
+    (formulae \alert{without disjunctions} easily convertible to small
+    formulae $l_1 \land \dots \land l_n$ where $l_i$ are literals and
+    $n$ is at most the number of state variables.)
+  \item[Idea] handle disjunctivity when generating search trees
+  \end{description}
+\end{frame}
+
+\begin{frame}{Unrestricted regression: search tree example}
+  \alert{Unrestricted regression:} do not treat disjunctions specially
+
+  \bigskip
+
+  Goal $\gamma = a \land b$, initial state $I = \{ a \mapsto 0, b \mapsto 0,
+    c \mapsto 0\}$.
+  \begin{pgfpicture}{0cm}{0cm}{10.2cm}{5cm}
+    \pgfsetlinewidth{0.7pt}
+    
+    \pgfnodebox{N1}[virtual]{\pgfxy(9.3,3)}{
+      $\gamma = a\land b$}{1pt}{1pt}
+    \pgfnodebox{N1o}[virtual]{\pgfxy(8.7,3.2)}{}{1pt}{1pt}
+    \pgfnodebox{N1u}[virtual]{\pgfxy(8.7,2.8)}{}{1pt}{1pt}
+    \pgfnodebox{N2}[virtual]{\pgfxy(5.5,4.5)}{
+      \alert{$\neg a\land a$}}{1pt}{1pt}
+    \pgfnodebox{N3}[virtual]{\pgfxy(5.5,1.5)}{
+      $(\neg c\lor a)\land b$}{1pt}{1pt}
+    \pgfnodebox{N4}[virtual]{\pgfxy(1.2,0.5)}{
+      \textgreen{$(\neg c\lor a)\land\neg a$}}{1pt}{1pt}
+    \pgfnodebox{N5}[virtual]{\pgfxy(1.2,2.5)}{
+      $(\neg c\lor a)\land b$}{1pt}{1pt}
+    
+    \pgfsetendarrow{\pgfarrowtriangle{6pt}}
+    
+    \pgfnodeconnline{N2}{N1o}
+    \pgfnodeconnline{N3}{N1u}
+    \pgfnodeconnline{N4}{N3}
+    \pgfnodeconnline{N5}{N3}
+    
+    \pgfnodelabelrotated{N2}{N1}[0.5][1.5mm]{\pgfbox[center,base]{
+        $\langle \neg a,b\rangle$}}
+    \pgfnodelabelrotated{N3}{N1}[0.5][1.5mm]{\pgfbox[center,base]{
+        $\langle b,\neg c\CEF a\rangle$}}
+    \pgfnodelabelrotated{N4}{N3}[0.5][1.5mm]{\pgfbox[center,base]{
+        $\langle \neg a,b\rangle$}}
+    \pgfnodelabelrotated{N5}{N3}[0.5][1.5mm]{\pgfbox[center,base]{
+        $\langle b,\neg c\CEF a\rangle$}}
+  \end{pgfpicture}
+\end{frame}
+
+\begin{frame}{Full splitting: search tree example}
+  \alert{Full splitting:} always remove all disjunctivity
+
+  \bigskip
+
+  Goal $\gamma = a \land b$, initial state $I = \{ a \mapsto 0, b \mapsto 0,
+    c \mapsto 0\}$.
+
+  $(\neg c \lor a) \land b$ in DNF:
+  $(\neg c \land b) \lor (a \land b)$ \\
+  $\leadsto$ split into $\neg c\land b$ and $a\land b$
+
+  \begin{pgfpicture}{0cm}{0cm}{10.2cm}{5cm}
+    \pgfsetlinewidth{0.7pt}
+
+    \pgfnodebox{N1}[virtual]{\pgfxy(9.3,3)}{$\gamma = a\land b$}{1pt}{1pt}
+    \pgfnodebox{N1o}[virtual]{\pgfxy(8.5,3.2)}{}{1pt}{1pt}
+    \pgfnodebox{N1u}[virtual]{\pgfxy(8.5,2.8)}{}{1pt}{1pt}
+    \pgfnodebox{N2}[virtual]{\pgfxy(5.5,4.5)}{\alert{$\neg a\land a$}}{1pt}{1pt}
+    \pgfnodebox{N3a}[virtual]{\pgfxy(5.5,1)}{$\neg c\land b$}{1pt}{1pt}
+    \pgfnodebox{N3b}[virtual]{\pgfxy(4,3)}{(duplicate of $\gamma$) $a\land b$}{1pt}{1pt}
+    \pgfnodebox{N4a}[virtual]{\pgfxy(0.7,0.5)}{\textgreen{$\neg c\land\neg a$}}{1pt}{1pt}
+    \pgfnodebox{N5a}[virtual]{\pgfxy(0.7,1.5)}{$\neg c\land b$}{1pt}{1pt}
+    %\pgfnodebox{N4b}[virtual]{\pgfxy(0.7,2.5)}{\alert{$a\land\neg a$}}{1pt}{1pt}
+    %\pgfnodebox{N5ba}[virtual]{\pgfxy(0.7,3.5)}{$a\land b$}{1pt}{1pt}
+    %\pgfnodebox{N5bb}[virtual]{\pgfxy(0.7,4.5)}{$\neg c\land b$}{1pt}{1pt}
+    
+    \pgfsetendarrow{\pgfarrowtriangle{6pt}}
+    
+    \pgfnodeconnline{N2}{N1o}
+    \pgfnodeconnline{N3a}{N1u}
+    \pgfnodeconnline{N3b}{N1}
+    \pgfnodeconnline{N4a}{N3a}
+    %\pgfnodeconnline{N4b}{N3b}
+    \pgfnodeconnline{N5a}{N3a}
+    %\pgfnodeconnline{N5ba}{N3b}
+    %\pgfnodeconnline{N5bb}{N3b}
+    
+    \pgfnodelabelrotated{N2}{N1}[0.35][1mm]{\pgfbox[center,base]{
+        $\langle \neg a,b\rangle$}}
+    \pgfnodelabelrotated{N3a}{N1}[0.35][1mm]{\pgfbox[center,base]{
+        $\langle b,\neg c\CEF a\rangle$}}
+    \pgfnodelabelrotated{N3b}{N1}[0.35][1mm]{\pgfbox[center,base]{
+        $\langle b,\neg c\CEF a\rangle$}}
+    \pgfnodelabelrotated{N4a}{N3a}[0.3][1mm]{\pgfbox[center,base]{
+        $\langle \neg a,b\rangle$}}
+    %\pgfnodelabelrotated{N4b}{N3b}[0.3][1mm]{\pgfbox[center,base]{
+    %    $\langle \neg a,b\rangle$}}
+    \pgfnodelabelrotated{N5a}{N3a}[0.3][1mm]{\pgfbox[center,base]{
+        $\langle b,\neg c\CEF a\rangle$}}
+    %\pgfnodelabelrotated{N5ba}{N3b}[0.3][1mm]{\pgfbox[center,base]{
+    %    $\langle b,\neg c\CEF a\rangle$}}
+    %\pgfnodelabelrotated{N5bb}{N3b}[0.3][1mm]{\pgfbox[center,base]{
+    %    $\langle b,\neg c\CEF a\rangle$}}
+  \end{pgfpicture}
+\end{frame}
+
+\begin{frame}{General splitting strategies}
+  Alternatives:
+  \begin{enumerate}
+  \item Do nothing (\alert{unrestricted regression}).
+  \item Always eliminate all disjunctivity
+    (\alert{full splitting}).
+  \item Reduce disjunctivity if formula becomes too big.
+  \end{enumerate}
+
+  \medskip
+
+  Discussion:
+  \begin{itemize}
+  \item \alert{With unrestricted regression} the formulae may have
+    \alert{size that is exponential} in the number of state variables.
+  \item \alert{With full splitting} search tree can be
+    \alert{exponentially bigger} than without splitting.
+  \item The third option lies between these two extremes.
+  \end{itemize}
+\end{frame}
+
+\section*{Summary}
+
+\begin{frame}{Summary}
+  \begin{itemize}
+  \item (Classical) \alert{search} is a very important planning
+    approach.
+  \item Search-based planning algorithms differ along many dimensions,
+    including
+    \begin{itemize}
+    \item \alert{search direction} (forward, backward)
+    \item \alert{what each search node represents} \\
+      (a state, a set of states, an operator sequence)
+    \end{itemize}
+  \item \alert{Progression search} proceeds forwards from the
+    initial state.%
+    \begin{itemize}
+    \item If we use duplicate detection, each search node corresponds
+      to a unique \alert{state}.
+    \item If we do not use duplicate detection, each search node
+      corresponds to a unique \alert{operator sequence}.
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Summary (ctd.)}
+  \begin{itemize}
+  \item \alert{Regression search} proceeds backwards from the goal.
+    \begin{itemize}
+    \item Each search node corresponds to a \alert{set of states}
+      represented by a \alert{formula}.
+    \item Regression is simple for \alert{STRIPS} operators.
+    \item The theory for \alert{general regression} is more complex.
+    \item When applying regression in practice, additional
+      considerations such as when and how to perform \alert{splitting}
+      come into play.
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\end{document}

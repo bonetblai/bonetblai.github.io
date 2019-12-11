@@ -1,0 +1,438 @@
+\documentclass{gkibeamer}
+
+\input{macros}
+\input{blocksworld}
+
+\begin{document}
+\subtitle{13.~Nondeterministic planning}
+\date{January 20th, 2012}
+\maketitles
+
+\section{Motivation}
+
+\begin{frame}
+  \frametitle{Nondeterministic planning}
+
+  \begin{itemize}
+  \item The world is not predictable.
+  \item 
+    AI robotics:
+    \begin{itemize}
+    \item imprecise movement of the robot
+    \item other robots
+    \item human beings, animals
+    \item machines (cars, trains, airplanes, lawn-mowers, \dots)
+    \item natural phenomena (wind, water, snow, temperature, \dots)
+    \end{itemize}
+  \item 
+    Games: other players are outside our control.
+    \begin{itemize}
+    \item To win a game (reaching a goal state) with certainty, all
+      possible actions by the other players have to be anticipated (a
+      \alert{winning strategy} of a game).
+    \item The world is not predictable because it is unknown:
+      we cannot \alert{observe} everything.
+    \end{itemize}
+  \end{itemize}
+
+  \smallskip
+
+  In this lecture, we will only deal with uncertain operator outcomes,
+  not with partial observability.
+\end{frame}
+
+\begin{frame}<handout:1>[label=game-example]
+  \frametitle{Nondeterminism in games}
+  \begin{center}
+    \begin{pgfpicture}{1cm}{0.5cm}{9cm}{7.5cm}
+
+      \pgfnodecircle{N0}[fill]{\pgfxy(5,7)}{1.1mm}
+      \only<all:1>{\pgfnodecircle{N00}[fill]{\pgfxy(2.5,4)}{1.1mm}}
+      \pgfnodecircle{N000}[fill]{\pgfxy(1.5,1)}{1.1mm}
+      \pgfnodecircle{N001}[fill]{\pgfxy(3.5,1)}{1.1mm}
+      \only<all:1>{\pgfnodecircle{N01}[fill]{\pgfxy(7.5,4)}{1.1mm}}
+      \pgfnodecircle{N010}[fill]{\pgfxy(6.5,1)}{1.1mm}
+      \pgfnodecircle{N011}[fill]{\pgfxy(8.5,1)}{1.1mm}
+      
+      \pgfputat{\pgfxy(5,5)}{\pgfbox[center,center]{\Large our actions}}
+      \only<all:1>{\pgfputat{\pgfxy(5,3)}{\pgfbox[center,center]{\Large opponent actions}}}
+      
+      \pgfsetlinewidth{1pt}
+      \pgfsetendarrow{\pgfarrowtriangle{6pt}}
+
+      \only<all:1>{
+        \color{red}
+        \pgfnodeconnline{N0}{N00}
+        \color{blue}
+        \pgfnodeconnline{N0}{N01}
+        \color{violet}
+        \pgfnodeconnline{N00}{N000}
+        \color{green}
+        \pgfnodeconnline{N00}{N001}
+        \color{violet}
+        \pgfnodeconnline{N01}{N010}
+        \color{green}
+        \pgfnodeconnline{N01}{N011}
+      }
+      
+      \only<all:2>{
+        \color{red}
+        \pgfnodeconnline{N0}{N000}
+        \pgfnodeconnline{N0}{N001}
+        \color{blue}
+        \pgfnodeconnline{N0}{N010}
+        \pgfnodeconnline{N0}{N011}
+      }
+    \end{pgfpicture}
+  \end{center}
+\end{frame}
+
+\only<handout>{
+  \againframe<handout:2>{game-example}
+}
+
+\begin{frame}
+  \frametitle{Nondeterministic planning}
+
+  \begin{itemize}
+  \item In \alert{deterministic planning} we have assumed that the
+    only changes taking place in the world are those caused by us and
+    that we can \alert{exactly predict} the results of our actions.
+  \item 
+    \alert{Other agents} and processes, beyond our control,
+    are formalized as \alert{nondeterminism}.
+  \item
+    Implications:
+    \begin{enumerate}
+    \item The future state of the world cannot be predicted.
+    \item We cannot reliably plan ahead: no single operator sequence
+      achieves the goals.
+    \item In some cases it is not possible to achieve the goals with
+      certainty no matter which outcomes the actions have, but only
+      under certain fairness assumptions.
+    \end{enumerate}
+  \end{itemize}
+\end{frame}
+
+\section{Transition systems and planning tasks}
+
+\subsection{Transition systems}
+
+\begin{frame}{Transition systems}
+  \frametitle{Transition systems with nondeterminism (cf.~Chapter~2)}
+  \begin{definition}[transition system]
+    A \alert{nondeterministic transition system} is a 5-tuple
+    $\mathcal T = \langle S, L, T, s_0, S_\star\rangle$ where
+    \begin{itemize}
+    \item $S$ is a finite set of \alert{states},
+    \item $L$ is a finite set of (transition) \alert{labels},
+    \item $T \subseteq S \times L \times S$ is the \alert{transition
+      relation},
+    \item $s_0 \in S$ is the \alert{initial state}, and
+    \item $S_\star \subseteq S$ is the set of \alert{goal states}.
+    \end{itemize}
+  \end{definition}
+
+  \structure{Note:} $T \subseteq S \times L \times S$ allows
+  \alert{nondeterministic operators} with more than one possible
+  outcome.
+\end{frame}
+
+\subsection{Operators}
+
+\begin{frame}
+  \frametitle{Nondeterministic operators}
+  \begin{definition}[nondeterministic operator]
+    Let $V$ be a set of finite-domain state variables.  A
+    nondeterministic operator in unary nondeterminism normal
+    form with conjunctive precondition and unconditional effects, or
+    \alert{nondeterministic operator} for short, is a pair $o = \langle
+    \chi, E \rangle$, where
+    \begin{itemize}
+    \item $\chi$ is a conjunction of atoms over $V$ (the
+      \alert{precondition}), and
+    \item $E = \{ e_1, \dots, e_n \}$ is a finite set of possible
+      \alert{effects} of $o$, each $e_i$ being a conjunction of atomic
+      finite-domain effects over $V$.
+    \end{itemize}
+  \end{definition}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Nondeterministic operators}
+  \begin{definition}[nondeterministic operator application]
+    Let $o = \langle \chi, E \rangle$ be a nondeterministic operator
+    and $s$ a state.
+
+    \medskip
+
+    Applicability of $o$ in $s$ is definied as in the deterministic
+    case, i.e., $o$ is \alert{applicable} in $s$ iff $s \models \chi$
+    and the change set of each effect $e \in E$ is consistent.
+
+    \medskip
+
+    If $o$ is applicable in $s$, then the \alert{application} of $o$
+    in $s$ leads to one of the states in the set $\applyop{o}{s} := \{
+    \applyop{\langle \chi, e \rangle}{s} \,|\, e \in E \}$
+    nondeterministically.
+  \end{definition}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Nondeterministic operators}
+  \begin{example}
+    $\textit{put-on-block}(A,B) = \langle \chi, \{ e_1, e_2 \} \rangle$ where
+    \begin{itemize}
+    \item $\chi = \{ \textit{handempty} \mapsto \textit{false},
+      \textit{clear-B} \mapsto \textit{true}, \textit{pos-A} \mapsto
+      \textit{hand} \}$,
+    \item $e_1 = \{ \textit{handempty} \mapsto \textit{true},
+      \textit{clear-B} \mapsto \textit{false}, \textit{pos-A} \mapsto
+      \textit{on-B} \}$,
+    \item $e_2 = \{ \textit{handempty} \mapsto \textit{true},
+      \textit{posn-A} \mapsto \textit{table} \}$.
+    \end{itemize}
+    
+    \medskip
+
+    Applied to a state where the agent is holding block $A$ and block
+    $B$ is clear, this operator leads to one of two possible successor
+    states. Either $A$ gets stacked on $B$ successfully, or $A$ is
+    dropped to the table.
+  \end{example}
+\end{frame}
+
+\subsection{Planning tasks}
+
+\begin{frame}{Nondeterministic planning task}
+  \begin{definition}[nondeterministic planning task]
+    A (fully observable) \alert{nondeterministic planning task} is a 4-tuple
+    $\Pi = \langle V,I,O,\gamma\rangle$ where
+    \begin{itemize}
+    \item $V$ is a finite set of \alert{finite-domain state
+      variables},
+    \item $I$ is an \alert{initial state} over $V$,
+    \item $O$ is a finite set of \alert{nondeterministic operators} over
+      $V$, and
+    \item $\gamma$ is a conjunctions of atoms over $V$ describing the
+      \alert{goal states}.
+    \end{itemize}
+  \end{definition}
+
+  \smallskip
+
+  \structure{Remark:} In the following, we will always assume that our
+  nondeterministic planning tasks are fully observable and omit the
+  qualification.
+
+\end{frame}
+
+\begin{frame}{Mapping planning tasks to transition systems}
+  \begin{definition}[induced transition system]
+    Every nondeterministic planning task $\Pi = \langle
+    V,I,O,\gamma\rangle$ induces a corresponding nondeterministic
+    transition system $\alert{\mathcal T(\Pi)} = \langle S, L, T, s_0,
+    S_\star\rangle$:
+    \begin{itemize}
+    \item $S$ is the set of all states over $V$,
+    \item $L$ is the set of operators $O$,
+    \item $T = \{ \langle s, o, s'\rangle \mid
+      s \in S,~ o \text{~applicable in~}s,~ s' \in \applyop{o}{s}\}$,
+    \item $s_0 = I$, and
+    \item $S_\star = \{ s \in S \mid s \models \gamma\}$
+    \end{itemize}
+  \end{definition}
+\end{frame}
+
+\section{Plans}
+
+\subsection{Motivation}
+
+\begin{frame}
+  \frametitle{What is a plan?}
+  
+  In nondeterministic planning, plans are more complicated
+  objects than in the deterministic case:
+
+  \medskip
+
+  The best action to take may \alert{depend} on nondeterministic
+  effects of previous operators.
+
+  \medskip
+
+  Nondeterministic plans thus often require \alert{branching}.
+  Sometimes, they even require \alert{looping}\\
+  (we will likely only cover branching in this course).
+\end{frame}
+
+\begin{frame}
+  \frametitle{What is a plan?}
+
+  \begin{example}[Branching]
+    (Part of) a plan for winning the game \alert{Connect Four} can be
+    described as follows:
+    \begin{itemize}
+    \item Place a tile in the 4th column.
+      \begin{itemize}
+      \item If opponent places a tile in the 1st, 4th or 7th column, \\
+        place a tile in the 4th column.
+      \item If opponent places a tile in the 2nd or 5th column, \\
+        place a tile in the 2nd column.
+      \item If opponent places a tile in the 3rd or 6th column, \\
+        place a tile in the 6th column.
+      \end{itemize}
+    \end{itemize}
+    
+    There is no \alert{non-branching} plan that solves the task\\
+    (= is guaranteed to win the game).
+  \end{example}
+\end{frame}
+
+\begin{frame}
+  \frametitle{What is a plan?}
+
+  \begin{example}[Looping]
+    A plan for building a card house can be described as follows:
+    \begin{enumerate}
+    \item Build a wall with two cards. \\
+      If the structure falls apart, redo from start.
+    \item Build a second wall with two cards. \\
+      If the structure falls apart, redo from start.
+    \item Build a ceiling on top of the walls with a fifth card. \\
+      If the structure falls apart, redo from start.
+    \item Build a wall on top of the ceiling with two cards. \\
+      If the structure falls apart, redo from start.
+    \end{enumerate}
+    
+    There is no \alert{non-looping} plan that solves the task \\
+    (unless the planning agent is very dextrous).
+  \end{example}
+\end{frame}
+
+\begin{frame}
+  \frametitle{What is a plan?}
+
+  \begin{itemize}
+  \item Plans should be allowed to \alert{branch}. Otherwise, most
+    interesting nondeterministic planning tasks cannot be solved.
+  \item We may or may not allow plans to \alert{loop}.
+    \begin{itemize}
+    \item Non-looping plans are preferable because they
+      \alert{guarantee} that the goal is reached within a bounded
+      number of steps.
+    \item Where non-looping plans are not possible, looping plans
+      may be adequate because they at least guarantee that the goal
+      will be reached \alert{eventually} unless nature is
+      \alert{unfair}.
+    \end{itemize}
+  \end{itemize}
+  We will now introduce the formal concepts necessary to define
+  branching (and looping) plans.
+\end{frame}
+
+\subsection{Definition}
+
+\begin{frame}
+  \frametitle{Nondeterministic plans: formal definition}
+
+  \begin{definition}[strategy]
+    Let $\Pi = \langle V, I, O, \gamma\rangle$ be a nondeterministic
+    planning task with state set $S$ and goal states $S_\star$.
+
+    \medskip
+
+    A \alert{strategy} for $\Pi$ is a function $\pi: S_\pi \to O$ for
+    some subset $S_\pi \subseteq S$ such that $\pi(s)$ is applicable in
+    $s$ for all $s \in S_\pi$.
+
+    \medskip
+
+    The set of states reachable in $\mathcal T(\Pi)$ starting in state
+    $s$ and following $\pi$ is denoted by $S_\pi(s)$.
+  \end{definition}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Nondeterministic plans: formal definition}
+
+  \begin{definition}[weak, closed, proper, and acyclic strategies]
+    Let $\Pi = \langle V, I, O, \gamma\rangle$ be a nondeterministic
+    planning task with state set $S$ and goal states $S_\star$, and let
+    $\pi$ be a strategy for $\Pi$.
+
+    Then $\pi$ is called
+    \begin{itemize}
+    \item \alert{weak} iff $S_\pi(s_0) \cap S_\star \neq \emptyset$,
+    \item \alert{closed} iff $S_\pi(s_0) \subseteq S_\pi$,
+    \item \alert{proper} iff $S_\pi(s') \cap S_\star \neq \emptyset$
+      for all $s' \in S_\pi(s_0)$, and
+    \item \alert{acyclic} iff there is no state $s' \in
+      S_\pi(s_0)$ such that $s'$ is reachable from $s'$ following
+      $\pi$ in a strictly positive number of steps.
+    \end{itemize}
+  \end{definition}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Nondeterministic plans: formal definition}
+  \begin{itemize}
+  \item \alert{Strategies} in nondeterministic planning correspond to
+    \alert{applicable operator sequences} in deterministic planning.
+  \item In deterministic planning, a \alert{plan} is an applicable
+    operator sequence that results in a goal state.
+  \item In nondeterministic planning, we define different notions of
+    ``resulting in a goal state''.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Nondeterministic plans: formal definition}
+
+  \begin{definition}
+    Let $\Pi = \langle V, I, O, \gamma\rangle$ be a nondeterministic
+    planning task with state set $S$ and goal states $S_\star$.
+
+    \begin{itemize}
+    \item A strategy for $\Pi$ is called a \alert{weak plan} for $\Pi$ \\
+      iff it is weak.
+    \item A strategy for $\Pi$ is called a \alert{strong cyclic plan}
+      for $\Pi$ \\
+      iff it is closed and proper.
+    \item A strong cyclic plan for $\Pi$ is called a \alert{strong
+      plan} for $\Pi$ \\
+      iff it is acyclic.
+    \end{itemize}
+  \end{definition}
+\end{frame}
+
+% \section{Summary}
+
+\begin{frame}
+  \frametitle{Summary and outlook}
+  
+  We extended the deterministic (\alert{classical}) planning formalism:
+  \begin{itemize}
+  \item \alert{operators} can be nondeterministic
+  \end{itemize}
+  \structure{Remark:} We could also introduce nondeterminism in the
+  initial situation by allowing more than one initial state, but this
+  can be easily compiled into our formalism.
+
+  \bigskip
+
+  As a consequence, \alert{plans} can contain
+  \begin{itemize}
+  \item \alert{branches} and
+  \item \alert{loops}.
+  \end{itemize}
+
+  \bigskip
+
+  In the following chapter, we consider the \alert{strong planning}
+  problem (and maybe strong cyclic planning, if time permits) and
+  discuss some algorithms.
+\end{frame}
+
+\end{document}

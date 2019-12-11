@@ -1,0 +1,12 @@
+\BOOKMARK [2][]{Outline0.1}{Introduction to search algorithms for planning}{}% 1
+\BOOKMARK [3][]{Outline0.1.1.4}{Search nodes \046 search states}{Outline0.1}% 2
+\BOOKMARK [3][]{Outline0.1.2.9}{Search for planning}{Outline0.1}% 3
+\BOOKMARK [3][]{Outline0.1.3.13}{Common procedures for search algorithms}{Outline0.1}% 4
+\BOOKMARK [2][]{Outline0.2}{Uninformed search algorithms}{}% 5
+\BOOKMARK [3][]{Outline0.2.1.18}{Breadth-first search without duplicate detection}{Outline0.2}% 6
+\BOOKMARK [3][]{Outline0.2.2.20}{Breadth-first search with duplicate detection}{Outline0.2}% 7
+\BOOKMARK [3][]{Outline0.2.3.22}{Random walk}{Outline0.2}% 8
+\BOOKMARK [2][]{Outline0.3}{Heuristic search algorithms}{}% 9
+\BOOKMARK [3][]{Outline0.3.1.24}{Heuristics: definition and properties}{Outline0.3}% 10
+\BOOKMARK [3][]{Outline0.3.2.32}{Systematic heuristic search algorithms}{Outline0.3}% 11
+\BOOKMARK [3][]{Outline0.3.3.44}{Heuristic local search algorithms}{Outline0.3}% 12

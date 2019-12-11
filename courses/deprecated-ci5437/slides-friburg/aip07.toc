@@ -1,0 +1,10 @@
+\beamer@endinputifotherversion {3.20pt}
+\beamer@sectionintoc {1}{How to obtain a heuristic}{2}{0}{1}
+\beamer@subsectionintoc {1}{1}{The STRIPS heuristic}{3}{0}{1}
+\beamer@subsectionintoc {1}{2}{Relaxation and abstraction}{5}{0}{1}
+\beamer@sectionintoc {2}{Relaxed planning tasks}{15}{0}{2}
+\beamer@subsectionintoc {2}{1}{Definition}{16}{0}{2}
+\beamer@subsectionintoc {2}{2}{The relaxation lemma}{19}{0}{2}
+\beamer@subsectionintoc {2}{3}{Greedy algorithm}{29}{0}{2}
+\beamer@subsectionintoc {2}{4}{Optimality}{32}{0}{2}
+\beamer@subsectionintoc {2}{5}{Discussion}{36}{0}{2}

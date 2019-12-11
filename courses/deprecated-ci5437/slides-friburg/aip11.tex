@@ -1,0 +1,1365 @@
+\documentclass{gkibeamer}
+
+\input{macros}
+
+\newcommand{\cliques}{\ensuremath{\textrm{cliques}}}
+
+\input{abstraction-pictures}
+%% \author[M.~Helmert, G.~R\"oger]{Malte Helmert and Gabriele R\"oger}
+%% abstraction pictures by Gabi
+
+\begin{document}
+\lectureno{11}
+\subtitle{Planning as search: pattern database heuristics}
+\date{December 13th, 2011}
+\maketitles
+
+\section[PDB heuristics]{Pattern databases heuristics}
+\subsection[Projections]{Projections and pattern database heuristics}
+
+\begin{frame}{Pattern database heuristics}
+  \begin{itemize}
+  \item The most commonly used abstraction heuristics in search and
+    planning are \alert{pattern database (PDB) heuristics}.
+  \item PDB heuristics were originally introduced \\
+    for the \alert{15-puzzle} (Culberson \& Schaeffer, 1996) \\
+    and for \alert{Rubik's cube} (Korf, 1997).
+  \item The first use for \alert{domain-independent planning} \\
+    is due to Edelkamp (2001).
+  \item Since then, much research has focused on the theoretical
+    properties of pattern databases, how to use pattern databases more
+    effectively, how to find good patterns, etc.
+  \item Pattern databases are a \alert{very active research area} both
+    in planning and in (domain-specific) heuristic search.
+  \item For many search problems, pattern databases are \\
+    the \alert{most effective admissible heuristics} currently known.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Pattern database heuristics informally}
+  \begin{block}{Pattern databases: informally}
+    A pattern database heuristic for a planning task is an abstraction
+    heuristic where
+    \begin{itemize}
+    \item some aspects of the task are represented in the abstraction
+      \alert{with perfect precision}, while
+    \item all other aspects of the task are \alert{not represented at
+      all}.
+    \end{itemize}
+  \end{block}
+
+  \begin{example}[15-puzzle]
+    \begin{itemize}
+    \item Choose a subset $T$ of tiles (the \alert{pattern}).
+    \item Faithfully represent the locations of $T$ in the
+      abstraction.
+    \item Assume that all other tiles and the blank can be anywhere in
+      the abstraction.
+    \end{itemize}
+  \end{example}
+\end{frame}
+
+\begin{frame}{Projections}
+  Formally, pattern database heuristics are induced abstractions of a
+  particular class of homomorphisms called \alert{projections}.
+
+  \begin{definition}[projections]
+    Let $\Pi$ be an FDR planning task with variable set $V$ and state
+    set $S$. Let $P \subseteq V$, and let $S'$ be the set of states
+    over $P$.
+
+    \smallskip
+
+    The \alert{projection} $\pi_P: S \to S'$ is defined as $\pi_P(s)
+    := s|_P$\\
+    (with $s|_P(v) := s(v)$ for all $v \in P$).
+
+    \smallskip
+
+    We call $P$ the \alert{pattern} of the projection $\pi_P$.
+  \end{definition}
+  
+  In other words, $\pi_P$ maps two states $s_1$ and $s_2$ to the same
+  abstract state iff they agree on all variables in $P$.
+\end{frame}
+
+\begin{frame}{Pattern database heuristics}
+  Abstraction heuristics for projections are called
+  \alert{pattern database} (\alert{PDB}) heuristics.
+
+  \begin{definition}[pattern database heuristic]
+    The abstraction heuristic induced by $\pi_P$ is called a \\
+    \alert{pattern database heuristic} or \alert{PDB heuristic}.
+
+    We write \alert{$h^P$} as a short-hand for $h^{\pi_P}$.
+  \end{definition}
+
+  \medskip
+
+  Why are they called \alert{pattern database heuristics}?
+  \begin{itemize}
+  \item Heuristic values for PDB heuristics are traditionally stored in
+    a 1-dimensional table (array) called a \alert{pattern database}
+    (PDB). Hence the name ``PDB heuristic''.
+  \end{itemize}
+\end{frame}
+
+\subsection{Examples}
+
+\begin{frame}{Example: transition system}
+  \begin{center}
+    \picfulltransitiongraph
+  \end{center}
+  Logistics problem with one package, two trucks, two locations:
+  \begin{itemize}
+  \item state variable \textblue{package}: $\{L,R,A,B\}$
+  \item state variable \textblue{truck A}: $\{L,R\}$
+  \item state variable \textblue{truck B}: $\{L,R\}$
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Example: projection}
+  Abstraction induced by $\pi_{\{\text{\textblue{package}}\}}$:
+  \begin{center}
+    \picprojectionpackage
+  \end{center}
+  \[ h^{\{\text{\textblue{package}}\}}(\text{LRR}) = 2 \]
+\end{frame}
+
+\begin{frame}{Example: projection (2)}
+  Abstraction induced by $\pi_{\{\text{\textblue{package}},
+    \text{\textblue{truck A}}\}}$:
+  \begin{center}
+    \picprojectionpackagetruck
+  \end{center}
+  \[ h^{\{\text{\textblue{package}},
+        \text{\textblue{truck A}}\}}(\text{LRR}) = 2 \]
+\end{frame}
+%% TODO: It would be pedagogically preferable if the second projection
+%% were actually better than the first. (After all, this example was
+%% designed to highlight the *problems* of PDB heuristics.) For
+%% example, we could use the 2-package, 1-truck task instead. But then
+%% we would need another picture for a 1-package/1-truck abstraction
+%% of that problem.
+
+\subsection{Overview}
+
+\begin{frame}{Chapter overview}
+  In the rest of this chapter, we will discuss:
+  \begin{itemize}
+  \item how to \alert{implement} PDB heuristics
+  \item how to effectively make use of \alert{multiple} PDB heuristics
+  \item how to \alert{find good patterns} for PDB heuristics
+  \end{itemize}
+\end{frame}
+
+\section[Implementing PDBs]{Implementing pattern database heuristics}
+\subsection[Precomputation]{Precomputation step}
+
+\begin{frame}{Pattern database implementation}
+  Assume we are given a pattern $P$ for a planning task $\Pi$.
+
+  How do we implement $h^P$?
+
+  \begin{enumerate}
+  \item In a \alert{precomputation} step, we compute a graph
+    representation for the abstraction $\mathcal T(\Pi)^{\pi_P}$ and
+    compute the abstract goal distance for each abstract state.
+  \item During search, we use the precomputed abstract goal distances
+    in a \alert{lookup} step.
+  \end{enumerate}
+\end{frame}
+
+\begin{frame}{Precomputation step}
+  Let $\Pi$ be a planning task and $P$ a pattern.
+
+  Let $\mathcal T = \mathcal T(\Pi)$ and $\mathcal T' = \mathcal
+  T^{\pi_P}$.
+  \begin{itemize}
+  \item We want to compute a graph representation of $\mathcal T'$.
+  \item $\mathcal T'$ is defined through a homomorphism of $\mathcal
+    T$.
+    \begin{itemize}
+    \item For example, each concrete transition induces an abstract
+      transition.
+    \end{itemize}
+  \item However, we cannot \alert{compute} $\mathcal T'$ by iterating
+    over all transitions of $\mathcal T$.%
+    \begin{itemize}
+    \item This would take time $\Omega(\|\mathcal T\|)$.
+    \item This is prohibitively large (or else we could solve the
+      task using breadth-first search or similar techniques).
+    \end{itemize}
+  \item Hence, we need a way of computing $\mathcal T'$ in time
+    which is \alert{polynomial only in $\|\Pi\|$ and $\|\mathcal
+      T'\|$}.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Syntactic projections}
+  \begin{definition}[syntactic projection]
+    Let $\Pi = \langle V, I, O, \gamma\rangle$ be an FDR planning task, \\
+    and let $P \subseteq V$ be a subset of its variables.
+
+    The \alert{syntactic projection $\Pi|_P$} of $\Pi$ to $P$
+    is the FDR planning task
+    $\langle P, I|_P, \{o|_P \mid o \in O\}, \gamma|_P\rangle$, where
+    \begin{itemize}
+    \item $\varphi|_P$ for formula $\varphi$ is defined as the
+      formula obtained from $\varphi$ by replacing all atoms $(v = d)$
+      with $v \notin P$ by $\top$, and
+    \item $o|_P$ for operator $o$ is defined by replacing all formulas
+      $\varphi$ occurring in the precondition or effect conditions of
+      $o$ with $\varphi|_P$ and all atomic effects $(v := d)$ with $v
+      \notin P$ with the empty effect $\top$.
+    \end{itemize}
+  \end{definition}
+  Put simply, $\Pi|_P$ throws away all information not pertaining to
+  variables in $P$.
+\end{frame}
+
+\begin{frame}{Trivially inapplicable operators}
+  \begin{definition}[trivially inapplicable operator]
+    An operator $\langle \chi, e\rangle$ of a \sasplus\ task is
+    called \alert{trivially inapplicable} if
+    \begin{itemize}
+    \item $\chi$ contains the atoms $(v = d)$ and $(v = d')$ \\
+      for some variable $v$ and values $d \neq d'$, or
+    \item $e$ contains the effects $(v := d)$ and $(v := d')$ \\
+      for some variable $v$ and values $d \neq d'$.
+    \end{itemize}
+  \end{definition}
+  \hilite{Notes:}
+  \begin{itemize}
+  \item Trivially inapplicable operators are never applicable and \\
+    can thus be safely omitted from the task.
+  \item Trivially inapplicable operators can be detected in linear time.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Trivially unsolvable {\sasplus} tasks}
+  \begin{definition}[trivially unsolvable {\sasplus} tasks]
+    A \sasplus\ task $\Pi = \langle V, I, O, \gamma\rangle$ 
+    is called \alert{trivially unsolvable} if
+    $\gamma$ contains the atoms $(v = d)$ and $(v = d')$
+    for some variable $v$ and values $d \neq d'$.
+  \end{definition}
+  \hilite{Notes:}
+  \begin{itemize}
+  \item Trivially unsolvable {\sasplus} tasks have no goal states,
+    and are hence unsolvable.
+  \item Trivially unsolvable {\sasplus} tasks can be detected in
+    linear time.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Equivalence theorem for syntactic projections}
+  \begin{theorem}[syntactic projections vs.\ projections]
+    Let $\Pi$ be a \sasplus\ task that is not trivially unsolvable
+    and has no trivially inapplicable operators,
+    and let $P$ be a pattern for $\Pi$.
+
+    Then $\mathcal T(\Pi|_P) \graphequiv \mathcal T(\Pi)^{\pi_P}$.
+  \end{theorem}
+  \begin{proof}
+    $\leadsto$ exercises
+  \end{proof}
+\end{frame}
+
+\begin{frame}{PDB computation}
+  Using the equivalence theorem, we can compute pattern databases
+  for (not trivially unsolvable) {\sasplus} tasks $\Pi$ and patterns $P$:
+  
+  \begin{block}{Computing pattern databases}
+    \textbf{def} compute-PDB($\Pi$, $P$): \\
+    {}\qquad Remove trivially inapplicable operators from $\Pi$. \\
+    {}\qquad Compute $\Pi' := \Pi|_P$. \\
+    {}\qquad Compute $\mathcal T' := \mathcal T(\Pi')$. \\
+    {}\qquad Perform a backward breadth-first search from the goal \\
+    {}\qquad\qquad states of $\mathcal T'$ to compute all abstract
+    goal distances. \\
+    {}\qquad $\textit{PDB} := \text{a table containing all
+    goal distances in~} \mathcal T'$ \\
+    {}\qquad\textbf{return} \textit{PDB}
+  \end{block}
+  
+  The algorithm runs \alert{in polynomial time and space} in terms of
+  $\|\Pi\| + |\textit{PDB}|$.
+\end{frame}
+
+\begin{frame}{Generalizations of the equivalence theorem}
+  \begin{itemize}
+  \item The restrictions to {\sasplus} tasks and to tasks without
+    trivially inapplicable operators are necessary.
+  \item We can slightly generalize the result if we allow general
+    negation-free formulas, but still forbid conditional effects.
+    \begin{itemize}
+    \item In that case, the unlabeled graph of $\mathcal
+      T(\Pi)^{\pi_P}$ is isomorphic to a subgraph of the unlabeled
+      graph of $\mathcal T(\Pi|_P)$.
+    \item This means that we can use $\mathcal T(\Pi|_P)$ to derive
+      an admissible estimate of $h^P$.
+    \end{itemize}
+  \item With conditional effects, not even this weaker result holds.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Going beyond {\sasplus} tasks}
+  \begin{itemize}
+  \item Most practical implementations of PDB heuristics are limited
+    to {\sasplus} tasks (or modest generalizations).
+  \item One way to avoid the issues with general FDR tasks is to
+    convert them to equivalent {\sasplus} tasks.
+  \item However, most direct conversions can exponentially increase
+    the task size in the worst case.
+  \end{itemize}
+  $\leadsto$ We will only consider {\sasplus} tasks in this chapter.
+\end{frame}
+
+\subsection[Lookup]{Lookup step}
+
+\begin{frame}{Lookup step: overview}
+  \begin{itemize}
+  \item During search, the PDB is the only piece of information
+    necessary to represent $h^P$. (It is not necessary to store the
+    abstract transition system itself at this point.)
+  \item Hence, the space requirements for PDBs during search are
+    linear in the number of abstract states $S'$: there is one table
+    entry for each abstract state.
+  \item During search, $h^P(s)$ is computed by mapping
+    $\pi_P(s)$ to a natural number in the range
+    $\{0, \dots, |S'| - 1\}$
+    using a \alert{perfect hash function}, then looking up the table
+    entry for that number.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Lookup step: algorithm}
+  Let $P = \{v_1, \dots, v_k\}$ be the pattern.
+  \begin{itemize}
+  \item We assume that all variable domains are natural numbers
+    counted from $0$, \ie, $\mathcal D_v = \{0, 1, \dots, |\mathcal
+      D_v| - 1\}$.
+  \item For all $i \in \{1, \dots, k\}$, we precompute
+    $N_i := \prod_{j=1}^{i-1} |\mathcal D(v_j)|$.
+  \end{itemize}
+
+  \smallskip
+
+  Then we can look up heuristic values as follows:
+  \begin{block}{Computing pattern database heuristics}
+    \textbf{def} PDB-heuristic($s$): \\
+    {}\qquad \textit{index} := $\sum_{i=1}^k N_i s(v_i)$ \\
+    {}\qquad \textbf{return} \textit{PDB}[\textit{index}]
+  \end{block}
+
+  \begin{itemize}
+  \item This is a \alert{very fast} operation: it can be performed in
+    $O(k)$.
+  \item For comparison, most relaxation heuristics need time
+    $O(\|\Pi\|)$ per state.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}<all:2>{Lookup step: example}
+  Abstraction induced by $\pi_{\{\text{\textblue{package}},
+    \text{\textblue{truck A}}\}}$:
+  \begin{center}
+    \picprojectionpackagetruck
+  \end{center}
+\end{frame}
+
+\begin{frame}{Lookup step: example (ctd.)}
+  \begin{itemize}
+  \item $P = \{v_1, v_2\}$ with $v_1 = \text{\textblue{package}}$,
+    $v_2 = \text{\textblue{truck A}}$.
+  \item $\mathcal D_{v_1} = \{\val{L}, \val{R}, \val{A}, \val{B}\}
+    \approx \{0, 1, 2, 3\}$
+  \item $\mathcal D_{v_2} = \{\val{L}, \val{R}\}
+    \approx \{0, 1\}$
+  \end{itemize}
+  
+  \smallskip
+
+  \begin{itemize}
+  \item[$\leadsto$] $N_1 = \prod_{j=1}^0 |\mathcal D_{v_j}| = 1$,
+    $N_2 = \prod_{j=1}^1 |\mathcal D_{v_j}| = 4$
+  \item[$\leadsto$] $\textit{index}(s) =
+    1 \cdot s(\text{\textblue{package}})
+    + 4 \cdot s(\text{\textblue{truck A}})$
+  \end{itemize}
+
+  Pattern database:
+  \smallskip
+
+  \begin{tabular}{@{}c|rrrrrrrr@{}}
+    abstract state & LL & RL & AL & BL & LR & RR & AR & BR \\
+    index & 0 & 1 & 2 & 3 & 4 & 5 & 6 & 7 \\
+    value & 2 & 0 & 2 & 1 & 2 & 0 & 1 & 1
+  \end{tabular}
+\end{frame}
+
+\section[Additivity]{Additive patterns for planning tasks}
+\subsection[Canonical heuristic function]{The additivity criterion \&
+  the canonical heuristic function}
+
+\begin{frame}{Pattern collections}
+  \begin{itemize}
+  \item The space requirements for a pattern database grow
+    \alert{exponentially} with the \alert{number of state variables}
+    in the pattern.
+  \item This places severe limits on the usefulness of single PDB
+    heuristics $h^P$ for larger planning task.
+  \item To overcome this limitation, planners using pattern databases
+    work with \alert{collections of multiple patterns}.
+  \item When using two patterns $P_1$ and $P_2$, it is always possible
+    to use the \alert{maximum} of $h^{P_1}$ and $h^{P_2}$ as an
+    admissible and consistent heuristic estimate.
+  \item However, when possible, it is much preferable to use
+    the \alert{sum} of $h^{P_1}$ and $h^{P_2}$ as a heuristic
+    estimate, since $h^{P_1} + h^{P_2} \ge \max \{h^{P_1}, h^{P_2}\}$.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Criterion for additive patterns}
+  \begin{theorem}[additive pattern sets]
+    Let $P_1, \dots, P_k$ be patterns for an FDR planning task $\Pi$.
+
+    \smallskip
+
+    If there exists no operator that has an effect on a variable $v_i
+    \in P_i$ and on a variable $v_j \in P_j$ for some $i \neq j$, then
+    $\sum_{i=1}^k h^{P_i}$ is an admissible and consistent heuristic
+    for $\Pi$.
+  \end{theorem}
+  \pause
+  \begin{proof}
+    If there exists no such operator, then no label of $\mathcal
+    T(\Pi)$ affects both $\mathcal T(\Pi)^{\pi_{P_i}}$ and $\mathcal
+    T(\Pi)^{\pi_{P_j}}$ for $i \neq j$. By the theorem on affecting
+    transition labels, this means that any two projections $\pi_{P_i}$
+    and $\pi_{P_j}$ are orthogonal. The claim follows with the theorem
+    on additivity for orthogonal abstraction mappings.
+  \end{proof}
+
+  A pattern set $\{P_1, \dots, P_k\}$ which satisfies the criterion of
+  the theorem is called an \alert{additive pattern set} or
+  \alert{additive set}.
+\end{frame}
+
+\begin{frame}{Finding additive pattern sets}
+  The theorem on additive pattern sets gives us a simple criterion to
+  decide which pattern heuristics can be admissibly added.
+
+  \smallskip
+
+  Given a \alert{pattern collection $\mathcal C$} (\ie, a set of
+  patterns), \\ we can use this information as follows:
+  \begin{enumerate}
+  \item Build the \alert{compatibility graph} for $\mathcal C$.
+    \begin{itemize}
+    \item Vertices correspond to patterns $P \in \mathcal C$.
+    \item There is an edge between two vertices iff no operator
+      affects both incident patterns.
+    \end{itemize}
+  \item Compute \alert{all maximal cliques} of the graph. \\
+    These correspond to maximal additive subsets of $\mathcal C$.
+    \begin{itemize}
+    \item Computing large cliques is an NP-hard problem, and a
+      graph can have exponentially many maximal cliques.
+    \item However, there are \alert{output-polynomial} algorithms for
+      finding all maximal cliques (Tomita, Tanaka \& Takahashi, 2004)
+      which have led to good results in practice.
+    \end{itemize}
+  \end{enumerate}
+\end{frame}
+
+\begin{frame}{The canonical heuristic function}
+  \begin{definition}[canonical heuristic function]
+    Let $\Pi$ be an FDR planning task, and
+    let $\mathcal C$ be a pattern collection for $\Pi$.
+
+    \smallskip
+
+    The \alert{canonical heuristic $h^{\mathcal C}$}
+    for pattern collection $\mathcal C$ is defined as
+    \[
+    h^{\mathcal C}(s) =
+    \max_{\mathcal D \in \cliques(\mathcal C)}
+    \sum_{P \in \mathcal D} h^P(s),\]
+    where $\cliques(\mathcal C)$ is the set of all maximal cliques \\
+    in the compatibility graph for $\mathcal C$.
+  \end{definition}
+  
+  For all choices of $\mathcal C$, heuristic $h^{\mathcal C}$ is
+  admissible and consistent.
+\end{frame}
+
+\begin{frame}{How good is the canonical heuristic function?}
+  \begin{itemize}
+  \item The canonical heuristic function is the \alert{best possible}
+    admissible heuristic we can derive from $\mathcal C$ using
+    \alert{our additivity criterion}.
+  \item In theory, even better heuristic estimates can be obtained from
+    projection heuristics using a \alert{more general additivity
+      criterion} based on an idea called \alert{cost partitioning}.
+    \begin{itemize}
+    \item Optimal polynomial cost partitioning algorithms exist
+      (Katz \& Domshlak, 2008a).
+    \item However, polynomial is often not fast enough here.
+    \item Coming up with good practical ways of cost partitioning for
+      PDB heuristics remains an open research issue.
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Canonical heuristic function: example}
+  \begin{example}
+    Consider a planning task with state variables $V = \{v_1, v_2,
+    v_3\}$ \\ and the pattern collection $\mathcal C = \{P_1, \dots,
+    P_4\}$ with $P_1 = \{v_1, v_2\}$, $P_2 = \{v_1\}$, $P_3 =
+    \{v_2\}$ and $P_4 = \{v_3\}$.
+
+    \smallskip
+
+    There are operators affecting each individual variable, and the
+    only operators affecting several variables affect $v_1$ and $v_3$.
+
+    \smallskip
+
+    What are the maximal cliques in the compatibility graph for
+    $\mathcal C$?
+
+    \pause
+    \medskip
+
+    \hilite{Answer:} $\{P_1\}$, $\{P_2, P_3\}$, $\{P_3, P_4\}$
+
+    \pause
+    \medskip
+
+    What is the canonical heuristic function $h^{\mathcal C}$?
+
+    \pause
+    \medskip
+
+    \hilite{Answer:}
+    $\begin{array}[t]{r@{}l}
+      h^{\mathcal C} & {} = \max\,\{
+        h^{P_1},
+        h^{P_2} + h^{P_3},
+        h^{P_3} + h^{P_4}
+      \} \\
+      & {} = \max\,\{
+        h^{\{v_1, v_2\}},
+        h^{\{v_1\}} + h^{\{v_2\}},
+        h^{\{v_2\}} + h^{\{v_3\}}
+        \}
+    \end{array}$
+  \end{example}
+\end{frame}
+
+\subsection[Simplification]{Algebraic simplification \& dominance pruning}
+
+\begin{frame}{Computing $h^{\mathcal C}$ efficiently: motivation}
+  Consider $h^{\mathcal C} = \max\,\{
+    h^{\{v_1, v_2\}},
+    h^{\{v_1\}} + h^{\{v_2\}},
+    h^{\{v_2\}} + h^{\{v_3\}}
+    \}$.
+  \begin{itemize}
+  \item We need to evaluate this expression for \alert{every search
+    node}.
+  \item It is thus worth to spend some effort in precomputations to
+    make the evaluation \alert{more efficient}.
+  \end{itemize}
+
+  \medskip
+
+  A naive implementation requires \alert{8 atomic operations}:
+  \begin{itemize}
+  \item \alert{4} heuristic lookups (for
+    $h^{\{v_1, v_2\}}$, 
+    $h^{\{v_1\}}$, 
+    $h^{\{v_2\}}$ and
+    $h^{\{v_3\}}$),
+  \item \alert{2} binary summations and
+  \item \alert{2} binary maximizations
+  \end{itemize}
+
+  \medskip
+
+  \alert{Can we do better than that?}
+\end{frame}
+
+\begin{frame}{Algebraic simplifications}
+  One possible simplification is to use \alert{algebraic
+    identities} \\
+  to reduce the number of operations:
+  \begin{align*}
+    &
+    \max\,\{
+      h^{\{v_1, v_2\}},
+      h^{\{v_1\}} + h^{\{v_2\}},
+      h^{\{v_2\}} + h^{\{v_3\}}
+      \} \\
+    {} = {} &
+    \max\,\{
+      h^{\{v_1, v_2\}},
+      h^{\{v_2\}} + \max\,\{h^{\{v_1\}}, h^{\{v_3\}}\}
+      \}
+  \end{align*}
+  $\leadsto$ reduces number of operations from \alert{8} to \alert{7}
+
+  \medskip
+
+  \alert{Is there anything else we can do?}
+\end{frame}
+
+\begin{frame}{Dominated sum theorem}
+  \begin{theorem}[dominated sum]
+    Let $\{P_1, \dots, P_k\}$ be an additive pattern set for an FDR
+    planning task, and let $P$ be a pattern with $P_i \subseteq P$ for
+    all $i \in \{1, \dots, k\}$.
+    
+    \smallskip
+
+    Then $\sum_{i=1}^k h^{P_i} \le h^P$.
+  \end{theorem}
+
+  \pause
+
+  \begin{proofstart}
+    Let $\mathcal T'$ be the transition system induced by $\pi_P$,
+    and for all $i \in \{1, \dots, k\}$, let $\mathcal T'_i$ be
+    the transition system induced by $\pi_{P_i}$.
+
+    Because $P_i \subseteq P$, we can write each projection
+    $\pi_{P_i}$ as a projection onto $P$ followed by a projection onto
+    $P_i$: $\pi_{P_i} = \pi'_{P_i} \circ \pi_P$. Hence, each $\mathcal
+    T'_i$ is a coarsening of $\mathcal T'$, and we can consider the
+    $h^{P_i}$ as \alert{abstraction heuristics on $\mathcal T'$},
+    where they are also additive.
+    %% TODO: This last part "where they are also additive" could do
+    %% with a proof, and the "can consider as heuristics on T'" could
+    %% do with a changed notation to emphasize the fact that the
+    %% domain of the function is different. (For example, use
+    %% \tilde{h} instead of h.)
+  \end{proofstart}
+\end{frame}
+
+\begin{frame}{Dominated sum theorem (ctd.)}
+  \begin{proofend}
+    We get:
+    \begin{align*}
+      \sum_{i=1}^k h^{P_i}(s)
+      & {} =
+      \sum_{i=1}^k h_{\mathcal T'_i}^*(\pi_{P_i}(s))
+      = \sum_{i=1}^k h_{\mathcal T'_i}^*(\pi'_{P_i}(\pi_P(s)))
+      \\ & {} \stackrel{(1)}{=}
+      \sum_{i=1}^k h_{\mathcal T'_i}^*(\pi'_{P_i}(s'))
+      \stackrel{(2)}{=} \sum_{i=1}^k h^{P_i}(s')
+      \\ & {} \stackrel{(3)}{\le}
+      h_{\mathcal T'}^*(s')
+      = h_{\mathcal T'}^*(\pi_P(s))
+      = h^P(s)
+    \end{align*}
+    where (1) holds for $s' := \pi_P(s)$, (2) holds because we can
+    consider the $h^{P_i}$ as abstraction heuristics on $\mathcal T'$,
+    and (3) holds because of the additivity criterion.
+  \end{proofend}
+\end{frame}
+
+\begin{frame}{Dominated sum corollary}
+  \begin{corollary}[dominated sum]
+    Let $\{P_1, \dots, P_n\}$ and $\{Q_1, \dots, Q_m\}$ be additive
+    pattern sets of an FDR planning task such that each pattern $P_i$
+    is a subset of some pattern $Q_j$ (not necessarily proper).
+
+    \smallskip
+
+    Then $\sum_{i=1}^n h^{P_i} \le \sum_{j=1}^m h^{Q_j}$.
+  \end{corollary}
+  \pause
+  \begin{proof}
+    \[ \sum_{i=1}^n h^{P_i}
+      \stackrel{(1)}{\le} \sum_{j=1}^m \sum_{P_i \subseteq Q_j} h^{P_i}
+      \stackrel{(2)}{\le} \sum_{j=1}^m h^{Q_j},
+      \]
+    where (1) holds because each $P_i$ is contained in some $Q_j$ \\
+    and (2) follows from the dominated sum theorem.
+  \end{proof}
+\end{frame}
+
+\begin{frame}{Dominance pruning}
+  \begin{itemize}
+  \item We can use the dominated sum corollary to simplify
+    the representation of $h^{\mathcal C}$:
+    sums that are dominated by other sums can be pruned.
+  \item The dominance test can be performed in polynomial time.
+  \end{itemize}
+
+  \begin{example}
+    \begin{align*}
+      &
+      \max\,\{
+      h^{\{v_1, v_2\}},
+      h^{\{v_1\}} + h^{\{v_2\}},
+      h^{\{v_2\}} + h^{\{v_3\}}
+      \} \\
+      {} = {} &
+      \max\,\{
+      h^{\{v_1, v_2\}},
+      h^{\{v_2\}} + h^{\{v_3\}}
+      \}
+    \end{align*}
+    $\leadsto$ reduces number of operations from \alert{8} to
+    \alert{5}
+  \end{example}
+\end{frame}
+
+\section{Pattern selection}
+\subsection[Local search]{Pattern selection as local search}
+
+\begin{frame}{Pattern selection as an optimization problem}
+  Only one question remains to be answered now \\
+  in order to apply PDBs to planning tasks in practice:
+
+  \smallskip
+
+  \alert{How do we automatically find a good pattern collection?}
+
+  \medskip
+
+  \begin{block}{The idea}
+    Pattern selection can be cast as an \alert{optimization problem}:
+    \begin{itemize}
+    \item \hilite{Given:} a set of \alert{candidate solutions} \\
+      (= pattern collections which fit into a given memory limit)
+    \item \hilite{Find:} a \alert{best possible} solution, or an
+      approximation \\
+      (= pattern collection with high heuristic quality)
+    \end{itemize}
+  \end{block}
+\end{frame}
+
+\begin{frame}{Pattern selection as local search}
+  How to solve this optimization problem?
+  \begin{itemize}
+  \item For problems of interesting size, we cannot hope to
+    find (and prove) a \alert{globally optimal} pattern collection.
+    \begin{itemize}
+    \item \hilite{Question:} How many candidates are there?
+    \end{itemize}
+  \item Instead, we try to find \alert{good} solutions by \alert{local
+    search}.
+  \end{itemize}
+
+  \bigskip
+
+  Two approaches from the literature:
+  \begin{itemize}
+  \item Edelkamp (2007): using \alert{evolutionary algorithm}
+  \item Haslum et al.\ (2007): using \alert{hill-climbing}
+  \end{itemize}
+  $\leadsto$ we present the main ideas of the second approach here
+\end{frame}
+
+\begin{frame}{Pattern selection as hill-climbing}
+  \begin{block}{Reminder: Hill-climbing}
+    $\sigma := \text{make-root-node}(\alert{\text{init}}())$ \\
+    \textbf{forever}: \\
+    {}\qquad \textbf{if}
+    $\alert{\text{is-goal}}(\text{state}(\sigma))$: \\
+    {}\qquad\qquad \textbf{return} $\text{extract-solution}(\sigma)$
+    \\
+    {}\qquad $\Sigma' := \{\,\text{make-node}(\sigma, o, s) \mid
+      \langle o, s\rangle \in
+      \alert{\text{succ}}(\text{state}(\sigma))\,\}$ \\
+    {}\qquad $\sigma := \text{an element of}~\Sigma'
+    \text{~minimizing~} \alert{h}$ (random tie breaking)
+  \end{block}
+
+  Four questions to answer to use this for pattern selection:
+  \begin{enumerate}
+  \item \alert{init:} What is the initial pattern collection?
+  \item \alert{is-goal:} When do we terminate?
+  \item \alert{succ:} Which collections
+    are neighbours of the current collection?
+  \item \alert{$h$:} How do we rank the quality of pattern collections?
+  \end{enumerate}
+\end{frame}
+
+\subsection{Search space}
+
+\begin{frame}{Search space}
+  We first discuss the \alert{search space} (init, is-goal, succ).
+
+  \medskip
+
+  The basic idea is that we
+  \begin{itemize}
+  \item start from \alert{small patterns} of only a single
+    variable each,
+  \item grow them by \alert{adding slightly larger patterns}, and
+  \item stop when \alert{heuristic quality no longer improves}.
+  \end{itemize}
+
+  \medskip
+  
+  To motivate the precise definition of our search space, we need a
+  little more theory.
+\end{frame}
+
+\begin{frame}{Initial pattern collection}
+  \begin{theorem}[non-goal patterns are trivial]
+    Let $\Pi$ be a {\sasplus} planning task that is not trivially
+    unsolvable, and let $P$ be a pattern for $\Pi$ such that no
+    variable in $P$ is mentioned in the goal formula of $\Pi$.
+
+    Then $h^P(s) = 0$ for all states $s$.
+  \end{theorem}
+  %% NOTE: Not true for general FDR tasks because these can have
+  %% unsatisfiable goal formulas, in which case *all* semantic
+  %% projections have h value infinity (no goal states => no abstract
+  %% goal states).
+
+  \begin{proof}
+    All states in the abstraction are goal states.
+  \end{proof}
+
+  \smallskip
+  
+  This motivates our first answer:
+  \begin{block}{1. What is the initial pattern collection?}
+    The initial pattern collection is
+    $\{\{v\}~|~v \text{~is a state variable mentioned in the goal formula}\}$.
+  \end{block}
+\end{frame}
+
+\begin{frame}{Termination criterion}
+  Our second question has a very simple answer:
+  \begin{block}{2. When do we terminate?}
+    We terminate as soon as the current pattern collection has no
+    successors of better quality.
+  \end{block}
+
+  Note that this also covers the case where there are no successors
+  at all because further growth of the current pattern collection
+  would exceed a memory limit.
+\end{frame}
+
+\begin{frame}{Search neighborhood: idea}
+  Our search neighbourhood is defined through \alert{incremental
+    growth} of the current pattern collection.
+
+  \smallskip
+
+  A successor is obtained by
+  \begin{itemize}
+  \item starting from the \alert{current pattern collection} $\mathcal
+    C$,
+  \item choosing \alert{one of its patterns} $P \in \mathcal C$
+    (without removing it from $\mathcal C$!),
+  \item generating a new pattern by extending $P$ with a single
+    variable ($P' = P \cup \{v\}$), and
+  \item adding $P'$ to $\mathcal C$ to form the new pattern
+    collection $\mathcal C'$
+  \end{itemize}
+
+  However, not all such collections $\mathcal C'$ are useful.
+\end{frame}
+
+\begin{frame}{Causal graphs}
+  \begin{definition}[causal graph]
+    Let $\Pi = \langle V, I, O, \gamma\rangle$ be an FDR planning task.
+
+    The \alert{causal graph} of $\Pi$, \alert{$\cg(\Pi)$}, is the
+    directed graph with vertex set $V$ and an arc from $u \in V$ to
+    $v \in V$ iff $u \neq v$ and there exists an operator $o \in O$
+    such that:
+    \begin{itemize}
+    \item $u$ appears anywhere in $o$ (in precondition, effect
+      conditions or atomic effects), and
+    \item $v$ is modified by an effect of $o$.
+    \end{itemize}
+  \end{definition}
+  \hilite{Idea:} an arc $\langle u, v\rangle$ in the causal graph
+  indicates that variable $u$ is in some way relevant for modifying
+  the value of $v$
+\end{frame}
+
+\begin{frame}{Causally relevant variables}
+  \begin{definition}[causally relevant variables]
+    Let $\Pi = \langle V, I, O, \gamma\rangle$ be an FDR planning task
+    and let $P \subseteq V$ be a pattern for $\Pi$.
+
+    We say that $v \in P$ is \alert{causally relevant for $P$} if
+    $\cg(\Pi)$ contains a directed path from $v$ to a variable $v' \in
+    P$ that is mentioned in the goal formula $\gamma$.
+  \end{definition}
+  \hilite{Note:} The definition implies that variables in $P$
+  mentioned in the goal are always causally relevant for $P$.
+\end{frame}
+%% NOTE from Patrik: It would probably make more sense to require that
+%% the path stays within P, i.e., exists in the subgraph of the causal
+%% graph induced by P. We kind of get the right criterion in the end
+%% anyway because we also require causal connectedness, but that's a
+%% bit too accidental for my tastes.
+
+\begin{frame}{Causally irrelevant variables are useless}
+  \begin{theorem}[causally irrelevant variables are useless]
+    Let $P \subseteq V$ be a pattern for an FDR planning task $\Pi$,
+    and let $P' \subseteq P$ consist of all variables that are
+    causally relevant for $P$.
+
+    Then $h^{P'}(s) = h^P(s)$ for all states $s$.
+  \end{theorem}
+
+  \pause
+
+  \begin{proofstart}
+    \hilite{$(\le)$:} follows from the dominated sum theorem with $P'
+    \subseteq P$
+
+  \pause
+    \medskip
+
+    \hilite{$(\ge)$:} Obvious if $h^{P'}(s) = \infty$; else, induction
+    over $n = h^{P'}(s)$.
+
+    \begin{itemize}
+    \item \hilite{Base case $n = 0$:}
+
+      If $h^{P'}(s) = 0$, then there exists a concrete goal state
+      $\tilde{s}$ that agrees with $s$ on all variables in $P'$. If we
+      change $\tilde{s}$ so that it agrees with $s$ on all variables in
+      $P$, it is still a goal state because we only change variables
+      that are not mentioned in the goal.
+    \end{itemize}
+  \end{proofstart}
+\end{frame}
+
+\begin{frame}{Causally irrelevant variables are useless (ctd.)}
+  \begin{proofmid}
+    \begin{itemize}
+    \item \hilite{Inductive case $n \rightarrow n + 1$:}
+
+      If $h^{P'}(s) = n+1$, then there exist concrete states $\tilde{s}$
+      and $\tilde{t}$ and an operator $o$ of $\Pi$ such that:
+      \begin{itemize}
+      \item $s$ and $\tilde{s}$ agree on all variables in $P'$,
+      \item $\applyop{o}{\tilde{s}} = \tilde{t}$, and
+      \item $h^{P'}(\tilde{t}) = n$.
+      \end{itemize}
+
+      \pause
+
+      If we change $\tilde{s}$ and $\tilde{t}$ so that they agree
+      with $s$ on all variables of $P$, then still
+      $\applyop{o}{\tilde{s}} = \tilde{t}$, because
+      \begin{itemize}
+      \item $o$ modifies a variable in $P'$ (otherwise
+        $\pi_{P'}(\tilde{s}) = \pi_{P'}(\tilde{t})$ contradicting
+        $h^{P'}(\tilde{s}) = n + 1 \neq n = h^{P'}(\tilde{t})$), and
+        hence
+      \item all variables mentioned in $o$ are causally relevant for
+        $P'$, which implies that
+      \item $o$ mentions no variable in $P \setminus P'$.
+      \end{itemize}
+      \dots
+    \end{itemize}
+  \end{proofmid}
+\end{frame}
+
+\begin{frame}{Causally irrelevant variables are useless (ctd.)}
+  \begin{proofend}
+    \begin{itemize}
+    \item \dots
+
+      We get:
+      \begin{itemize}
+      \item $s$ and $\tilde{s}$ agree on all variables in $P$,
+      \item $\applyop{o}{\tilde{s}} = \tilde{t}$, and
+      \item $h^{P'}(\tilde{t}) = n = h^P(\tilde{t})$ (by the induction
+        hypothesis).
+      \end{itemize}
+      This implies $h^P(s) \le n + 1$, concluding the proof.
+    \end{itemize}
+  \end{proofend}
+
+  \hilite{Corollary:} There is no point in growing a pattern by adding
+  a variable that is causally irrelevant in the resulting pattern.
+\end{frame}
+
+\begin{frame}{Causally connected patterns}
+  \begin{definition}[causally connected patterns]
+    Let $\Pi = \langle V, I, O, \gamma\rangle$ be an FDR planning task
+    and let $P \subseteq V$ be a pattern for $\Pi$.
+
+    We say that $P$ is \alert{causally connected} if the subgraph of
+    $\cg(\Pi)$ induced by $P$ is weakly connected (\ie, contains a
+    path from every vertex to every other vertex, ignoring arc
+    directions).
+  \end{definition}
+\end{frame}
+
+\begin{frame}{Disconnected patterns are decomposable}
+  \begin{theorem}[causally disconnected patterns are decomposable]
+    Let $P \subseteq V$ be a pattern for a {\sasplus} planning task
+    $\Pi$ that is not causally connected, and let $P_1$, $P_2$ be a
+    partition of $P$ into non-empty subsets such that $\cg(\Pi)$
+    contains no arc between the two sets.
+
+    Then $h^{P_1}(s) + h^{P_2}(s) = h^P(s)$ for all states $s$.
+  \end{theorem}
+  %% NOTE: Not a theorem for FDR tasks with disjunctive goals.
+  %% Consider \gamma = (a \lor b), where a and b are atoms from different
+  %% subpatterns. Then each subpattern has h value zero because the
+  %% goal can be satisfied by achieving the disjunctive subgoal from
+  %% the other subpattern. However, the combined pattern can of course
+  %% have non-zero heuristic estimates. The cause of the breakdown is
+  %% that our causal graph definition -- or our notion of causal
+  %% connectedness -- is in some ways inappropriate for disjunctive
+  %% goals.
+
+  \pause
+
+  \begin{proofstart}
+    \hilite{$(\le)$:} There is no arc between $P_1$ and $P_2$ in the
+    causal graph, and thus there is no operator that affects both
+    patterns. Therefore, they are additive, and $h^{P_1} + h^{P_2} \le
+    h^P$ follows from the dominated sum theorem.
+  \end{proofstart}
+\end{frame}
+
+\begin{frame}{Disconnected patterns are decomposable (ctd.)}
+  \begin{proofmid}
+    \hilite{$(\ge)$:} If $h^{P_1}(s) + h^{P_2}(s) = \infty$, we are
+    done.
+
+    Otherwise, proof by induction over $n = h^{P_1}(s) + h^{P_2}(s)$.
+    \begin{itemize}
+    \item \hilite{Base case $n = 0$:}
+
+      If $h^{P_1}(s) + h^{P_2}(s) = 0$,
+      then $h^{P_1}(s) = 0$ and hence $s$ satisfies all goal atoms for
+      variables in $P_1$; similarly for $P_2$. Hence, it satisfies all
+      goal atoms for variables in $P = P_1 \cup P_2$, and thus
+      $h^P(s) = 0$.
+    \end{itemize}
+  \end{proofmid}
+\end{frame}
+
+\begin{frame}{Disconnected patterns are decomposable (ctd.)}
+  \begin{proofmid}
+    \begin{itemize}
+    \item \hilite{Inductive case $n \rightarrow n + 1$:}
+
+      If $h^{P_1}(s) + h^{P_2}(s) = n+1$, then there exist concrete
+      states $\tilde{s}$ and $\tilde{t}$, an operator $o$ of $\Pi$ and
+      $i \in \{1, 2\}$ such that:
+      \begin{enumerate}
+      \item $s$ and $\tilde{s}$ agree on all variables in $P_i$,
+      \item $\applyop{o}{\tilde{s}} = \tilde{t}$, and
+      \item $h^{P_i}(\tilde{t}) = h^{P_i}(\tilde{s}) - 1$.
+      \end{enumerate}
+
+      \pause
+
+      Let $j \in \{1, 2\}$ with $j \neq i$. Since $P_1$ and $P_2$ are
+      causally disconnected, the operator $o$ does not mention any
+      variables in $P_j$. Therefore, we can change $\tilde{s}$ and
+      $\tilde{t}$ so that they agree with $s$ on all variables of
+      $P$ and still have (2) and (3).
+
+      \dots
+    \end{itemize}
+  \end{proofmid}
+\end{frame}
+
+\begin{frame}{Disconnected patterns are decomposable (ctd.)}
+  \begin{proofend}
+    \begin{itemize}
+    \item \dots
+
+      We get:
+      \begin{itemize}
+      \item $h^{P_j}(\tilde{t}) = h^{P_j}(\tilde{s})$ (because
+        $o$ does not affect variables in $P_j$)
+      \item[$\leadsto$] $h^{P_1}(\tilde{t}) + h^{P_2}(\tilde{t}) = n$
+      \item[$\leadsto$] $h^P(\tilde{t}) = n$ (by the induction
+        hypothesis)
+      \item[$\leadsto$] $h^P(\tilde{s}) \le n + 1$ (because
+        $\applyop{o}{\tilde{s}} = \tilde{t}$)
+      \item[$\leadsto$] $h^P(s) \le n + 1$ (because
+        $s$ and $\tilde{s}$ agree on $P$ and hence $h^P(s) =
+        h^P(\tilde{s})$).
+      \end{itemize}
+      This concludes the proof.
+    \end{itemize}
+  \end{proofend}
+
+  \hilite{Corollary:} There is no point in including a causally
+  disconnected pattern in the collection. (Using its connected
+  components instead requires less space and gives identical results.)
+\end{frame}
+
+\begin{frame}{Search neighbourhood}
+  We can now put the pieces together to define our search
+  neighbourhood, obtaining the third answer:
+  
+  \begin{block}{3. Which collections are neighbours of the
+      current collection?}
+    
+    The neighbours of $\mathcal C$ are all pattern collections
+    $\mathcal C \cup \{P'\}$ where
+    \begin{itemize}
+    \item $P' = P \cup \{v\}$ for some $P \in \mathcal C$,
+    \item $P' \notin \mathcal C$,
+    \item all variables of $P'$ are causally relevant in $P'$,
+    \item $P'$ is causally connected, and
+    \item all pattern databases in $\mathcal C \cup \{P'\}$ can be
+      represented within some prespecified space limit
+    \end{itemize}
+  \end{block}
+\end{frame}
+
+\begin{frame}{Search neighborhood (ctd.)}
+  \hilite{Remark:} For causal relevance and connectivity, there is
+  a sufficient and necessary criterion which is easy to check:
+  \begin{itemize}
+  \item $v$ is a predecessor of some $u \in P$ in the causal graph,
+    \alert{or}
+  \item $v$ is a successor of some $u \in P$ in the causal graph and
+    is mentioned in the goal formula.
+  \end{itemize}
+  %% NOTE: The second possibility appears to be missing in the AAAI
+  %% 2007 PDB paper. (That is, the "optimization" there appears to be
+  %% too strong.)
+\end{frame}
+
+\subsection{Estimating heuristic quality}
+
+\begin{frame}{What is a good pattern collection?}
+  \begin{itemize}
+  \item The last question we need to answer is \alert{how to rank} \\
+    the quality of pattern collections.
+  \item This is perhaps the most critical point: without a good
+    ranking criterion, pattern collections are chosen blindly.
+  \end{itemize}
+  \medskip
+
+  The first search-based approach to pattern selection (Edelkamp,
+  2007) used the following strategy:
+  \begin{itemize}
+  \item only additive sets are used as pattern collections
+    \begin{itemize}
+    \item no need for something like the canonical heuristic function
+    \end{itemize}
+  \item the quality of a \alert{single pattern} is estimated by \\
+    its \alert{mean heuristic value} (the higher, the better)
+  \item the quality of a \alert{pattern collection} is estimated by \\
+    the \alert{sum} of the individual pattern qualities
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Discussion of the mean value approach}
+  Pros of the approach:
+  \begin{itemize}
+  \item mean heuristic values are clearly correlated with search
+    performance $\leadsto$ the \alert{quality measure makes sense}
+  \item mean heuristic values are quite \alert{easy to calculate}
+  \end{itemize}
+
+  \medskip
+
+  Cons of the approach:
+  \begin{itemize}
+  \item cannot reasonably deal with \alert{infinite} heuristic
+    estimates
+  \item difficult to generalize to pattern collections that are \\
+    \alert{not fully additive}
+  \item there are \alert{better predictors} for search performance \\
+    than mean heuristic values
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{So what is a good pattern collection, again?}
+  How can be come up with a better quality measure?
+  \begin{itemize}
+  \item We are chiefly interested in \alert{minimizing the number of
+    node expansions} for the \alert{canonical heuristic function}
+    during the \alert{actual search phase} of the planner.
+  \item There is theoretical work on \alert{predicting node
+    expansions} of heuristic search algorithms based on
+    parameters of the heuristic (Korf, Reid \& Edelkamp, 2001).
+  \item[$\leadsto$] Try to estimate these parameters, then use their
+    analysis.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{The Korf, Reid \& Edelkamp formula}
+  \begin{block}{Korf, Reid \& Edelkamp (2001)}
+    In the limit of large $c$, the expected number of node expansions
+    for a failed iteration of {\idastar} with depth threshold $c$ is
+    \[ E(N, c, P) = \sum_{i=0}^c N_i P(c - i) \]
+    where
+    \begin{itemize}
+    \item $N = \langle N_0, N_1, \dots, N_c\rangle$ is the
+      \alert{brute-force tree shape}
+      \begin{itemize}
+      \item[$\leadsto$] $N_i$: number of search nodes in layer $i$ of
+        the brute-force search tree
+      \end{itemize}
+    \item $P$ is the \alert{equilibrium distribution} of the heuristic
+      function
+      \begin{itemize}
+      \item[$\leadsto$] $P(k)$: probability that node chosen
+        uniformly from layer $i$ of the brute-force search tree has
+        heuristic value at most $k$, in the limit of large $i$
+      \end{itemize}
+    \end{itemize}
+  \end{block}
+\end{frame}
+
+\begin{frame}{Using the formula for quality estimation}
+  Some problems when using the formula for quality estimation:
+  \begin{itemize}
+  \item only holds in the limit
+  \item applies to {\idastar}, but most planners use {\astar}
+  \item we do not know $N$ or $P$
+  \end{itemize}
+
+  \bigskip
+
+  However:
+  \begin{itemize}
+  \item we do not need \alert{absolute} node estimates, we only need
+    to know which heuristic among a set of candidates is \alert{best}
+  \item we would expect heuristics good for {\idastar} to be good for
+    {\astar} most of the time
+  \item we can use \alert{random walks} and \alert{sampling} to get
+    approximate estimates without knowing $N$ and $P$
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Estimating heuristic quality in practice}
+  With some additional assumptions and simplifications, we reduce the
+  problem of ranking the quality of pattern collections to the
+  following criterion:
+
+  \begin{block}{Measuring degree of improvement}
+    \begin{itemize}
+    \item Generate $M$ states $s_1, \dots, s_M$ through random walks
+      in the search space from the initial state (according to certain
+      parameters not discussed in detail).
+    \item The \alert{degree of improvement} of a pattern collection
+      $\mathcal C'$ which is generated as a successor of collection
+      $\mathcal C$ is the \alert{number of sample states} $s_i$ for
+      which \alert{$h^{\mathcal C'}(s_i) > h^{\mathcal C}(s_i)$}.
+    \end{itemize}
+  \end{block}
+\end{frame}
+
+\begin{frame}{Computing $h^{\mathcal C'}(s)$}
+  \begin{itemize}
+  \item So we need to compute $h^{\mathcal C'}(s)$ for some states $s$
+    and each candidate successor collection $\mathcal C'$.
+  \item We have PDBs for all patterns in $\mathcal C$, but not for the
+    new pattern $P' \in \mathcal C'$ (of the form $P \cup \{v\}$ for
+    some $P \in \mathcal C$).
+  \item If possible, we want to avoid computing the complete pattern
+    database except for the best successor (where we will need it
+    later anyway).
+  \end{itemize}
+
+  \hilite{Idea:}
+  \begin{itemize}
+  \item For {\sasplus} tasks $\Pi$, $h^{P'}(s)$ is identical to the \\
+    \alert{optimal solution length for the syntactic projection
+      $\Pi|_{P'}$}.
+  \item We can use \alert{any optimal planning algorithm} for this.
+  \item In particular, we can use \alert{\astar} search using
+    \alert{$h^P$} as a heuristic.
+  \end{itemize}
+\end{frame}
+
+\section{Literature}
+\subsection{References}
+
+\begin{frame}{References\only<all:2->{ (ctd.)}}
+  References on planning with pattern databases:
+  \begin{thebibliography}{1}
+    \only<all:1>{
+    \bibitem{} Stefan Edelkamp.
+      \newblock Planning with Pattern Databases.
+      \newblock \emph{Proc.~ECP 2001}, pp.~13--24, 2001.
+      \newblock \alert{First paper} on planning with pattern databases.
+    \bibitem{} Stefan Edelkamp.
+      \newblock Symbolic Pattern Databases in Heuristic Search Planning.
+      \newblock \emph{Proc.~AIPS 2002}, pp.~274--283, 2002.
+      \newblock \alert{Uses BDDs} to store pattern databases more
+      compactly.
+    }
+    \only<all:2>{
+    \bibitem<2>{} Patrik Haslum, Blai Bonet and H{\'e}ctor Geffner.
+      \newblock New Admissible Heuristics for Domain-Independent
+      Planning.
+      \newblock \emph{Proc.~AAAI 2005}, pp.~1164--1168, 2005.
+      \newblock Introduces \alert{constrained PDBs}. \\
+      First pattern \alert{selection methods} based on \alert{heuristic
+        quality}.
+    }
+    \only<all:3>{
+    \bibitem{} Stefan Edelkamp.
+      \newblock Automated Creation of Pattern Database Search
+      Heuristics.
+      \newblock \emph{Proc.~MoChArt 2006}, pp.~121--135, 2007.
+      \newblock First \alert{search-based} pattern selection method.
+    \bibitem{} Patrik Haslum, Adi Botea, Malte Helmert, Blai Bonet and
+      Sven Koenig.
+      \newblock Domain-Independent Construction of Pattern Database
+      Heuristics for Cost-Optimal Planning.
+      \newblock \emph{Proc.~AAAI 2007}, pp.~1007--1012, 2007.
+      \newblock Introduces \alert{canonical heuristic} for
+      pattern collections. \\
+      Search-based pattern selection based on \alert{Korf, Reid \&
+        Edelkamp's theory}.
+    }
+  \end{thebibliography}
+\end{frame}
+
+\section*{Summary}
+
+\begin{frame}{Summary}
+  \begin{itemize}
+  \item \alert{Pattern database (PDB) heuristics} are abstraction
+    heuristics based on \alert{projection} to a subset of variables.
+  \item For \sasplus\ tasks, they can easily be implemented via
+    \alert{syntactic projections} on the task representation.
+  \item PDBs are \alert{lookup tables} that store heuristic values, \\
+    indexed by \alert{perfect hash values} for projected states.
+  \item PDB values can be looked up \alert{very fast}, \\
+    in time $O(k)$ for a projection to $k$ variables.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Summary (ctd.)}
+  \begin{itemize}
+  \item When faced with multiple PDB heuristics (a \alert{pattern
+    collection}), we want to \alert{admissibly add} their values where
+    possible, and \alert{maximize} where addition is inadmissible.
+  \item The \alert{canonical heuristic function} is the \alert{best
+    possible} additive/maximizing combination for a given pattern
+    collection given our additivity criterion.
+  \item One way to \alert{automatically find a good pattern
+    collection} is by performing \alert{search in the space of
+    pattern collections}.
+  \item One such approach uses hill-climbing search guided by the
+    \alert{Korf, Reid and Edelkamp formula}, which tries to estimate
+    the quality of a heuristic function.
+  \end{itemize}
+\end{frame}
+
+\end{document}

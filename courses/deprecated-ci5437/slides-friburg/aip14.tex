@@ -1,0 +1,883 @@
+\documentclass{gkibeamer}
+
+\input{macros}
+\input{nondet-blocksworld}
+
+\usetikzlibrary{positioning}
+
+\begin{document}
+\subtitle{14.~Strong nondeterministic planning}
+\date{January 24th, 2012}
+\maketitles
+
+\begin{frame}
+  \frametitle{Strong planning}
+
+  We will consider one of the simplest cases of nondeterministic
+  planning by restricting attention to \alert{strong plans}.
+\end{frame}
+
+\section{Concepts}
+\subsection{Strong plans}
+
+\begin{frame}{Strong plans}
+  Recall the definition of strong plans:
+  
+  \medskip
+  
+  \begin{definition}[strong plan]
+    Let $S$ be the set of states of a planning task $\mathcal T$. Then a
+    \alert{strong plan} for $\Pi$ is a function $\pi: S_\pi \to O$ for
+    some subset $S_\pi \subseteq S$ such that
+    \begin{itemize}
+    \item $\pi(s)$ is applicable in $s$ for all $s \in S_\pi$,
+    \item $S_\pi(s_0) \subseteq S_\pi$ ($\pi$ is closed),
+    \item $S_\pi(s') \cap S_\star \neq \emptyset$ for all $s' \in S_\pi(s_0)$ ($\pi$ is proper), and
+    \item there is no state $s' \in S_\pi(s_0)$ such that $s'$ is
+      reachable from $s'$ following $\pi$ in a strictly positive number
+      of steps ($\pi$ is acyclic).
+    \end{itemize}
+  \end{definition}
+\end{frame}
+
+\begin{frame}{Strong plans}
+  \begin{block}{Execution of a strong plan}
+    \begin{enumerate}
+    \item Determine the current state $s$.
+    \item If $s$ is a goal state or $\pi(s)$ is not defined then
+      terminate.
+    \item Execute action $\pi(s)$.
+    \item Repeat from first step.
+    \end{enumerate}
+  \end{block}
+\end{frame}
+
+\begin{frame}<handout:1>[label=strong-plan-blocksworld]
+  \frametitle{Strong plans}
+  \begin{center}
+    \begin{tikzpicture}[>=latex,xscale=6,yscale=2.75]
+      \tikzstyle{hypernode}=[draw,shape=rectangle,draw=black,fill=blue!10!white]
+      \tikzstyle{hyperedge}=[thick,rounded corners=20pt,->]
+      %% step 1
+      \visible<1->{
+        \node[hypernode] at (0.5,2) (nA) {\bwstateA};
+        \node[left=of nA] (dummyI) {};
+        \draw[hyperedge] (dummyI) -- (nA);
+      }
+      %% step 2
+      \visible<2->{
+        \node[hypernode] at (0,1)   (nB) {\bwstateB};
+        \node[hypernode] at (1,1)   (nC) {\bwstateC};
+        \path (nB.south) ++(0.5,-0.5) node (dummyB) {};
+        \path (nC.west)  ++(-0.5,0.2) node (dummyC) {};
+        \draw[hyperedge] (nA.south) -- (nB);
+        \draw[hyperedge] (nA.south) -- (nC);
+        \arc{nA}{south}{nB}{nC}
+        \node (labelA) at (0.8,1.5) {\footnotesize{(pick-up A B)}};
+      }
+      %% step 3
+      \visible<3->{
+        \node[hypernode,double] at (0,0)   (nD) {\bwstateD};
+        %% \draw[hyperedge] (nB.south) -- ++(0.5,-0.5) -- (nC);
+        \draw[hyperedge] (nB.south) -- (nD);
+        %% \arc{nB}{south}{nD}{dummyB}
+        \node[anchor=east] (labelB) at (0.0,0.5) {\footnotesize{(put-on A C)}};
+      }
+      %% step 4
+      \visible<4>{
+        \draw[hyperedge] (nC.west) -- (nB);
+        %% \draw[hyperedge] (nC.west) -- ++(-0.5,0.2) -- ++(0.25,0.25) -- (nC);
+        \node[anchor=north] (labelC) at (0.5,1) {\footnotesize{(pick-up-from-table A)}};
+        %% \arc{nC}{west}{nB}{dummyC}
+      }
+    \end{tikzpicture}
+  \end{center}
+\end{frame}
+
+\only<handout>{
+  \againframe<handout:4>{strong-plan-blocksworld}
+}
+
+\subsection{Images}
+
+\begin{frame}
+  \frametitle{Images}
+
+  \begin{block}{Image}
+    The \alert{image} of a set $T$ of states with respect to an
+    operator $o$ is the set of those states that can be reached by
+    executing $o$ in a state in $T$.
+  \end{block}
+
+  \begin{center}
+    \begin{pgfpicture}{0cm}{1cm}{6.0cm}{5.5cm}
+      \pgfsetlinewidth{0.7pt}
+
+      \pgfputat{\pgfxy(1.3,4.4)}{\pgfbox[left,left]{$T$}}
+      %% DASHED LINES
+      \pgfsetdash{{3pt}{3pt}}{0pt}
+      \pgfellipse[stroke]{\pgfxy(1,3)}{\pgfxy(0.5,0)}{\pgfxy(0,1.5)}
+      \pgfputat{\pgfxy(4.3,4.4)}{\pgfbox[left,left]{$\image{o}{T}$}}
+      %% DASHED LINES
+      \pgfsetdash{{3pt}{3pt}}{0pt}
+      \pgfellipse[stroke]{\pgfxy(4,3)}{\pgfxy(0.5,0)}{\pgfxy(0,1.5)}
+      %% NORMAL LINES
+      \pgfsetdash{{3pt}{0pt}}{3pt}
+      \pgfnodecircle{N01}[fill]{\pgfxy(1,2)}{0.1cm}
+      \pgfnodecircle{N02}[fill]{\pgfxy(1,3)}{0.1cm}
+      \pgfnodecircle{N03}[fill]{\pgfxy(1,4)}{0.1cm}
+      \pgfnodecircle{N11}[fill]{\pgfxy(4,2)}{0.1cm}
+      \pgfnodecircle{N12}[fill]{\pgfxy(4,3)}{0.1cm}
+      \pgfnodecircle{N13}[fill]{\pgfxy(4,4)}{0.1cm}
+      \pgfnodecircle{N14}[fill]{\pgfxy(4,5)}{0.1cm}
+      \pgfsetendarrow{\pgfarrowtriangle{4pt}}
+      \pgfnodeconnline{N01}{N11}
+      \pgfnodeconnline{N01}{N12}
+      \pgfnodeconnline{N02}{N12}
+      \pgfnodeconnline{N02}{N13}
+      \pgfnodeconnline{N03}{N13}
+    \end{pgfpicture}
+  \end{center}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Images}
+
+  \begin{definition}[image of a state]
+    $\image{o}{s} = \{ s'\in S | s \xrightarrow{o} s' \} = \applyop{o}{s}$
+  \end{definition}
+  
+  \begin{definition}[image of a set of states]
+    $\image{o}{T} = \bigcup_{s\in T}\image{o}{s}$
+  \end{definition}
+\end{frame}
+
+\subsection{Weak preimages}
+
+\begin{frame}
+  \frametitle{Weak preimages}
+
+  \begin{block}{Weak preimage}
+    The \alert{weak preimage} of a set $T$ of states with respect to
+    an operator $o$ is the set of those states from which a state in
+    $T$ can be reached by executing $o$.
+  \end{block}
+  
+  \begin{center}
+    \begin{pgfpicture}{0cm}{1cm}{5cm}{5.5cm}
+      \pgfsetlinewidth{0.7pt}
+      
+      \pgfputat{\pgfxy(1.3,4.4)}{\pgfbox[left,left]{$\wpreimage{o}{T}$}}
+      %% DASHED LINES
+      \pgfsetdash{{3pt}{3pt}}{0pt}
+      \pgfellipse[stroke]{\pgfxy(1,3)}{\pgfxy(0.5,0)}{\pgfxy(0,1.5)}
+      \pgfputat{\pgfxy(4.3,4.4)}{\pgfbox[left,left]{$T$}}
+      %% DASHED LINES
+      \pgfsetdash{{3pt}{3pt}}{0pt}
+      \pgfellipse[stroke]{\pgfxy(4,3.5)}{\pgfxy(0.5,0)}{\pgfxy(0,1)}
+      %% NORMAL LINES
+      \pgfsetdash{{3pt}{0pt}}{3pt}
+      \pgfnodecircle{N01}[fill]{\pgfxy(1,2)}{0.1cm}
+      \pgfnodecircle{N02}[fill]{\pgfxy(1,3)}{0.1cm}
+      \pgfnodecircle{N03}[fill]{\pgfxy(1,4)}{0.1cm}
+      \pgfnodecircle{N04}[fill]{\pgfxy(1,5)}{0.1cm}
+      \pgfnodecircle{N11}[fill]{\pgfxy(4,2)}{0.1cm}
+      \pgfnodecircle{N12}[fill]{\pgfxy(4,3)}{0.1cm}
+      \pgfnodecircle{N13}[fill]{\pgfxy(4,4)}{0.1cm}
+      \pgfsetendarrow{\pgfarrowtriangle{4pt}}
+      \pgfnodeconnline{N01}{N11}
+      \pgfnodeconnline{N01}{N12}
+      \pgfnodeconnline{N02}{N12}
+      \pgfnodeconnline{N02}{N13}
+      \pgfnodeconnline{N03}{N13}
+    \end{pgfpicture}
+  \end{center}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Weak preimages}
+
+  \begin{definition}[weak preimage of a state]
+    $\wpreimage{o}{s'} = \{ s\in S | s \xrightarrow{o} s' \}$
+  \end{definition}
+
+  \begin{definition}[weak preimage of a set of states]
+    $\wpreimage{o}{T} = \bigcup_{s\in T}\wpreimage{o}{s}$.
+  \end{definition}
+\end{frame}
+
+\subsection{Strong preimages}
+\begin{frame}
+  \frametitle{Strong preimages}
+
+  \begin{block}{Strong preimage}
+    The \alert{strong preimage} of a set $T$ of states with
+    respect to an operator $o$ is the set of
+    those states from which a state in $T$ is always reached when
+    executing $o$.
+  \end{block}
+
+  \begin{center}
+    \begin{pgfpicture}{0cm}{1cm}{5cm}{5.5cm}
+      \pgfsetlinewidth{0.7pt}
+
+      \pgfputat{\pgfxy(1.3,4.4)}{\pgfbox[left,left]{$\spreimage{o}{T}$}}
+      %% DASHED LINES
+      \pgfsetdash{{3pt}{3pt}}{0pt}
+      \pgfellipse[stroke]{\pgfxy(1,3.5)}{\pgfxy(0.5,0)}{\pgfxy(0,1)}
+      \pgfputat{\pgfxy(4.3,4.4)}{\pgfbox[left,left]{$T$}}
+      %% DASHED LINES
+      \pgfsetdash{{3pt}{3pt}}{0pt}
+      \pgfellipse[stroke]{\pgfxy(4,3.5)}{\pgfxy(0.5,0)}{\pgfxy(0,1)}
+      %% NORMAL LINES
+      \pgfsetdash{{3pt}{0pt}}{3pt}
+      \pgfnodecircle{N01}[fill]{\pgfxy(1,2)}{0.1cm}
+      \pgfnodecircle{N02}[fill]{\pgfxy(1,3)}{0.1cm}
+      \pgfnodecircle{N03}[fill]{\pgfxy(1,4)}{0.1cm}
+      \pgfnodecircle{N04}[fill]{\pgfxy(1,5)}{0.1cm}
+      \pgfnodecircle{N11}[fill]{\pgfxy(4,2)}{0.1cm}
+      \pgfnodecircle{N12}[fill]{\pgfxy(4,3)}{0.1cm}
+      \pgfnodecircle{N13}[fill]{\pgfxy(4,4)}{0.1cm}
+      \pgfsetendarrow{\pgfarrowtriangle{4pt}}
+      \pgfnodeconnline{N01}{N11}
+      \pgfnodeconnline{N01}{N12}
+      \pgfnodeconnline{N02}{N12}
+      \pgfnodeconnline{N02}{N13}
+      \pgfnodeconnline{N03}{N13}
+    \end{pgfpicture}
+  \end{center}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Strong preimages}
+
+  \begin{definition}[strong preimage of a set of states]
+    $\spreimage{o}{T} = \{ s\in S~|~\exists s'\in T: s \xrightarrow{o} s' \land
+    \image{o}{s} \subseteq T \}$
+  \end{definition}
+\end{frame}
+
+\section{Basic algorithms}
+
+\begin{frame}
+  \frametitle{Algorithms for strong planning}
+
+  \begin{enumerate}
+  \item \alert{Heuristic search} (forward)
+
+    Strong planning can be viewed as AND/OR graph search.
+    \begin{description}[AND nodes]
+    \item[OR nodes:] Choice between operators
+    \item[AND nodes:] Nondeterministically reached state
+    \end{description}
+    Heuristic AND-OR search algorithms: \\
+    AO*, Proof Number Search, \dots
+  \item \alert{Dynamic programming} (backward)
+    
+    Compute operator/distance/value for a state based on the
+    operators/distances/values of its all successor states.
+    \begin{enumerate}
+    \item Zero actions needed for goal states.
+    \item If states with $i$ actions to goals are known,
+      states with $\leq i+1$ actions to goals can be easily identified.
+    \end{enumerate}
+    Automatic reuse of already found plan suffixes.
+  \end{enumerate}
+\end{frame}
+
+\subsection{AND/OR graph search}
+
+\begin{frame}<handout:1>[label=and-or-search]
+  \frametitle{AND/OR search}
+  \begin{center}
+    \begin{pgfpicture}{1.15cm}{0.6cm}{11.35cm}{7.6cm}
+      \pgfsetxvec{\pgfpoint{1.31cm}{0cm}}
+      \pgfsetyvec{\pgfpoint{0cm}{1cm}}
+
+      \pgfnodecircle{N0}[fill]{\pgfxy(4.75,7.5)}{1.1mm}
+      \only<all:2>{\pgfnodecircle{N00}[fill]{\pgfxy(2.75,6)}{1.1mm}}
+      \only<all:2>{\pgfnodecircle{N01}[fill]{\pgfxy(6.75,6)}{1.1mm}}
+      \pgfnodecircle{N000}[fill]{\pgfxy(1.75,4.5)}{1.1mm}
+      \pgfnodecircle{N001}[fill]{\pgfxy(3.75,4.5)}{1.1mm}
+      \pgfnodecircle{N010}[fill]{\pgfxy(5.75,4.5)}{1.1mm}
+      \pgfnodecircle{N011}[fill]{\pgfxy(7.75,4.5)}{1.1mm}
+
+      \only<all:2>{\pgfnodecircle{N0000}[fill]{\pgfxy(1.25,2.5)}{1.1mm}}
+      \only<all:2>{\pgfnodecircle{N0001}[fill]{\pgfxy(2.25,2.5)}{1.1mm}}
+      \only<all:2>{\pgfnodecircle{N0010}[fill]{\pgfxy(3.25,2.5)}{1.1mm}}
+      \only<all:2>{\pgfnodecircle{N0011}[fill]{\pgfxy(4.25,2.5)}{1.1mm}}
+      \only<all:2>{\pgfnodecircle{N0100}[fill]{\pgfxy(5.25,2.5)}{1.1mm}}
+      \only<all:2>{\pgfnodecircle{N0101}[fill]{\pgfxy(6.25,2.5)}{1.1mm}}
+      \only<all:2>{\pgfnodecircle{N0110}[fill]{\pgfxy(7.25,2.5)}{1.1mm}}
+      \only<all:2>{\pgfnodecircle{N0111}[fill]{\pgfxy(8.25,2.5)}{1.1mm}}
+      
+      \pgfnodecircle{N00000}[fill]{\pgfxy(1,1)}{1.0mm}
+      \pgfnodecircle{N00001}[fill]{\pgfxy(1.5,1)}{1.0mm}
+      \pgfnodecircle{N00010}[fill]{\pgfxy(2,1)}{1.0mm}
+      \pgfnodecircle{N00011}[fill]{\pgfxy(2.5,1)}{1.0mm}
+      \pgfnodecircle{N00100}[fill]{\pgfxy(3,1)}{1.0mm}
+      \pgfnodecircle{N00101}[fill]{\pgfxy(3.5,1)}{1.0mm}
+      \pgfnodecircle{N00110}[fill]{\pgfxy(4,1)}{1.0mm}
+      \pgfnodecircle{N00111}[fill]{\pgfxy(4.5,1)}{1.0mm}
+      \pgfnodecircle{N01000}[fill]{\pgfxy(5,1)}{1.0mm}
+      \pgfnodecircle{N01001}[fill]{\pgfxy(5.5,1)}{1.0mm}
+      \pgfnodecircle{N01010}[fill]{\pgfxy(6,1)}{1.0mm}
+      \pgfnodecircle{N01011}[fill]{\pgfxy(6.5,1)}{1.0mm}
+      \pgfnodecircle{N01100}[fill]{\pgfxy(7,1)}{1.0mm}
+      \pgfnodecircle{N01101}[fill]{\pgfxy(7.5,1)}{1.0mm}
+      \pgfnodecircle{N01110}[fill]{\pgfxy(8,1)}{1.0mm}
+      \pgfnodecircle{N01111}[fill]{\pgfxy(8.5,1)}{1.0mm}
+      
+      \only<all:2>{\pgfputat{\pgfxy(4.75,7)}{\pgfbox[center,center]{\Large OR}}}
+      \only<all:2>{\pgfputat{\pgfxy(1.75,3.0)}{\pgfbox[center,center]{OR}}}
+      \only<all:2>{\pgfputat{\pgfxy(3.75,3.0)}{\pgfbox[center,center]{OR}}}
+      \only<all:2>{\pgfputat{\pgfxy(5.75,3.0)}{\pgfbox[center,center]{OR}}}
+      \only<all:2>{\pgfputat{\pgfxy(7.75,3.0)}{\pgfbox[center,center]{OR}}}
+      
+      \pgfputat{\pgfxy(1.35,4.5)}{\pgfbox[left,center]{$s_1$}}
+      \pgfputat{\pgfxy(3.35,4.5)}{\pgfbox[left,center]{$s_2$}}
+      \pgfputat{\pgfxy(5.35,4.5)}{\pgfbox[left,center]{$s_3$}}
+      \pgfputat{\pgfxy(7.35,4.5)}{\pgfbox[left,center]{$s_4$}}
+
+      \pgfputat{\pgfxy(1,0.7)}{\pgfbox[center,center]{\small $s_5$}}
+      \pgfputat{\pgfxy(1.5,0.7)}{\pgfbox[center,center]{\small $s_6$}}
+      \pgfputat{\pgfxy(2,0.7)}{\pgfbox[center,center]{\small $s_7$}}
+      \pgfputat{\pgfxy(2.5,0.7)}{\pgfbox[center,center]{\small $s_8$}}
+      \pgfputat{\pgfxy(3,0.7)}{\pgfbox[center,center]{\small $s_9$}}
+      \pgfputat{\pgfxy(3.5,0.7)}{\pgfbox[center,center]{\small $s_{10}$}}
+      \pgfputat{\pgfxy(4,0.7)}{\pgfbox[center,center]{\small $s_{11}$}}
+      \pgfputat{\pgfxy(4.5,0.7)}{\pgfbox[center,center]{\small $s_{12}$}}
+      \pgfputat{\pgfxy(5,0.7)}{\pgfbox[center,center]{\small $s_{13}$}}
+      \pgfputat{\pgfxy(5.5,0.7)}{\pgfbox[center,center]{\small $s_{14}$}}
+      \pgfputat{\pgfxy(6,0.7)}{\pgfbox[center,center]{\small $s_{15}$}}
+      \pgfputat{\pgfxy(6.5,0.7)}{\pgfbox[center,center]{\small $s_{16}$}}
+      \pgfputat{\pgfxy(7,0.7)}{\pgfbox[center,center]{\small $s_{17}$}}
+      \pgfputat{\pgfxy(7.5,0.7)}{\pgfbox[center,center]{\small $s_{18}$}}
+      \pgfputat{\pgfxy(8,0.7)}{\pgfbox[center,center]{\small $s_{19}$}}
+      \pgfputat{\pgfxy(8.5,0.7)}{\pgfbox[center,center]{\small $s_{20}$}}
+
+      \only<all:2>{
+        \pgfsetlinewidth{1pt}
+        \pgfsetendarrow{\pgfarrowtriangle{6pt}}
+
+        \color{red}
+        \pgfnodeconnline{N0}{N00}
+        \color{blue}
+        \pgfnodeconnline{N0}{N01}
+        \color{black}
+        \pgfnodeconnline{N00}{N000}
+        \pgfnodeconnline{N00}{N001}
+        \pgfnodeconnline{N01}{N010}
+        \pgfnodeconnline{N01}{N011}
+        \color{red}
+        \pgfnodeconnline{N000}{N0000}
+        \color{blue}
+        \pgfnodeconnline{N000}{N0001}
+        \color{red}
+        \pgfnodeconnline{N010}{N0100}
+        \color{blue}
+        \pgfnodeconnline{N010}{N0101}
+        \color{red}
+        \pgfnodeconnline{N001}{N0010}
+        \color{blue}
+        \pgfnodeconnline{N001}{N0011}
+        \color{red}
+        \pgfnodeconnline{N011}{N0110}
+        \color{blue}
+        \pgfnodeconnline{N011}{N0111}
+
+        \pgfsetlinewidth{1pt}
+        \pgfsetendarrow{\pgfarrowtriangle{6pt}}
+        
+        \color{black}
+        \pgfnodeconnline{N0000}{N00000}
+        \pgfnodeconnline{N0000}{N00001}
+        \pgfnodeconnline{N0001}{N00010}
+        \pgfnodeconnline{N0001}{N00011}
+        \pgfnodeconnline{N0100}{N01000}
+        \pgfnodeconnline{N0100}{N01001}
+        \pgfnodeconnline{N0101}{N01010}
+        \pgfnodeconnline{N0101}{N01011}
+        \pgfnodeconnline{N0010}{N00100}
+        \pgfnodeconnline{N0010}{N00101}
+        \pgfnodeconnline{N0011}{N00110}
+        \pgfnodeconnline{N0011}{N00111}
+        \pgfnodeconnline{N0110}{N01100}
+        \pgfnodeconnline{N0110}{N01101}
+        \pgfnodeconnline{N0111}{N01110}
+        \pgfnodeconnline{N0111}{N01111}
+      }
+
+      \only<all:1>{
+        \pgfsetlinewidth{1pt}
+        \pgfsetendarrow{\pgfarrowtriangle{6pt}}
+
+        \color{red}
+        \pgfnodeconnline{N0}{N000}
+        \pgfnodeconnline{N0}{N001}
+        \color{blue}
+        \pgfnodeconnline{N0}{N010}
+        \pgfnodeconnline{N0}{N011}
+        \color{red}
+        \pgfnodeconnline{N000}{N00000}
+        \pgfnodeconnline{N000}{N00001}
+        \color{blue}
+        \pgfnodeconnline{N000}{N00010}
+        \pgfnodeconnline{N000}{N00011}
+        \color{red}
+        \pgfnodeconnline{N010}{N01000}
+        \pgfnodeconnline{N010}{N01001}
+        \color{blue}
+        \pgfnodeconnline{N010}{N01010}
+        \pgfnodeconnline{N010}{N01011}
+        \color{red}
+        \pgfnodeconnline{N001}{N00100}
+        \pgfnodeconnline{N001}{N00101}
+        \color{blue}
+        \pgfnodeconnline{N001}{N00110}
+        \pgfnodeconnline{N001}{N00111}
+        \color{red}
+        \pgfnodeconnline{N011}{N01100}
+        \pgfnodeconnline{N011}{N01101}
+        \color{blue}
+        \pgfnodeconnline{N011}{N01110}
+        \pgfnodeconnline{N011}{N01111}
+        
+        \pgfsetlinewidth{1pt}
+        \pgfsetendarrow{\pgfarrowtriangle{6pt}}
+      }
+    \end{pgfpicture}
+  \end{center}
+\end{frame}
+
+\only<handout>{
+  \againframe<handout:2>{and-or-search}
+}
+
+\subsection{Dynamic programming}
+
+\begin{frame}
+  \frametitle{Dynamic programming}
+  
+  \begin{block}{Planning by dynamic programming}
+    If for all successors of state $s$ with respect to operator $o$ a
+    plan exists, assign operator $o$ to $s$.
+
+    \begin{description}[Inductive case $i \ge 1$:]
+    \item[Base case $i=0$:]
+      In goal states there is nothing to do.
+
+    \item[Inductive case $i\ge 1$:]
+      If there is $o\in O$ such that for all $s' \in \image{o}{s}$,
+      the state $s'$ is a goal state or $\pi(s')$ was assigned in
+      an earlier iteration, then assign $\pi(s)=o$.
+    \end{description}
+  \end{block}
+
+  \begin{block}{Backward distances}
+    If $s$ is assigned a value on iteration $i\ge 1$, then
+    the \alert{backward distance} of $s$ is $i$.
+
+    The dynamic programming algorithm essentially computes
+    the \alert{backward distances} of states.
+  \end{block}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Backward distances}
+
+  \begin{example}
+  \begin{center}
+    \begin{pgfpicture}{-9.45cm}{0.8cm}{0.75cm}{6.7cm}
+      \pgfsetxvec{\pgfpoint{2cm}{0cm}}
+      \pgfsetlinewidth{0.7pt}
+      \pgfputat{\pgfxy(-2.5,6.5)}{\pgfbox[center,center]{\large distance to $G$}}
+      \pgfputat{\pgfxy(-4.5,6)}{\pgfbox[center,center]{$\infty$}}
+      \pgfputat{\pgfxy(-3,6)}{\pgfbox[center,center]{3}}
+      \pgfputat{\pgfxy(-2,6)}{\pgfbox[center,center]{2}}
+      \pgfputat{\pgfxy(-1,6)}{\pgfbox[center,center]{1}}
+      \pgfputat{\pgfxy(0,6)}{\pgfbox[center,center]{0}}
+      \pgfputat{\pgfxy(0.3,5)}{\pgfbox[center,center]{$G$}}
+      %% DASHED LINES
+      \pgfsetdash{{3pt}{3pt}}{0pt}
+      \pgfellipse[stroke]{\pgfxy(0,3)}{\pgfxy(0.3,0)}{\pgfxy(0,2)}
+      %% NORMAL LINES
+      \pgfsetdash{{3pt}{0pt}}{3pt}
+      \pgfnodecircle{N01}[fill]{\pgfxy(0,2)}{0.1cm}
+      \pgfnodecircle{N02}[fill]{\pgfxy(0,4)}{0.1cm}
+      \pgfnodecircle{N11}[fill]{\pgfxy(-1,2)}{0.1cm}
+      \pgfnodecircle{N12}[fill]{\pgfxy(-1,4)}{0.1cm}
+      \pgfnodecircle{N21}[fill]{\pgfxy(-2,1)}{0.1cm}
+      \pgfnodecircle{N22}[fill]{\pgfxy(-2,3)}{0.1cm}
+      \pgfnodecircle{N23}[fill]{\pgfxy(-2,5)}{0.1cm}
+      \pgfnodecircle{N31}[fill]{\pgfxy(-3,2)}{0.1cm}
+      \pgfnodecircle{N32}[fill]{\pgfxy(-3,4)}{0.1cm}
+      \pgfnodecircle{N41}[fill]{\pgfxy(-4.5,2)}{0.1cm}
+      \pgfnodecircle{N42}[fill]{\pgfxy(-4.5,4)}{0.1cm}
+      \pgfsetendarrow{\pgfarrowtriangle{6pt}}
+      \color{blue}
+      \pgfnodeconnline{N31}{N41}
+      \pgfnodeconnline{N32}{N23}
+      \pgfnodeconnline{N32}{N41}
+      \pgfnodeconncurve{N42}{N42}{50}{130}{20mm}{20mm}
+      \pgfnodeconnline{N41}{N42}
+      \pgfnodeconnline{N42}{N32}
+      \pgfnodeconnline{N23}{N22}
+      \pgfnodeconnline{N32}{N31}
+      \color{red}
+      \pgfnodeconnline{N11}{N01}
+      \pgfnodeconnline{N12}{N01}
+      \pgfnodeconnline{N12}{N02}
+      \pgfnodeconnline{N22}{N01}
+      \pgfnodeconnline{N22}{N11}
+      \pgfnodeconnline{N22}{N12}
+      \pgfnodeconnline{N23}{N12}
+      \pgfnodeconnline{N21}{N11}
+      \pgfnodeconnline{N32}{N22}
+      \pgfnodeconnline{N31}{N21}
+      \pgfnodeconnline{N31}{N11}
+    \end{pgfpicture}
+  \end{center}
+  \end{example}
+\end{frame}
+
+\subsection{Backward distances}
+
+\begin{frame}
+  \frametitle{Backward distances}
+
+  \begin{definition}[backward distance sets]
+    Let $G$ be a set of states and $O$ a set of operators.
+    
+    The \alert{backward distance sets} $D^{\ms{bwd}}_i$ for $G$ and
+    $O$ consist of those states for which there is a guarantee of
+    reaching a state in $G$ with at most $i$ operator applications
+    using operators in $O$:
+    \begin{align*}
+      D^{\ms{bwd}}_0 & := G \\
+      D^{\ms{bwd}}_i & := D^{\ms{bwd}}_{i-1} \cup
+      \bigcup_{o \in O} \spreimage{o}{D^{\ms{bwd}}_{i - 1}}
+      \text{~for all~} i \ge 1
+    \end{align*}
+  \end{definition}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Backward distances}
+
+  \begin{definition}[backward distance]
+    Let $G$ be a set of states and $O$ a set of operators, and
+    let $D^{\ms{bwd}}_0, D^{\ms{bwd}}_1, \dots$ be the backward
+    distance sets for $G$ and $O$. Then the \alert{backward distance}
+    of a state $s$ for $G$ and $O$ is
+    \[
+    \disbwd{G}{s} = \min \{ i \in \mathbb N \,|\, s \in D^{\ms{bwd}}_i \}
+    \]
+    (where $\min\emptyset = \infty$).
+  \end{definition}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Strong plans based on distances}
+
+  Let $\Pi = \langle V, I, O, \gamma\rangle$ be a nondeterministic
+  planning task with state set $S$ and goal states $S_\star$.
+
+  \begin{block}{Extraction of a strong plan from distance sets}
+    \begin{enumerate}
+    \item Let $S' \subseteq S$ be those states having a finite backward
+      distance for $\gamma$ and $O$.
+    \item Let $s \in S'$ be a state with distance $i = \disbwd{\gamma}{s} \ge 1$.
+    \item Assign to $\pi(s)$ any operator $o \in O$ such that
+      $\image{o}{s} \subseteq D^{\ms{bwd}}_{i-1}$. 
+      Hence $o$ decreases the backward distance by at least one.
+    \end{enumerate}
+    Then $\pi$ is a strong plan for $\mathcal T$ iff
+    $I \in S'$.
+  \end{block}
+
+  \textblue{Question:} What is the \alert{worst-case} runtime of the
+  algorithm?
+
+  \textblue{Question:} What is the \alert{best-case} runtime of the
+  algorithm \\
+  \textbg{Question:} if most states have a finite backward distance?
+\end{frame}
+
+\section{Efficient algorithm}
+
+\subsection{Main algorithm}
+
+\begin{frame}
+  \frametitle{Making the algorithm a logic-based algorithm}
+
+  \begin{itemize}
+  \item An algorithm that represents the states \alert{explicitly}
+    stops being feasible at about $10^8$ or $10^9$ states.
+  \item For planning with bigger transition systems \alert{structural
+      properties} of the transition system have to be taken advantage
+    of.
+  \item As before, representing state sets as \alert{propositional
+      formulae} (or \alert{BDDs}) often allows taking advantage of the
+    structural properties: a formula (or BDD) that represents a set of
+    states or a transition relation that has certain regularities may
+    be very small in comparison to the set or relation.
+  \item In the following, we will present an algorithm using a
+    boolean-formula representation (without going into the details of
+    how to implement it using BDDs).
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Making the algorithm a logic-based algorithm}
+
+  \structure{Remark:} The following algorithm assumes a propositional
+  representation of the state space as opposed to a finite-domain
+  representation. We have already seen how to translate an FDR
+  encoding into a propositional encoding in Chapter~9 (cf.\ definition
+  of the ``induced propositional planning task'').
+
+  \smallskip
+
+  Therefore, for the rest of the present chapter, we will assume
+  without loss of generality that all $v \in V$ are propositional
+  variables with domain $\mathcal D_v = \{ 0, 1 \}$.
+\end{frame}
+
+\begin{frame}[t]
+  \frametitle{Breadth-first search with progression and
+    state sets (deterministic case)}
+
+  \begin{block}{Progression breadth-first search}
+    \textbf{def} bfs-progression($V$, $I$, $O$, $\gamma$): \\
+    {}\qquad$\textit{goal} := \textit{formula-to-set}(\gamma)$ \\
+    {}\qquad$\textit{reached} := \{I\}$ \\
+    {}\qquad\textbf{loop}: \\
+    {}\qquad\qquad\textbf{if} $\textit{reached} \cap \textit{goal}
+    \neq \emptyset$: \\
+    {}\qquad\qquad\qquad\textbf{return} solution found \\
+    {}\qquad\qquad$\textit{new-reached} := \textit{reached} \cup
+    \bigcup_{o \in O} \image{o}{\textit{reached}}$ \\
+    {}\qquad\qquad\textbf{if} $\textit{new-reached} = 
+    \textit{reached}$: \\
+    {}\qquad\qquad\qquad\textbf{return} no solution exists \\
+    {}\qquad\qquad$\textit{reached} := \textit{new-reached}$
+  \end{block}
+  
+  $\leadsto$ This can easily be transformed into a \alert{regression}
+  algorithm.
+\end{frame}
+
+\begin{frame}[t]
+  \frametitle{Breadth-first search with regression and
+    state sets (deterministic case)}
+
+  \begin{block}{Regression breadth-first search}
+    \textbf{def} bfs-regression($V$, $I$, $O$, $\gamma$): \\
+    {}\qquad$\textit{init} := I$ \\
+    {}\qquad$\textit{reached} := \textit{formula-to-set}(\gamma)$ \\
+    {}\qquad\textbf{loop}: \\
+    {}\qquad\qquad\textbf{if} $\textit{init} \in
+    \textit{reached}$: \\
+    {}\qquad\qquad\qquad\textbf{return} solution found \\
+    {}\qquad\qquad$\textit{new-reached} := \textit{reached} \cup
+    \bigcup_{o \in O} \wpreimage{o}{\textit{reached}}$ \\
+    {}\qquad\qquad\textbf{if} $\textit{new-reached} = 
+    \textit{reached}$: \\
+    {}\qquad\qquad\qquad\textbf{return} no solution exists \\
+    {}\qquad\qquad$\textit{reached} := \textit{new-reached}$
+  \end{block}
+  
+  \begin{itemize}
+  \item This algorithm is very similar to the dynamic programming
+    algorithm for the nondeterministic case!
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[t]
+  \frametitle{Breadth-first search with regression and
+    state sets (nondeterministic case)}
+
+  \begin{block}{Regression breadth-first search}
+    \textbf{def} bfs-regression($V$, $I$, $O$, $\gamma$): \\
+    {}\qquad$\textit{init} := I$ \\
+    {}\qquad$\textit{reached} := \textit{formula-to-set}(\gamma)$ \\
+    {}\qquad\textbf{loop}: \\
+    {}\qquad\qquad\textbf{if} $\textit{init} \in \textit{reached}$: \\
+    {}\qquad\qquad\qquad\textbf{return} solution found \\
+    {}\qquad\qquad$\textit{new-reached} := \textit{reached} \cup
+    \alert{\bigcup_{o \in O} \spreimage{o}{\textit{reached}}}$ \\
+    {}\qquad\qquad\textbf{if} $\textit{new-reached} = 
+    \textit{reached}$: \\
+    {}\qquad\qquad\qquad\textbf{return} no solution exists \\
+    {}\qquad\qquad$\textit{reached} := \textit{new-reached}$
+  \end{block}
+
+  \begin{itemize}
+  \item How do we define \alert{\textit{spreimg}} with set-theoretic
+    (BDD) operations?
+  \end{itemize}
+\end{frame}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\begin{frame}
+  \frametitle{Computing strong preimages}
+
+  \begin{block}{Strong preimages}
+    \begin{align*}
+      \spreimage{o}{T}
+      & = \{s \in S~|~\exists s' \in T: s \xrightarrow{o} s' \land \image{o}{s} \subseteq T\} \\
+      & = \{s \in S~|~(\exists s' \in S:
+      s \xrightarrow{o} s' \land s' \in T) \land {} \\
+      & \phantom{= \{s' \in S~|~}
+      \{s' \in S~|~s \xrightarrow{o} s'\} \subseteq T\} \\
+      & = \{s \in S~|~(\exists s' \in S:
+      s \xrightarrow{o} s' \land s' \in T) \land {} \\
+      & \phantom{= \{s' \in S~|~}
+      (\forall s' \in S: s \xrightarrow{o} s' \rightarrow (s' \in T)) \} \\
+      & = \{s \in S~|~(\exists s' \in S:
+      s \xrightarrow{o} s' \land s' \in T) \land {} \\
+      & \phantom{= \{s' \in S~|~}
+      (\neg \exists s' \in S: s \xrightarrow{o} s' \land s' \notin T) \}
+    \end{align*}
+  \end{block}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Computing strong preimages with boolean function operations}
+
+  \begin{align*}
+    \spreimage{o}{T} & = \{s \in S~|~(\exists s' \in S:
+    s \xrightarrow{o} s' \land s' \in T) \land {} \\
+    & \phantom{= \{s' \in S~|~}
+    (\neg \exists s' \in S: s \xrightarrow{o} s' \land s' \notin T) \}
+  \end{align*}
+
+  \begin{block}{Strong preimages with boolean functions}
+  DEFINE SUBSTITUTION
+
+  DEFINE EXISTENTIAL ABSTRACTION (ONE VARIABLE)
+
+  DEFINE EXISTENTIAL ABSTRACTION (SET OF VARIABLES)
+
+  DEFINE REGRESSION/SPREIMG FORMULA
+  \end{block}
+
+
+
+  Are we done?
+  
+  No, because we have not yet shown how to compute $\tau_A(o)$
+  for \alert{nondeterministic} operators.
+\end{frame}
+
+
+\subsection[Transitions]{Representing operator transitions}
+
+\begin{frame}
+  \frametitle{Transition formula for nondeterministic operators}
+
+  The formula $\opcpc{A}{o}$ must express
+  \begin{itemize}
+  \item the conditions for applicability of $o$,
+  \item how $o$ \alert{changes} state variables, and
+  \item which state variables $o$ \alert{does not change}.
+  \end{itemize}
+  
+  A significant difficulty lies in the third requirement because
+  \alert{different variables} may be affected depending on
+  nondeterministic choices.
+\end{frame}
+
+
+\begin{frame}
+  \frametitle{Transition formula for nondeterministic operators}
+
+  \begin{block}{$\opcpc{A}{o}$ for deterministic operators
+      $o = \langle c, e\rangle$}
+    \begin{align*}
+      \opcpc{A}{o} = c \land{}
+      & \bigwedge_{a \in A} ((\eprecon{a}{e} \lor
+      (a \land \neg \eprecon{\neg a}{e})) \leftrightarrow a') \\
+      \land & \bigwedge_{a \in A} \neg
+      (\eprecon{a}{e} \land \eprecon {\neg a}{e})
+    \end{align*}
+  \end{block}
+
+  For $o = \langle c, e_1 \choice \dots \choice e_n\rangle$
+  where each $e_i$ is deterministic:
+  \begin{align*}
+    \opcpc{A}{o} = c \land{}
+    & \bigvee_{i=1}^n \bigwedge_{a \in A} ((\eprecon{a}{e_i} \lor
+    (a \land \neg \eprecon{\neg a}{e_i})) \leftrightarrow a') \\
+    \land & \bigwedge_{i=1}^n \bigwedge_{a \in A} \neg
+    (\eprecon{a}{e_i} \land \eprecon {\neg a}{e_i})
+  \end{align*}
+\end{frame}
+
+
+\section{Summary}
+
+\begin{frame}
+  \frametitle{Summary}
+
+  \begin{itemize}
+  \item We have considered the special case of nondeterministic planning
+    where
+    \begin{itemize}
+    \item planning tasks are \alert{fully observable} and
+    \item we are interested in \alert{strong plans}.
+    \end{itemize}
+  \item We have introduced important concepts also relevant
+    to other variants of nondeterministic planning such as
+    \begin{itemize}
+    \item \alert{images} and
+    \item \alert{weak and strong preimages}.
+    \end{itemize}
+  \item We have discussed some basic classes of algorithms:
+    \begin{itemize}
+    \item \alert{forward search} in AND/OR graphs, and
+    \item \alert{backward induction} by dynamic programming.
+    \end{itemize}
+  \item Finally, we have shown how to make a dynamic programming
+    algorithm more efficient by exploiting logic- or set-based
+    representations such as BDDs.
+  \end{itemize}
+\end{frame}
+
+\end{document}

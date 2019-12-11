@@ -1,0 +1,1094 @@
+\documentclass{gkibeamer}
+
+\input{macros}
+
+\input{abstraction-pictures}
+%% \author[M.~Helmert, G.~R\"oger]{Malte Helmert and Gabriele R\"oger}
+%% abstraction pictures by Gabi
+
+\begin{document}
+\subtitle{12.~Planning as search: merge-and-shrink abstractions}
+\date{January 13th, 2012}
+\maketitles
+
+\section{Motivation}
+\subsection[PDB limitations]{Limitations of pattern databases}
+
+\begin{frame}{Beyond pattern databases}
+  \begin{itemize}
+  \item Despite their popularity, pattern databases have some
+    \alert{fundamental limitations} ($\leadsto$ example on next
+    slides).
+  \item In this chapter, we study a class of
+    abstractions called \alert{merge-and-shrink abstractions}.
+  \item Merge-and-shrink abstractions can be seen as a \\
+    \alert{proper generalization} of pattern databases.
+    \begin{itemize}
+    \item They can do everything that pattern databases can do
+      (modulo polynomial extra effort).
+    \item They can do some things that pattern databases cannot.
+    \end{itemize}
+  \item Initial experiments with merge-and-shrink abstractions have
+    shown very promising results.
+  \item They have provably greater \alert{representational power} than
+    pattern databases for many common planning domains.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Back to the running example}
+  \begin{center}
+    \picfulltransitiongraph
+  \end{center}
+  Logistics problem with one package, two trucks, two locations:
+  \begin{itemize}
+  \item state variable \textblue{package}: $\{L,R,A,B\}$
+  \item state variable \textblue{truck A}: $\{L,R\}$
+  \item state variable \textblue{truck B}: $\{L,R\}$
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Example: projection}
+  Project to $\{\text{\textblue{package}}\}$:
+  \begin{center}
+    \picprojectionpackage
+  \end{center}
+\end{frame}
+
+\begin{frame}{Example: projection (2)}
+   Project to $\{\text{\textblue{package}},
+   \text{\textblue{truck A}}\}$:
+   \begin{center}
+     \picprojectionpackagetruck
+   \end{center}
+\end{frame}
+
+\begin{frame}{Limitations of projections}
+  How accurate is the PDB heuristic?
+  \begin{itemize}
+  \item consider \alert{generalization of the example}: \\
+    $N$ trucks, $M$ locations (fully connected), still one package
+  \item consider \alert{any} pattern that is proper subset of
+    variable set $V$
+  \item $h(s_0) \le 2$ $\leadsto$ \alert{no better} than atomic
+    projection to $\text{\textblue{package}}$
+  \end{itemize}
+
+  \bigskip
+
+  These values cannot be improved by maximizing over several patterns
+  or using additive patterns.
+
+  \bigskip
+
+  \alert{Merge-and-shrink abstractions} can represent heuristics with
+  $h(s_0) \ge 3$ for tasks of this kind of any size.
+
+  Time and space requirements are \alert{polynomial in $N$ and $M$}.
+\end{frame}
+
+\subsection{Main ideas}
+
+\begin{frame}{Merge-and-shrink abstractions: main idea}
+  \begin{block}{Main idea of merge-and-shrink abstractions}
+    (due to Dr\"ager, Finkbeiner \& Podelski, 2006): \medskip
+
+    Instead of \alert{perfectly} reflecting \alert{a few} state
+    variables, \\
+    reflect \alert{all} state variables, but in a \alert{potentially
+      lossy} way.
+  \end{block}
+\end{frame}
+
+\begin{frame}{The need for succinct abstraction mappings}
+  \begin{itemize}
+  \item One major difficulty for non-PDB abstractions is to
+    \alert{succinctly represent the abstraction mapping}.
+  \item For pattern databases, this is easy because the abstraction
+    mappings -- projections -- are very \alert{structured}.
+  \item For less rigidly structured abstraction mappings, we need
+    another idea.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Merge-and-shrink abstractions: idea}
+  \begin{itemize}
+  \item The main idea underlying merge-and-shrink abstractions is
+    that given two abstractions $\mathcal A$ and $\mathcal A'$, we can
+    \alert{merge} them into a new \alert{product abstraction}.
+  \item The product abstraction \alert{captures all information} of
+    both abstractions and can be \alert{better informed than either}.
+  \item It can even be better informed than their \alert{sum}.
+  \item By merging a set of very simple abstractions, we can in theory
+    represent \alert{arbitrary} abstractions of an {\sasplus} task.
+  \item In practice, due to memory limitations, such abstractions can
+    become too large. In that case, we can \alert{shrink} them by
+    abstracting them further using \alert{any abstraction} on an
+    intermediate result, then \alert{continue the merging process}.
+  \end{itemize}
+\end{frame}
+
+\subsection{Running example}
+
+\begin{frame}{Running example: explanations}
+  \begin{itemize}
+  \item \alert{Atomic projections} -- projections to a single state
+    variable -- play an important role in this chapter.
+  \item Unlike previous chapters, \alert{transition labels} are
+    critically important in this chapter.
+  \item Hence we now look at the transition systems for atomic
+    projections of our example task, including transition labels.
+  \item We abbreviate operator names as in these examples:
+    \begin{itemize}
+    \item \hilite{MALR:} \alert{m}ove truck \alert{A} from
+      \alert{l}eft to \alert{r}ight
+    \item \hilite{DAR:} \alert{d}rop package from truck \alert{A} at
+      \alert{r}ight location
+    \item \hilite{PBL:} \alert{p}ick up package with truck \alert{B} at
+      \alert{l}eft location
+    \end{itemize}
+  \item We abbreviate parallel arcs with \alert{commas} and
+    \alert{wildcards ($\star$)} in the labels as in these examples:
+    \begin{itemize}
+    \item \hilite{PAL, DAL:} two parallel arcs labeled \hilite{PAL}
+      and \hilite{DAL}
+    \item \hilite{MA$\star\star$:} two parallel arcs labeled
+      \hilite{MALR} and \hilite{MARL}
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Running example: atomic projection for package}
+  $\mathcal T^{\pi_{\{\hilite{\text{package}}\}}}$:
+  \begin{center}
+    \picatomicprojectionpackage
+  \end{center}
+\end{frame}
+
+\begin{frame}{Running example: atomic projection for truck A}
+  $\mathcal T^{\pi_{\{\hilite{\text{truck A}}\}}}$:
+  \begin{center}
+    \picatomicprojectiontrucka
+  \end{center}
+\end{frame}
+
+\begin{frame}{Running example: atomic projection for truck B}
+  $\mathcal T^{\pi_{\{\hilite{\text{truck B}}\}}}$:
+  \begin{center}
+    \picatomicprojectiontruckb
+  \end{center}
+\end{frame}
+
+\section{Synchronized products}
+\subsection{Definition}
+
+\begin{frame}{Synchronized product of transition systems}
+  \begin{definition}[synchronized product of transition systems]
+    For $i \in \{1, 2\}$, let
+    $\mathcal T_i = \langle S_i, L, T_i, {s_0}_i, {S_\star}_i\rangle $ be
+    transition systems with identical label set.
+
+    \smallskip
+
+    The \alert{synchronized product} of $\mathcal T_1$ and $\mathcal
+    T_2$, in symbols \alert{$\mathcal T_1 \otimes \mathcal T_2$}, is
+    the transition system $\mathcal T_{\otimes} = \langle S_{\otimes},
+    L, T_{\otimes}, {s_0}_{\otimes}, {S_\star}_{\otimes}\rangle$ with
+    \begin{itemize}
+    \item $S_{\otimes} := S_1 \times S_2$
+    \item $T_{\otimes} := \{
+      \langle \langle s_1, s_2\rangle, l, \langle t_1,
+      t_2\rangle\rangle \mid
+      \only<beamer>{\begin{array}[t]{@{}l@{}}}
+      \langle s_1, l, t_1\rangle \in T_1 \text{~and~}
+      \only<beamer>{\\}
+      \langle s_2, l, t_2\rangle \in T_2
+      \}
+      \only<beamer>{\end{array}}$
+    \item ${s_0}_{\otimes} := \langle{s_0}_1,{s_0}_2\rangle$
+    \item ${S_\star}_{\otimes} := {S_\star}_1 \times {S_\star}_2$
+    \end{itemize}
+  \end{definition}
+\end{frame}
+
+\begin{frame}{Synchronized product of functions}
+  \begin{definition}[synchronized product of functions]
+    Let $\alpha_1: S \to S_1$ and $\alpha_2: S \to S_2$ be
+    functions with identical domain.
+
+    \smallskip
+
+    The \alert{synchronized product} of $\alpha_1$ and $\alpha_2$,
+    in symbols \alert{$\alpha_1 \otimes \alpha_2$},
+    is the function $\alpha_{\otimes}: S \to S_1 \times S_2$
+    defined as $\alpha_{\otimes}(s) = \langle \alpha_1(s),
+    \alpha_2(s)\rangle$.
+  \end{definition}
+\end{frame}
+
+\subsection{Example}
+
+\begin{frame}{Example: synchronized product}
+  $\mathcal T^{\pi_{\{\hilite{\text{package}}\}}} \otimes
+  \mathcal T^{\pi_{\{\hilite{\text{truck A}}\}}}$:
+  \begin{center}
+    \picproductpackagetrucka
+  \end{center}
+\end{frame}
+
+\begin{frame}{Example: computation of synchronized product}
+  $\mathcal T^{\pi_{\{\hilite{\text{package}}\}}} \otimes
+  \mathcal T^{\pi_{\{\hilite{\text{truck A}}\}}}$:
+  \alert{\only<all:2>{$S_{\otimes} = S_1 \times S_2$}%
+    \only<all:3>{${s_0}_{\otimes} = \langle{s_0}_1,{s_0}_2\rangle$}%
+    \only<all:4>{${S_\star}_{\otimes} = {S_\star}_1 \times {S_\star}_2$}%
+    \only<all:5->{$T_{\otimes} := \{\langle \langle s_1, s_2\rangle,
+        l, \langle t_1, t_2\rangle\rangle \mid \dots\}$}}
+  \begin{center}
+    \picproductpackagetruckaillustration
+  \end{center}
+\end{frame}
+
+\subsection{Properties}
+
+\begin{frame}{Synchronized products are abstractions}
+  \begin{theorem}[synchronized products are abstractions]
+    For $i \in \{1, 2\}$, let $\mathcal T_i$ be an abstraction of
+    transition system $\mathcal T$ with abstraction mapping
+    $\alpha_i$ such that $\alpha_1 \otimes \alpha_2$ is surjective.
+
+    \smallskip
+
+    Then $\mathcal T_{\otimes} := \mathcal T_1 \otimes \mathcal T_2$
+    is an abstraction of $\mathcal T$ with abstraction mapping
+    $\alpha_{\otimes} := \alpha_1 \otimes \alpha_2$, and $\langle
+    \mathcal T_{\otimes}, \alpha_{\otimes}\rangle$ is a refinement of
+    $\langle \mathcal T_1, \alpha_1\rangle$
+    and of $\langle \mathcal T_2, \alpha_2\rangle$.
+  \end{theorem}
+  \hilite{Remark:} If $\alpha_1 \otimes \alpha_2$ is not surjective,
+  then the proof also holds if we restrict $\mathcal T_{\otimes}$ to
+  the states in the image of $\alpha_1 \otimes \alpha_2$.
+\end{frame}
+
+\begin{frame}{Synchronized products are abstractions (ctd.)}
+  \begin{proofstart}
+    We prove the first part. The refinement property is then easy to
+    see: the mapping $\langle s_1, s_2\rangle \mapsto s_i$ is a strict
+    homomorphism from $\mathcal T_{\otimes}$ to $\mathcal T_i$ for $i
+    \in \{1, 2\}$.
+
+    \pause
+    \medskip
+
+    To show that $\mathcal T_{\otimes}$ is an abstraction of $\mathcal
+    T$ with mapping $\alpha_{\otimes}$, we need to show that
+    $\alpha_{\otimes}$ is surjective and preserves initial states,
+    goal states and transitions.
+
+  \end{proofstart}
+\end{frame}
+
+\begin{frame}{Synchronized products are abstractions (ctd.)}
+  \begin{proofmid}
+    Let $\mathcal T = \langle S, L, T, s_0, S_\star\rangle$, and let
+    $\mathcal T_i = \langle S_i, L, T_i, {s_0}_i, {S_\star}_i\rangle$ for
+    $i \in \{1, 2, \otimes\}$.
+
+    \begin{itemize}
+    \item \hilite{$\alpha_{\otimes}$ surjective:} This is given in the
+      premise.
+      \pause
+
+    \item \hilite{$\alpha_{\otimes}$ preserves the initial state:}
+      
+      $\alpha_{\otimes}(s_0) = \langle \alpha_1(s_0), \alpha_2(s_0)\rangle$
+      \quad (definition of $\alpha_{\otimes}$)
+
+      $\phantom{\alpha_{\otimes}(s_0)} = \langle {s_0}_1, {s_0}_2 \rangle$
+      \quad (abstraction property for $\mathcal T_1$, $\mathcal T_2$)
+
+      $\phantom{\alpha_{\otimes}(s_0)} = {s_0}_{\otimes}$
+      \quad (definition of ${s_0}_{\otimes}$)
+    \end{itemize}
+  \end{proofmid}
+\end{frame}
+
+\begin{frame}{Synchronized products are abstractions (ctd.)}
+  \begin{proofend}
+    \begin{itemize}
+    \item \hilite{$\alpha_{\otimes}$ preserves goal states:}
+      
+      Let $s \in S_\star$. Then
+
+      $\alpha_{\otimes}(s) = \langle \alpha_1(s), \alpha_2(s)\rangle$
+      \quad (definition of $\alpha_{\otimes}$)
+
+      $\phantom{\alpha_{\otimes}(s)} \in {S_\star}_1 \times {S_\star}_2$
+      \quad (abstraction property for $\mathcal T_1$, $\mathcal T_2$)
+
+      $\phantom{\alpha_{\otimes}(s)} = {S_\star}_{\otimes}$
+      \quad (definition of ${S_\star}_{\otimes}$)
+      \pause
+
+    \item \hilite{$\alpha_{\otimes}$ preserves transitions:}
+
+      Let $\langle s, l, t\rangle \in T$.
+
+      $\leadsto$ $\langle \alpha_1(s), l, \alpha_1(t)\rangle \in T_1$,
+      $\langle \alpha_2(s), l, \alpha_2(t)\rangle \in T_2$
+
+      $\leadsto$ $\langle \langle \alpha_1(s), \alpha_2(s)\rangle, l,
+      \langle \alpha_1(t), \alpha_2(t)\rangle\rangle \in T_{\otimes}$
+
+      $\leadsto$ $\langle \alpha_{\otimes}(s), l,
+      \alpha_{\otimes}(t)\rangle \in T_{\otimes}$
+    \end{itemize}
+  \end{proofend}
+\end{frame}
+
+\begin{frame}{Preserving strict homomorphisms}
+  \begin{itemize}
+  \item It would be very nice if we could also prove that if $\mathcal
+    T_1$ and $\mathcal T_2$ are \alert{strictly homomorphic} abstractions,
+    then so is $\mathcal T_1 \otimes \mathcal T_2$.
+  \item However, this is \alert{not true} in general.
+  \item It is \alert{not even} true for {\sasplus} tasks.
+  \item However, there is an important \alert{sufficient condition}
+    for preserving the strict homomorphism property.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Synchronized products and strict homomorphisms}
+  \begin{theorem}[synchronized products and strict homomorphisms]
+    Let $\Pi$ be an {\sasplus} planning task with variable set $V$,
+    and let $V_1$ and $V_2$ be disjoint subsets of $V$.
+
+    \smallskip
+
+    For $i \in \{1, 2\}$, let $\mathcal T_i$ be a strictly homomorphic
+    abstraction of $\mathcal T(\Pi)$ with mapping $\alpha_i$ such
+    that $\langle \mathcal T_i, \alpha_i\rangle$ is a coarsening of
+    $\langle \mathcal T^{\pi_{V_i}}, \pi_{V_i}\rangle$.
+
+    \medskip
+    
+    Then $\alpha_{\otimes} := \alpha_1 \otimes \alpha_2$ is surjective
+    and $\mathcal T_{\otimes} := \mathcal T_1 \otimes \mathcal T_2$ is
+    a strictly homomorphic abstraction of $\mathcal T(\Pi)$ with mapping
+    $\alpha_{\otimes}$.
+  \end{theorem}
+
+  \medskip
+
+  \begin{corollary}[Synchronized products of projections]
+    Let $\Pi$ be an {\sasplus} planning task with variable set $V$,
+    and let $V_1$ and $V_2$ be disjoint subsets of $V$.
+
+    Then $\mathcal T^{\pi_{V_1}} \otimes \mathcal T^{\pi_{V_2}} \sim
+    \mathcal T^{\pi_{V_1 \cup V_2}}$.
+  \end{corollary}
+
+  (Proofs omitted.)
+
+  %% \medskip
+
+  %% \hilite{Note:} In this special case, we do not need to
+  %% \alert{require} that $\alpha_{\otimes}$ is surjective but can
+  %% \alert{conclude} it from the other premises.
+\end{frame}
+
+%% \begin{frame}{Synchronized products of projections}
+%%   \begin{corollary}[Synchronized products of projections]
+%%     Let $\Pi$ be an {\sasplus} planning task with variable set $V$,
+%%     and let $V_1$ and $V_2$ be disjoint subsets of $V$.
+
+%%     Then $\mathcal T^{\pi_{V_1}} \otimes \mathcal T^{\pi_{V_2}} \sim
+%%     \mathcal T^{\pi_{V_1 \cup V_2}}$.
+%%   \end{corollary}
+%%   \begin{proof}
+%%     \begin{itemize}
+%%     \item By the theorem, $\mathcal T_{\otimes} := \mathcal T^{\pi_{V_1}}
+%%       \otimes \mathcal T^{\pi_{V_2}}$ is a strictly homomorphic abstraction of
+%%       $\mathcal T(\Pi)$ with mapping $\pi_{V_1} \otimes \pi_{V_2}$.
+%%     \item $\mathcal T^{\pi_{V_1 \cup V_2}}$ is a strictly homomorphic
+%%       abstraction of $\mathcal T(\Pi)$ with mapping $\pi_{V_1 \cup
+%%         V_2}$.
+%%     \end{itemize}
+%%     $\pi_{V_1} \otimes \pi_{V_2}$ and $\pi_{V_1 \cup V_2}$ are
+%%     identical functions up to renaming of abstract states, and
+%%     strictly homomorphic abstractions are uniquely determined by the
+%%     abstraction function, so the abstractions must be isomorphic.
+%%   \end{proof}
+%% \end{frame}
+
+\begin{frame}{Example: product for disjoint projections}
+  $\mathcal T^{\pi_{\{\hilite{\text{package}}\}}} \otimes
+  \mathcal T^{\pi_{\{\hilite{\text{truck A}}\}}}
+  \sim
+  \mathcal T^{\pi_{\{\hilite{\text{package}}, \hilite{\text{truck A}}\}}}$:
+  \begin{center}
+    \picproductpackagetrucka
+  \end{center}
+\end{frame}
+
+\begin{frame}{Recovering $\mathcal T(\Pi)$ from the atomic projections}
+  \begin{itemize}
+  \item By repeated application of the corollary, we can recover
+    \alert{all pattern database abstractions} of an {\sasplus} planning
+    task from the abstractions for atomic projections.
+  \item In particular, by computing the product of \alert{all} atomic
+    projections, we can recover the abstraction for the
+    \alert{identity abstraction} $\text{id} = \pi_V$.
+  \end{itemize}
+  \begin{corollary}[Recovering $\mathcal T(\Pi)$ from the atomic
+      projections]
+    Let $\Pi$ be an {\sasplus} planning task with variable set $V$.
+
+    Then $\mathcal T(\Pi) \sim \bigotimes_{v \in V} \mathcal T^{\pi_{\{v\}}}$.
+  \end{corollary}
+  \begin{itemize}
+  \item This is an important result because it shows that the
+    abstractions for atomic projections \alert{contain all
+      information} of an {\sasplus} task.
+  \end{itemize}
+\end{frame}
+
+\section{Algorithm}
+\subsection{Merge steps and shrink steps}
+
+\begin{frame}{Generic merge-and-shrink abstractions: outline}
+  Using the results from the previous section, we can develop the
+  ideas of a \alert{generic abstraction computation procedure} that
+  \alert{takes all state variables into account}:
+  \begin{itemize}
+  \item \alert{Initialization step:} Compute all abstract transition
+    systems for atomic projections to form the initial abstraction
+    collection.
+  \item \alert{Merge steps:} Combine two abstractions
+    in the collection by replacing them with their synchronized
+    product. (Stop once only one abstraction is left.)
+  \item \alert{Shrink steps:} If the abstractions in the collection
+    are too large to compute their synchronized product, make them
+    smaller by abstracting them further (applying an arbitrary
+    strict homomorphism to them).
+  \end{itemize}
+  We explain these steps with our running example.
+\end{frame}
+
+\begin{frame}{Initialization step: atomic projection for package}
+  $\mathcal T^{\pi_{\{\hilite{\text{package}}\}}}$:
+  \begin{center}
+    \picatomicprojectionpackage
+  \end{center}
+\end{frame}
+
+\begin{frame}{Initialization step: atomic projection for truck A}
+  $\mathcal T^{\pi_{\{\hilite{\text{truck A}}\}}}$:
+  \begin{center}
+    \picatomicprojectiontrucka
+  \end{center}
+\end{frame}
+
+\begin{frame}{Initialization step: atomic projection for truck B}
+  $\mathcal T^{\pi_{\{\hilite{\text{truck B}}\}}}$:
+  \begin{center}
+    \picatomicprojectiontruckb
+  \end{center}
+  current collection: $\{
+    \mathcal T^{\pi_{\{\hilite{\text{package}}\}}},
+    \mathcal T^{\pi_{\{\hilite{\text{truck A}}\}}},
+    \mathcal T^{\pi_{\{\hilite{\text{truck B}}\}}}\}$
+\end{frame}
+
+\begin{frame}{First merge step}
+  $\mathcal T_1 := \mathcal T^{\pi_{\{\hilite{\text{package}}\}}}
+  \otimes \mathcal T^{\pi_{\{\hilite{\text{truck A}}\}}}$:
+  \begin{center}
+    \picproductpackagetrucka[scale=0.94]
+  \end{center}
+  current collection: $\{
+    \mathcal T_1,
+    \mathcal T^{\pi_{\{\hilite{\text{truck B}}\}}}\}$  
+\end{frame}
+
+\begin{frame}{Need to simplify?}
+  \begin{itemize}
+  \item If we have sufficient memory available, we can now compute
+    $\mathcal T_1 \otimes \mathcal T^{\pi_{\{\hilite{\text{truck
+            B}}\}}}$, which would recover the complete transition
+    system of the task.
+  \item However, to illustrate the general idea, let us assume that we
+    do not have sufficient memory for this product.
+  \item More specifically, we will assume that after each product
+    operation we need to reduce the result abstraction to \alert{four
+      states} to obey memory constraints.
+  \item So we need to reduce $\mathcal T_1$ to four states. We have a
+    lot of leeway in deciding \alert{how exactly} to abstract
+    $\mathcal T_1$.
+  \item In this example, we simply use an abstraction that leads to a
+    good result in the end.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{First shrink step}
+  $\mathcal T_2 := \text{some abstraction of~} \mathcal T_1$
+  \begin{center}
+    \picshrinkexampleone[scale=0.94]
+  \end{center}
+  \only<all:10>{current collection: $\{\mathcal T_2,
+      \mathcal T^{\pi_{\{\hilite{\text{truck B}}\}}}\}$}
+\end{frame}
+
+\begin{frame}{Second merge step}
+  $\mathcal T_3 := \mathcal T_2
+  \otimes \mathcal T^{\pi_{\{\hilite{\text{truck B}}\}}}$:
+  \begin{center}
+    \picproductfinal[scale=0.94]
+  \end{center}
+  current collection: $\{\mathcal T_3\}$
+\end{frame}
+
+\begin{frame}{Another shrink step?}
+  \begin{itemize}
+  \item Normally we could stop now and use the distances in the final
+    abstraction as our heuristic function.
+  \item However, if there were further state variables to integrate,
+    we would simplify further, \eg\ leading to the following
+    abstraction (again with four states):
+  \end{itemize}
+  \begin{center}
+    \picshrinkexampletworesult
+  \end{center}
+  \begin{itemize}
+  \item We get a heuristic value of 3 for the initial state,
+    \alert{better than any PDB heuristic} that is a proper
+    abstraction.
+  \item The example generalizes to more locations and trucks, even if
+    we stick to the size limit of $4$ (after merging).
+  \end{itemize}
+\end{frame}
+
+\subsection{Abstraction mapping}
+
+\begin{frame}{How to represent the abstraction mapping?}
+  \hilite{Idea:} the computation of the abstraction mapping
+  follows the sequence of product computations
+  \begin{itemize}
+  \item For the \alert{atomic abstractions} for $\pi_{\{v\}}$, we
+    generate a \alert{one-dimensional table} that denotes which value
+    in $\mathcal D_v$ corresponds to which abstract state.
+  \item During the \alert{merge} (product) step $\mathcal A :=
+    \mathcal A_1 \otimes \mathcal A_2$, we generate a
+    \alert{two-dimensional table} that denotes which pair of states of
+    $\mathcal A_1$ and $\mathcal A_2$ corresponds to which state of
+    $\mathcal A$.
+  \item During the \alert{shrink} (abstraction) steps, we make sure to
+    keep the table in sync with the abstraction choices.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{How to represent the abstraction mapping? (ctd.)}
+  \hilite{Idea:} the computation of the abstraction mapping
+  follows the sequence of product computations
+  \begin{itemize}
+  \item Once we have computed the final abstraction, we compute all
+    \alert{abstract goal distances} and store them in a
+    \alert{one-dimensional table}.
+  \item At this point, we can \alert{throw away} all the abstractions
+    \\
+    -- we just need to keep the tables.
+  \item During \alert{search}, we do a sequence of table lookups to
+    navigate from the atomic abstraction states to the final
+    abstraction state and heuristic value
+
+    $\leadsto$ $2|V|$ lookups, $O(|V|)$ time
+    %% |V| lookups for the atomic projections, |V| - 1 for the merges,
+    %% 1 for the heuristic value
+  \end{itemize}
+  Again, we illustrate the process with our running example.
+\end{frame}
+
+\begin{frame}{Abstraction mapping example: atomic abstractions}
+  Computing abstraction mappings for the atomic abstractions is
+  simple. Just number the states (domain values) consecutively
+  and generate a table of references to the states:
+
+  \begin{center}
+    \only<all:1>{\picatomicprojectionpackage}%
+    \only<all:2>{\picatomicprojectionpackagenumberedstates}%
+  \end{center}
+
+  \begin{overprint}
+    \onslide<all:2>
+    \begin{center}
+      \begin{tabular}{cccc}
+        $L$ & $R$ & $A$ & $B$ \\ \hline
+        0   & 1   & 2   & 3
+      \end{tabular}
+    \end{center}
+  \end{overprint}
+\end{frame}
+
+\begin{frame}{Abstraction mapping example: merge step}
+  For product abstractions $\mathcal A_1 \otimes \mathcal A_2$, we
+  again number the product states consecutively and generate a table
+  that links state pairs of $\mathcal A_1$ and $\mathcal A_2$ to
+  states of $\mathcal A$:
+
+  \begin{columns}
+    \begin{column}{7.2cm}
+      \renewcommand{\bendtransition}{\bendtransitionnolabel}%
+      \only<all:1>{\picproductpackagetrucka[scale=0.63]}%
+      \only<all:2>{\picproductpackagetruckanumberedstates[scale=0.63]}%
+    \end{column}
+    \begin{column}{4.0cm}
+      \only<all:2>{\footnotesize
+      \begin{tabular}{c|cc}
+        & $s_2 = 0$ & $s_2 = 1$ \\ \hline
+        $s_1 = 0$ & 0 & 1 \\
+        $s_1 = 1$ & 2 & 3 \\
+        $s_1 = 2$ & 4 & 5 \\
+        $s_1 = 3$ & 6 & 7 \\
+      \end{tabular}}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Maintaining the mapping when shrinking}
+  \begin{itemize}
+  \item The hard part in representing the abstraction mapping is to
+    keep it consistent when shrinking.
+  \item In theory, this is easy to do:
+    \begin{itemize}
+    \item When combining states $i$ and $j$, arbitrarily use one of
+      them (say $i$) as the number of the new state.
+    \item Find all table entries in the table for this abstraction
+      which map to the other state $j$ and change them to $i$.
+    \end{itemize}
+  \item However, doing a table scan each time two states are combined
+    is very inefficient.
+  \item Fortunately, there also is an efficient implementation which
+    takes constant time per combination.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Maintaining the mapping efficiently}
+  \begin{itemize}
+  \item Associate each abstract state with a linked list, representing
+    \alert{all table entries that map to this state}.
+  \item Before starting the shrink operation, initialize the
+    lists by scanning through the table, then \alert{discard the table}.
+  \item While shrinking, when combining $i$ and $j$, \alert{splice the
+    list elements of $j$ into the list elements of $i$}.
+    \begin{itemize}
+    \item For linked lists, this is a \alert{constant-time operation}.
+    \end{itemize}
+  \item Once shrinking is completed, renumber all abstract states so
+    that there are no gaps in the numbering.
+  \item Finally, regenerate the mapping table from the linked list
+    information.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Abstraction mapping example: shrink step}
+  \begin{overprint}
+    \onslide<all:1>
+    \alert{Representation before shrinking:}
+    \onslide<all:2>
+    \alert{1. Convert table to linked lists and discard it.}
+    \onslide<all:3-11>
+    \alert{2. When combining $i$ and $j$, splice $\textit{list}_j$
+      into $\textit{list}_i$.}
+    \onslide<all:12-13>
+    \alert{3. Renumber abstract states consecutively.}
+    \onslide<all:14->
+    \alert{4. Regenerate the mapping table from the linked lists.}
+  \end{overprint}
+
+  \bigskip
+
+  \begin{columns}[c]
+    \begin{column}{7.2cm}%
+      \begin{center}
+        \renewcommand{\bendtransition}{\bendtransitionnolabel}%
+        \picshrinkexampleonenumberedstates[scale=0.55]
+      \end{center}
+    \end{column}
+    \begin{column}{4.0cm}%
+      \only<all:2->{\footnotesize
+        $\textit{list}_0 = \{(0, 0)\}$ \\
+        $\textit{list}_1 = \{(0, 1)\}$ \\
+        \alert<all:3-4>{$\textit{list}_2 =
+          \only<all:-3>{\{(1, 0)\}}
+          \only<all:4->{\{(1, 0), (1, 1)\}}
+          $} \\
+        \alert<all:3-4,12-13>{$\textit{list}_3 =
+          \only<all:-3>{\{(1, 1)\}}
+          \only<all:4-12>{\emptyset}
+          \only<all:13->{\{\begin{array}[t]{@{}l@{}}
+              (2, 0), (2, 1), \\ (3, 0), (3, 1)\}\end{array}}
+          $} \\
+        \alert<all:5-6,9-10,12-13>{$\textit{list}_4 =
+          \only<all:-5>{\{(2, 0)\}}
+          \only<all:6-9>{\{(2, 0), (2, 1)\}}
+          \only<all:10-12>{\{\begin{array}[t]{@{}l@{}}
+              (2, 0), (2, 1), \\ (3, 0), (3, 1)\}\end{array}}
+          \only<all:13->{\emptyset}
+          $} \\
+        \alert<all:5-6>{$\textit{list}_5 =
+          \only<all:-5>{\{(2, 1)\}}
+          \only<all:6->{\emptyset}
+          $} \\
+        \alert<all:9-10>{%
+          \alert<all:7-8>{$\textit{list}_6 =
+            \only<all:-7>{\{(3, 0)\}}
+            \only<all:8-9>{\{(3, 0), (3, 1)\}}
+            \only<all:10->{\emptyset}
+            $}} \\
+        \alert<all:7-8>{$\textit{list}_7 =
+          \only<all:-7>{\{(3, 1)\}}
+          \only<all:8->{\emptyset}
+          $}
+      }
+    \end{column}
+  \end{columns}
+  \begin{overprint}
+    \onslide<all:1-2,15>
+    \begin{columns}
+      \begin{column}{7.2cm}
+      \end{column}
+      \begin{column}{4.0cm}
+        \footnotesize
+        \only<all:2>{\color{gray}}%
+        \begin{tabular}{c|cc}
+          & $s_2 = 0$ & $s_2 = 1$ \\ \hline
+          $s_1 = 0$
+          & \only<all:1-2>{0}\only<all:15>{0}
+          & \only<all:1-2>{1}\only<all:15>{1}
+          \\
+          $s_1 = 1$
+          & \only<all:1-2>{2}\only<all:15>{2}
+          & \only<all:1-2>{3}\only<all:15>{2}
+          \\
+          $s_1 = 2$
+          & \only<all:1-2>{4}\only<all:15>{3}
+          & \only<all:1-2>{5}\only<all:15>{3}
+          \\
+          $s_1 = 3$
+          & \only<all:1-2>{6}\only<all:15>{3}
+          & \only<all:1-2>{7}\only<all:15>{3}
+        \end{tabular}
+      \end{column}
+    \end{columns}
+  \end{overprint}
+\end{frame}
+
+\begin{frame}{The final heuristic representation}
+  \setlength{\tabcolsep}{5pt}
+  At the end, our heuristic is represented by six tables:
+  \begin{itemize}
+  \item three one-dimensional tables for the atomic abstractions:
+    
+    \medskip
+
+    \begin{footnotesize}
+      \begin{tabular}{c|cccc}
+        $T_{\text{\hilite{package}}}$ & $L$ & $R$ & $A$ & $B$ \\ \hline
+        & 0   & 1   & 2   & 3
+      \end{tabular}
+      \quad
+      \begin{tabular}{c|cc}
+        $T_{\text{\hilite{truck A}}}$ & $L$ & $R$ \\ \hline
+        & 0   & 1
+      \end{tabular}
+      \quad
+      \begin{tabular}{c|cc}
+        $T_{\text{\hilite{truck B}}}$ & $L$ & $R$ \\ \hline
+        & 0   & 1
+      \end{tabular}
+    \end{footnotesize}
+  \item two tables for the two merge and subsequent shrink steps:
+
+    \medskip
+
+    \begin{footnotesize}
+      \begin{tabular}{c|cc}
+        $T^1_{\text{\hilite{m\&s}}}$ & $s_2 = 0$ & $s_2 = 1$ \\ \hline
+        $s_1 = 0$ & 0 & 1 \\
+        $s_1 = 1$ & 2 & 2 \\
+        $s_1 = 2$ & 3 & 3 \\
+        $s_1 = 3$ & 3 & 3
+      \end{tabular}
+      \quad
+      \begin{tabular}{c|cc}
+        $T^2_{\text{\hilite{m\&s}}}$ & $s_2 = 0$ & $s_2 = 1$ \\ \hline
+        $s_1 = 0$ & 1 & 1 \\
+        $s_1 = 1$ & 1 & 0 \\
+        $s_1 = 2$ & 2 & 2 \\
+        $s_1 = 3$ & 3 & 3
+      \end{tabular}
+    \end{footnotesize}
+  \item one table with goal distances for the final abstraction:
+
+    \medskip
+
+    \begin{footnotesize}
+      \begin{tabular}{c|cccc}
+        $T_{\hilite{h}}$  & $s = 0$ & $s = 1$ & $s = 2$ & $s = 3$ \\ \hline
+        $h(s)$ & 3       & 2       & 1       & 0
+      \end{tabular}
+    \end{footnotesize}
+  \end{itemize}
+
+  \medskip
+
+  Given a state $s = \{
+    \text{\hilite{package}} \mapsto p,
+    \text{\hilite{truck A}} \mapsto a,
+    \text{\hilite{truck B}} \mapsto b\}$, \\
+  its heuristic value is then looked up as:
+  \begin{itemize}
+  \item $h(s) =
+    T_{\hilite{h}}[
+      T^2_{\text{\hilite{m\&s}}}[
+        T^1_{\text{\hilite{m\&s}}}[
+          T_{\text{\hilite{package}}}[p],
+          T_{\text{\hilite{truck A}}}[a]],
+        T_{\text{\hilite{truck B}}}[b]]]$
+  \end{itemize}
+\end{frame}
+
+\subsection{Concrete algorithm}
+
+\begin{frame}{Towards a concrete algorithm}
+  \begin{itemize}
+  \item We have now described how merge-and-shrink abstractions work
+    \alert{in general}.
+  \item However, we have not said how exactly to decide
+    \begin{itemize}
+    \item \alert{which abstractions to combine} in a merge step and
+    \item \alert{when and how to further abstract} in a shrink step.
+    \end{itemize}
+  \item There are \alert{many possibilities here} (just like there are
+    many possible PDB heuristics).
+  \item Only \alert{one} concrete method, called
+    \alert{\hhhh}, has been explored so far in planning,
+    which we will now discuss briefly.
+  \end{itemize}
+\end{frame}
+    
+\begin{frame}{Generic algorithm template}
+  \begin{block}{Generic abstraction computation algorithm}
+    \begin{tabular}{l}
+      \textit{abs} := $\{\mathcal T^{\pi_{\{v\}}} \mid v \in V\}$ \\
+      \textbf{while} \textit{abs} contains more than one
+      abstraction: \\
+      \hspace*{1cm}
+      \textblue{select} $\mathcal A_1$, $\mathcal A_2$
+      from \textit{abs} \\
+      \hspace*{1cm}
+      \textblue{shrink} $\mathcal A_1$ and/or $\mathcal A_2$
+      until $\textit{size}(\mathcal A_1) \cdot
+      \textit{size}(\mathcal A_2) \le N$ \\
+      \hspace*{1cm} \textit{abs} := $\text{\textit{abs}}
+      \setminus \{\mathcal A_1, \mathcal A_2\}
+      \cup \{\mathcal A_1 \otimes \mathcal A_2\}$ \\
+      \textbf{return} the remaining abstraction in \textit{abs}
+    \end{tabular}
+  \end{block}
+  $N$: parameter bounding number of abstract states
+
+  \bigskip
+
+  \textblue{Questions for practical implementation:}
+  \begin{itemize}
+  \item Which abstractions to select?
+    $\leadsto$ \alert{merging strategy}
+  \item How to shrink an abstraction?
+    $\leadsto$ \alert{shrinking strategy}
+  \item How to choose $N$?
+    $\leadsto$ usually: as high as memory allows
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Merging strategy}
+  \textblue{Which abstractions to select?}
+
+  \begin{block}{\hhhh: Linear merging strategy}
+    In each iteration after the first, choose the abstraction
+    computed in the previous iteration as $\mathcal A_1$.
+
+    $\leadsto$ fully defined by an ordering of atomic projections
+  \end{block}
+
+  \textblue{Rationale:} only maintains one ``complex'' abstraction
+  at a time
+
+  \medskip
+
+  \begin{block}{\hhhh: Ordering of atomic projections}
+    \begin{itemize}
+    \item Start with a goal variable.
+    \item Add variables that appear in preconditions of operators
+      affecting previous variables.
+    \item If that is not possible, add a goal variable.
+    \end{itemize}
+  \end{block}
+
+  \textblue{Rationale:} increases $h$ quickly
+  (cf.\ causal graph criteria for growing patterns)
+\end{frame}
+
+\begin{frame}{Shrinking strategy}
+  \textblue{Which abstractions to shrink?}
+  
+  \begin{block}{\hhhh: only shrink the product}
+    If at all possible, don't shrink atomic abstractions,
+    but only product abstractions.
+  \end{block}
+
+  \textblue{Rationale:} Product abstractions are more likely to
+  contain significant redundancies and symmetries.
+\end{frame}
+
+\begin{frame}{Shrinking strategy (ctd.)}
+  \textblue{How to shrink an abstraction?}
+  
+  \begin{block}{\hhhh: $f$-preserving shrinking strategy}
+    Repeatedly combine abstract states with \\
+    \alert{identical} abstract goal distances (\alert{$h$ values}) and \\
+    \alert{identical} abstract initial state distances (\alert{$g$
+      values}).
+  \end{block}
+  
+  \textblue{Rationale:}
+  preserves heuristic value and overall graph shape
+
+  \begin{block}{\hhhh: Tie-breaking criterion}
+    Prefer combining states where \alert{$g+h$ is high}.
+
+    In case of ties, combine states where \alert{$h$ is high}.
+  \end{block}
+  \textblue{Rationale:} states with high $g+h$ values are less likely to
+  be explored by \astar, so inaccuracies there matter less
+\end{frame}
+
+\section{Conclusion}
+\subsection[Properties]{Theoretical properties and practical performance}
+
+\begin{frame}{Properties of merge-and-shrink abstractions}
+  \begin{itemize}
+  \item We conclude by briefly mentioning a number of
+    \alert{theoretical} properties of merge-and-shrink abstractions
+    (without proof).
+  \item While these theoretical results are interesting, heuristics in
+    planning usually need to be justified by good \alert{empirical
+      performance}.
+  \item Regarding empirical performance, initial results for {\hhhh}
+    are \alert{very encouraging}, outperforming pattern databases (and
+    all other admissible heuristics) on a number of benchmark domains.
+  \item However, merge-and-shrink abstractions are \alert{not nearly
+    as well studied} (and understood) as pattern databases, so the
+    \alert{jury is still out}.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Theoretical properties: as good as PDBs}
+  \begin{block}{As powerful as PDBs}
+    \alert{Pattern database heuristics} are a \alert{special case} of
+    our abstraction heuristics, and arise naturally as a side product.
+  \end{block}
+
+  \begin{itemize}
+  \item More precisely, PDB heuristics are merge-and-shrink
+    abstractions without shrink steps (terminating heuristic
+    computation as soon as space runs out).
+  \item However, specialized PDB algorithms are faster than the
+    generic merge-and-shrink algorithm.
+  \item This performance difference is only \alert{polynomial}, but
+    this does not mean that it does not matter in practice!
+  \item Still, this shows that \alert{representational power} is
+    \alert{at least as large} as that of PDB heuristics.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Theoretical properties: better than PDBs}
+  \begin{block}{Greater representational power}
+    In \alert{some planning domains} where polynomial-sized pattern
+    database heuristics have unbounded error (Gripper, Schedule, two
+    Promela variants), merge-and-shrink abstractions can obtain
+    \alert{perfect heuristics} in polynomial time with suitable
+    merging/shrinking strategies.
+  \end{block}
+
+  \begin{itemize}
+  \item This shows that \alert{representational power} is
+    \alert{strictly greater} than that of PDB heuristics.
+  \item However, it does \alert{not} mean that we know good general
+    (domain-independent) merging/shrinking strategies that will
+    generate these perfect heuristics in practice.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Theoretical properties: additivity}
+  \begin{block}{Get additivity for free}
+    If $P_1$ and $P_2$ are \alert{additive patterns} of a {\sasplus}
+    task, then for \alert{all} $h$-preserving merge-and-shrink
+    abstractions $\mathcal A_1$ of $\mathcal T^{\pi_{P_1}}$, $\mathcal
+    A_2$ of $\mathcal T^{\pi_{P_2}}$ and $\mathcal A$ of $\mathcal A_1
+    \otimes \mathcal A_2$, the abstraction heuristic for
+    \alert{$\mathcal A$ dominates $h^{P_1} + h^{P_2}$}. (An
+    abstraction is \alert{$h$-preserving} if $\alpha(s) = \alpha(s')$
+    only for $s$, $s'$ with same abstract goal distance.)
+  \end{block}
+  
+  \begin{itemize}
+  \item One can derive a similar \alert{theory of additivity} for
+    merge-and-shrink abstraction as for pattern databases.
+  \item However, this result shows that this is \alert{not as
+    necessary} as for pattern databases: additivity is
+    \alert{exploited automatically} by a single merge-and-shrink
+    abstraction to some extent.
+  \item Still, experimental results show that there is sometimes a
+    benefit of using multiple merge-and-shrink abstractions. (However,
+    so far only maximization has been explored.)
+  \end{itemize}
+\end{frame}
+
+\subsection{Literature}
+
+\begin{frame}{Literature}
+  References on merge-and-shrink abstractions:
+  \begin{thebibliography}{1}
+  \bibitem{} Klaus Dr\"ager, Bernd Finkbeiner and Andreas Podelski.
+    \newblock Directed Model Checking with Distance-Preserving
+    Abstractions.
+    \newblock \emph{Proc.~SPIN 2006}, pp.~19--34, 2006.
+    \newblock \alert{Introduces} merge-and-shrink abstractions (for
+    model-checking).
+  \bibitem{} Malte Helmert, Patrik Haslum and J\"org Hoffmann.
+    \newblock Flexible Abstraction Heuristics for Optimal Sequential
+    Planning.
+    \newblock \emph{Proc.~ICAPS 2007}, pp.~176--183, 2007.
+    \newblock Introduces merge-and-shrink abstractions \alert{for
+      planning}. \\ Most ideas of this chapter come from this paper.
+  \end{thebibliography}
+\end{frame}
+
+\section*{Summary}
+\begin{frame}{Summary}
+  \begin{itemize}
+  \item \alert{Projections} \alert{perfectly} reflect \alert{a few} state
+    variables. \alert{Merge-and-shrink abstractions} are a
+    \alert{generalization} that can reflect \alert{all} state variables, but in
+    a \alert{potentially lossy} way.
+  \item The \alert{merge steps} combine two abstractions by replacing them
+    with their \alert{synchronized product}.
+  \item The \alert{shrink steps} make an abstraction smaller by abstracting it
+    further.
+  \item The resulting \alert{abstraction mapping} is represented by a set of
+    reference tables. 
+  \end{itemize}
+\end{frame}
+
+\end{document}

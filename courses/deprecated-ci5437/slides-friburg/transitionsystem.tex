@@ -1,0 +1,37 @@
+\usetikzlibrary{shapes}
+
+\begin{tikzpicture}
+\node (A) at (0:25mm) {A};
+\node (B) at (60:25mm) {B};
+\node (C) at (120:25mm) {C};
+\node (D) at (180:25mm) {D};
+\node (E) at (240:25mm) {E};
+\node (F) at (300:25mm) {F};
+
+\tikzstyle action edge=[->, thick, >=latex]
+
+\begin{scope}[style=action edge, red]
+\draw[bend right=10] (A) to (B);
+\draw (B) to (F);
+\draw[bend right=10] (C) to (D);
+\draw (E) to (B);
+\draw[bend left=10] (F) to (E);
+\end{scope}
+
+\begin{scope}[style=action edge, blue]
+\draw[bend left=10] (C) to (B);
+\draw[bend right=10] (D) to (E);
+\draw[bend right=10] (F) to (A);
+\end{scope}
+
+\begin{scope}[style=action edge, green]
+\draw (C) to (F);
+\draw (D) to (A);
+\draw[bend right=10] (E) to (D);
+\draw[bend left=10] (F) to (A);
+\end{scope}
+
+\node[draw, circle, dashed, minimum size = 7mm] (init) at (F) [label=below:initial state] {};
+\node[draw, ellipse, dashed, minimum height=8mm, minimum width=35mm] (goal) at (0,2.18) [label=above:goal states] {};
+
+\end{tikzpicture}

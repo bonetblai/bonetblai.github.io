@@ -1,0 +1,2638 @@
+\documentclass{gkibeamer}
+
+\input{macros}
+
+\usetikzlibrary{shapes}
+
+\tikzstyle{relaxed planning graph}=[draw,inner sep=0pt,font=\small]
+\tikzstyle{rpg square}=[relaxed planning graph,minimum size=0.52cm,rectangle]
+\tikzstyle{rpg circle}=[relaxed planning graph,minimum size=0.52cm,circle]
+
+\tikzstyle{prop}=        [rpg circle,fill=yellow]
+\tikzstyle{trueinitprop}=[rpg square,fill=yellow]
+\tikzstyle{logic-and}=   [rpg square,fill=orange]
+\tikzstyle{logic-or}=    [rpg circle,fill=orange]
+\tikzstyle{logic-cond}=  [rpg square,fill=blue!40]
+\tikzstyle{operator}=    [rpg square,fill=blue!40]
+\tikzstyle{goal-and}=    [rpg square,fill=white]
+\tikzstyle{goal-or}=     [rpg circle,fill=white]
+
+\tikzstyle{true}=[fill=green]
+\tikzstyle{false}=[fill=red]
+\tikzstyle{selected}=[fill=cyan]
+\tikzstyle{dirty}=[fill=lightgray]
+
+\tikzstyle{idle}=[thin]
+\tikzstyle{nonidle}=[thin]
+
+\newcommand{\markplusone}[1]{\path (#1) +(-0.04cm,0.28cm) node {\tiny $+1$};}
+\newcommand{\markopnode}[3][0.35cm]{\path (#2) +(0cm,#1) node {\tiny
+    \ensuremath{#3}};}
+\newcommand{\markopnodeff}[3][0.30cm]{\path (#2) +(0cm,#1) node {\tiny
+    \ensuremath{#3}};}
+
+\begin{document}
+\lectureno{8}
+\subtitle{Planning as search: relaxation heuristics}
+\date{November 22nd, 2011}
+\maketitles
+
+\section{Parallel plans}
+\subsection[Plan steps]{Plan steps, serializations and parallel plans}
+
+\begin{frame}{Towards better relaxed plans}
+  Why does the greedy algorithm compute low-quality plans?
+  \begin{itemize}
+  \item It may apply many operators which are not
+    \alert{goal-directed}.
+  \end{itemize}
+
+  \bigskip
+
+  How can this problem be fixed?
+  \begin{itemize}
+  \item \alert{Reaching the goal} of a relaxed planning task is most
+    easily achieved with \alert{forward search}.
+  \item Analyzing \alert{relevance} of an operator for achieving a
+    goal (or subgoal) is most easily achieved with \alert{backward
+      search}.
+  \end{itemize}
+  
+  \bigskip
+  
+  \hilite{Idea:} Use a \alert{forward-backward} algorithm that first
+  finds a path to the goal greedily, then prunes it to a relevant
+  subplan.
+\end{frame}
+
+\begin{frame}{Relaxed plan steps}
+  How to decide which operators to apply in forward direction?
+  \begin{itemize}
+  \item We \alert{avoid} such a decision by applying all applicable
+    operators \alert{simultaneously}.
+  \end{itemize}
+  
+  \begin{definition}[plan step]
+    A \alert{plan step} is a set of operators $\omega =
+    \{\langle \chi_1, e_1\rangle, \dots, \langle \chi_n,
+      e_n\rangle\}$.
+      
+    \smallskip
+   
+    In the \alert{special case of all operators of $\omega$ being
+      relaxed}, \\
+    we further define:
+    \begin{itemize}
+    \item Plan step $\omega$ is \alert{applicable} in state $s$ iff
+      $s \models \chi_i$ for all $i \in \{1, \dots, n\}$.
+    \item The \alert{result} of applying $\omega$ to $s$, in
+      symbols $\applyops{\omega}{s}$, is defined as the state $s'$ with
+      $\onset{s'} = \onset{s} \cup \bigcup_{i=1}^n \changes{e_i}{s}$.
+    \end{itemize}
+  \end{definition}
+  \alert{general} semantics for plan steps $\leadsto$ much later
+\end{frame}
+
+\begin{frame}{Applying relaxed plan steps: examples}
+  In all cases, $s = \{a \mapsto 0, b \mapsto 0, c \mapsto 1,
+    d \mapsto 0\}$.
+  \begin{itemize}
+  \item $\omega = \{
+    \langle c, a\rangle,
+    \langle \top, b \rangle
+    \}$
+  \item $\omega = \{
+    \langle c, a\rangle,
+    \langle c, a \CEF b \rangle
+    \}$
+  \item $\omega = \{
+    \langle c, a \land b\rangle,
+    \langle a, b \CEF d\rangle
+    \}$
+  \item $\omega = \{
+    \langle c, a \land (b \CEF d)\rangle,
+    \langle c, b \land (a \CEF d)\rangle
+    \}$
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Serializations}
+  Applying a relaxed plan step to a state is related to applying
+  the operators in the step to a state in sequence.
+  \begin{definition}[serialization]
+    A \alert{serialization} of plan step 
+    $\omega = \{\relaxation{o}_1, \dots, \relaxation{o}_n\}$ is a sequence
+    $\relaxation{o}_{\pi(1)}, \dots, \relaxation{o}_{\pi(n)}$ where
+    $\pi$ is a permutation of $\{1, \dots, n\}$.
+  \end{definition}
+
+  \begin{lemma}[conservativeness of plan step semantics]
+    If $\omega$ is a plan step applicable in a state $s$ of a
+    relaxed planning task, then each serialization $o_1, \dots, o_n$
+    of $\omega$ is applicable in $s$ and
+    $\applyplan{o_1, \dots, o_n}{s}$ dominates
+    $\applyplan{\omega}{s}$.
+  \end{lemma}
+
+  \begin{itemize}
+  \item Does equality hold for all serializations/some serialization?
+  \item What if there are no conditional effects?
+  \item What if we allowed general (unrelaxed) planning tasks?
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Parallel plans}
+  \begin{definition}[parallel plan]
+    A \alert{parallel plan} for a relaxed planning task
+    $\langle A, I, \relaxation{O}, \gamma\rangle$
+    is a sequence of plan steps $\omega_1, \dots, \omega_n$
+    of operators in $\relaxation{O}$ with:
+    \begin{itemize}
+    \item $s_0 := I$
+    \item For $i = 1, \dots, n$, step $\omega_i$ is applicable in
+      $s_{i-1}$ \\
+      and $s_i := \applyops{\omega_i}{s_{i-1}}$.
+    \item $s_n \models \gamma$
+    \end{itemize}
+  \end{definition}
+  
+  \hilite{Remark:}
+  By ordering the operators within each single step arbitrarily, we
+  obtain a (regular, non-parallel) plan.
+\end{frame}
+
+\subsection[Forward distances]{Forward states and parallel forward distances}
+
+\begin{frame}{Forward states, plan steps and sets}
+  \hilite{Idea:} In the forward phase of the heuristic computation,
+  \begin{itemize}
+  \item first apply plan step with \alert{all operators applicable
+    initially},
+  \item then apply plan step with \alert{all operators applicable
+    then},
+  \item and so on.
+  \end{itemize}
+
+  \begin{definition}[forward state, forward plan step, forward set]
+    Let $\relaxation{\Pi} = \langle A, I, \relaxation{O}, \gamma\rangle$ be
+    a relaxed planning task.
+
+    \smallskip
+
+    The \alert{$n$-th forward state}, in symbols \alert{$s^{\text
+      F}_n$} ($n \in \mathbb N_0$), \\
+    the \alert{$n$-th forward plan step}, in symbols
+    \alert{$\omega^{\text F}_n$} ($n \in \mathbb N_1$), and \\
+    the \alert{$n$-th forward set}, in symbols
+    \alert{$S^{\text F}_n$} ($n \in \mathbb N_0$),
+    are defined as:
+    \begin{itemize}
+    \item $s^{\text F}_0 := I$
+    \item $\omega^{\text F}_n := \{ o \in \relaxation{O} \mid o
+      \text{~applicable in~} s^{\text F}_{n-1}\}$ 
+      for all $n \in \mathbb N_1$
+    \item $s^{\text F}_n := \applyops{\omega^{\text F}_n}{s^{\text
+        F}_{n-1}}$ for all $n \in \mathbb N_1$
+    \item $S^{\text F}_n := \onset{s^{\text F}_n}$ for all $n \in
+      \mathbb N_0$
+    \end{itemize}
+  \end{definition}
+\end{frame}
+
+\begin{frame}{The max heuristic \hmax}
+  \begin{definition}[parallel forward distance]
+    The \alert{parallel forward distance} of a relaxed planning
+    task $\langle A, I, \relaxation{O}, \gamma\rangle$ is the lowest number
+    $n \in \mathbb N_0$ such that $s^{\text F}_n \models \gamma$, or
+    $\infty$ if no forward state satisfies $\gamma$.
+  \end{definition}
+
+  \hilite{Remark:} The parallel forward distance can be computed in
+  polynomial time. (How?)
+
+  \medskip
+
+  \begin{definition}[max heuristic \hmax]
+    Let $\Pi = \langle A, I, O, \gamma\rangle$ be a planning task in
+    positive normal form, and let $s$ be a state of $\Pi$.
+
+    The \alert{max heuristic} estimate for $s$,
+    \alert{$\hmax(s)$}, is the parallel forward distance of the
+    relaxed planning task $\langle A, s, \relaxation{O}, \gamma\rangle$.
+  \end{definition}
+  
+  \hilite{Remark:} {\hmax} is safe, goal-aware, admissible and
+  consistent. (Why?)
+\end{frame}
+
+\begin{frame}{So far, so good\dots}
+  \begin{itemize}
+  \item We have seen how systematic computation of forward states
+    leads to an admissible heuristic estimate.
+  \item However, this estimate is \alert{very coarse}.
+  \item To improve it, we need to include \alert{backward propagation}
+    of information.
+  \end{itemize}
+  
+  For this purpose, we use so-called \alert{relaxed planning graphs}.
+\end{frame}
+
+\section{Relaxed planning graphs}
+\subsection{Introduction}
+
+\begin{frame}{AND/OR dags}
+  \begin{definition}[AND/OR dag]
+    An \alert{AND/OR dag}
+    $\langle V, A, \textit{type}\rangle$
+    is a directed acyclic graph $\langle V, A\rangle$ with a
+    label function $\textit{type}: V \to \{ \land, \lor\}$
+    partitioning nodes into \alert{AND nodes} ($\textit{type}(v) = \land)$
+    and \alert{OR nodes} ($\textit{type}(v) = \lor$).
+  \end{definition}
+  
+  \hilite{Note:} We draw AND nodes as squares and OR
+  nodes as circles.
+
+  \begin{definition}[truth values in AND/OR dags]
+    Let $G = \langle V, A, \textit{type}\rangle$ be an AND/OR dag, and
+    let $u \in V$ be a node with successor set $\{v_1, \dots, v_k\}
+      \subseteq V$.
+
+    \medskip
+
+    The (truth) \alert{value} of $u$, $\alert{\textit{val}(u)}$, is
+    inductively defined as:
+    \begin{itemize}
+    \item If $\textit{type}(u) = \land$, then
+      $\textit{val}(u) = \textit{val}(v_1) \land \dots \land
+      \textit{val}(v_k)$.
+    \item If $\textit{type}(u) = \lor$, then
+      $\textit{val}(u) = \textit{val}(v_1) \lor \dots \lor
+      \textit{val}(v_k)$.
+    \end{itemize}
+  \end{definition}
+  \hilite{Note:} No separate base case is needed. (Why not?)
+\end{frame}
+
+\begin{frame}{Relaxed planning graphs}
+  Let $\relaxation{\Pi}$ be a relaxed planning task, and let $k \in
+  \mathbb N_0$.
+
+  \medskip
+
+  The \alert{relaxed planning graph} of $\relaxation{\Pi}$ for depth
+  $k$, in symbols \alert{$\textit{RPG}_k(\relaxation{\Pi})$}, is an
+  AND/OR dag that encodes
+  \begin{itemize}
+  \item \alert{which propositions} can be made true in $k$ plan
+    steps, and
+  \item \alert{how} they can be made true.
+  \end{itemize}
+  
+  \smallskip
+
+  Its construction is a bit involved, so we present it in stages.
+\end{frame}
+
+\begin{frame}{Running example}
+  As a running example, consider the relaxed planning task
+  $\langle A, I, \{o_1, o_2, o_3, o_4\}, \gamma\rangle$ with
+  \begin{align*}
+    A ={} & \{a, b, c, d, e, f, g, h\} \\
+    I ={} & \{a \mapsto 1, b \mapsto 0, c \mapsto 1,
+      d \mapsto 1, \\
+      & \phantom{\{}e \mapsto 0, f \mapsto 0, g \mapsto 0, h \mapsto
+      0\} \\
+    o_1 ={} &
+    \langle b \lor (c \land d),
+    b \land ((a \land b) \CEF e)\rangle \\
+    o_2 ={} & \langle \top, f\rangle \\
+    o_3 ={} & \langle f, g\rangle \\
+    o_4 ={} & \langle f, h\rangle \\
+    \gamma ={} & e \land (g \land h)
+  \end{align*}
+\end{frame}
+
+\begin{frame}{Running example: forward sets and plan steps}
+  \begin{small}
+    \begin{align*}
+      I & = \{a \mapsto 1, b \mapsto 0, c \mapsto 1, d \mapsto 1,
+      e \mapsto 0, f \mapsto 0, g \mapsto 0, h \mapsto 0\} \\
+      o_1 & = \langle b \lor (c \land d),
+      b \land ((a \land b) \CEF e)\rangle \\
+      o_2 & = \langle \top, f\rangle, \quad
+      o_3 = \langle f, g\rangle, \quad
+      o_4 = \langle f, h\rangle
+    \end{align*}
+  \end{small}
+  \vspace{-10pt}
+  \begin{align*}
+    S^{\text F}_0 & = \{a, c, d\} \\
+    \omega^{\text F}_1 & = \{o_1, o_2\} \\
+    S^{\text F}_1 & = \{a, b, c, d, f\} \\
+    \omega^{\text F}_2 & = \{o_1, o_2,
+    o_3, o_4\} \\
+    S^{\text F}_2 & = \{a, b, c, d, e, f, g, h\} \\
+    \omega^{\text F}_3 & = \omega^{\text F}_2 \\
+    S^{\text F}_3 & = S^{\text F}_2 \text{~etc.}
+  \end{align*}
+\end{frame}
+
+\subsection{Construction}
+
+\begin{frame}{Components of relaxed planning graphs}
+  A relaxed planning graph consists of four kinds of components:
+  \begin{itemize}
+  \item \alert{Proposition nodes} represent the truth value of
+    propositions after applying a certain number of plan steps.
+  \item \alert{Idle arcs} represent the fact that state variables,
+    once true, remain true.
+  \item \alert{Operator subgraphs} represent the possibility and effect
+    of applying a given operator in a given plan step.
+  \item The \alert{goal subgraph} represents the truth value of the
+    goal condition after $k$ plan steps.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Relaxed planning graph: proposition layers}
+  Let $\relaxation{\Pi} = \langle A, I, \relaxation{O}, \gamma\rangle$
+  be a relaxed planning task, let $k \in \mathbb N_0$.
+
+  \bigskip
+
+  For each $i \in \{0, \dots, k\}$, $\textit{RPG}_k(\relaxation{\Pi})$
+  contains one \alert{proposition layer} which consists of:
+  \begin{itemize}
+  \item a \alert{proposition node $a^{i}$} for each state variable $a
+    \in A$.
+  \end{itemize}
+
+  Node $a^i$ is an AND node if $i = 0$ and $I \models a$. \\
+  Otherwise, it is an OR node.
+\end{frame}
+
+\begin{frame}{Relaxed planning graph: proposition layers}
+  \begin{center}
+    \begin{tikzpicture}
+      \pgfsetxvec{\pgfpoint{1.2cm}{0.0cm}}
+      \pgfsetyvec{\pgfpoint{0.0cm}{0.96cm}}
+      %% layer 0
+      \node[trueinitprop] at (0,7) (a0) {$a^0$};
+      \node[prop] at (0,6) (b0) {$b^0$};
+      \node[trueinitprop] at (0,5) (c0) {$c^0$};
+      \node[trueinitprop] at (0,4) (d0) {$d^0$};
+      \node[prop] at (0,3) (e0) {$e^0$};
+      \node[prop] at (0,2) (f0) {$f^0$};
+      \node[prop] at (0,1) (g0) {$g^0$};
+      \node[prop] at (0,0) (h0) {$h^0$};
+      %% layer 1
+      \pause
+      \node[prop] at (1,7) (a1) {$a^1$};
+      \node[prop] at (1,6) (b1) {$b^1$};
+      \node[prop] at (1,5) (c1) {$c^1$};
+      \node[prop] at (1,4) (d1) {$d^1$};
+      \node[prop] at (1,3) (e1) {$e^1$};
+      \node[prop] at (1,2) (f1) {$f^1$};
+      \node[prop] at (1,1) (g1) {$g^1$};
+      \node[prop] at (1,0) (h1) {$h^1$};
+      %% layer 2
+      \pause
+      \node[prop] at (2,7) (a2) {$a^2$};
+      \node[prop] at (2,6) (b2) {$b^2$};
+      \node[prop] at (2,5) (c2) {$c^2$};
+      \node[prop] at (2,4) (d2) {$d^2$};
+      \node[prop] at (2,3) (e2) {$e^2$};
+      \node[prop] at (2,2) (f2) {$f^2$};
+      \node[prop] at (2,1) (g2) {$g^2$};
+      \node[prop] at (2,0) (h2) {$h^2$};
+      %% layer 3
+      \node[prop] at (3,7) (a3) {$a^3$};
+      \node[prop] at (3,6) (b3) {$b^3$};
+      \node[prop] at (3,5) (c3) {$c^3$};
+      \node[prop] at (3,4) (d3) {$d^3$};
+      \node[prop] at (3,3) (e3) {$e^3$};
+      \node[prop] at (3,2) (f3) {$f^3$};
+      \node[prop] at (3,1) (g3) {$g^3$};
+      \node[prop] at (3,0) (h3) {$h^3$};
+      %% layer 4
+      \node[prop] at (4,7) (a4) {$a^4$};
+      \node[prop] at (4,6) (b4) {$b^4$};
+      \node[prop] at (4,5) (c4) {$c^4$};
+      \node[prop] at (4,4) (d4) {$d^4$};
+      \node[prop] at (4,3) (e4) {$e^4$};
+      \node[prop] at (4,2) (f4) {$f^4$};
+      \node[prop] at (4,1) (g4) {$g^4$};
+      \node[prop] at (4,0) (h4) {$h^4$};
+      %% layer 5
+      \node[prop] at (5,7) (a5) {$a^5$};
+      \node[prop] at (5,6) (b5) {$b^5$};
+      \node[prop] at (5,5) (c5) {$c^5$};
+      \node[prop] at (5,4) (d5) {$d^5$};
+      \node[prop] at (5,3) (e5) {$e^5$};
+      \node[prop] at (5,2) (f5) {$f^5$};
+      \node[prop] at (5,1) (g5) {$g^5$};
+      \node[prop] at (5,0) (h5) {$h^5$};
+      %% layer 6
+      \node[prop] at (6,7) (a6) {$a^6$};
+      \node[prop] at (6,6) (b6) {$b^6$};
+      \node[prop] at (6,5) (c6) {$c^6$};
+      \node[prop] at (6,4) (d6) {$d^6$};
+      \node[prop] at (6,3) (e6) {$e^6$};
+      \node[prop] at (6,2) (f6) {$f^6$};
+      \node[prop] at (6,1) (g6) {$g^6$};
+      \node[prop] at (6,0) (h6) {$h^6$};
+      %% layer 7
+      \node[prop] at (7,7) (a7) {$a^7$};
+      \node[prop] at (7,6) (b7) {$b^7$};
+      \node[prop] at (7,5) (c7) {$c^7$};
+      \node[prop] at (7,4) (d7) {$d^7$};
+      \node[prop] at (7,3) (e7) {$e^7$};
+      \node[prop] at (7,2) (f7) {$f^7$};
+      \node[prop] at (7,1) (g7) {$g^7$};
+      \node[prop] at (7,0) (h7) {$h^7$};
+      %% layer 8
+      \node[prop] at (8,7) (a8) {$a^8$};
+      \node[prop] at (8,6) (b8) {$b^8$};
+      \node[prop] at (8,5) (c8) {$c^8$};
+      \node[prop] at (8,4) (d8) {$d^8$};
+      \node[prop] at (8,3) (e8) {$e^8$};
+      \node[prop] at (8,2) (f8) {$f^8$};
+      \node[prop] at (8,1) (g8) {$g^8$};
+      \node[prop] at (8,0) (h8) {$h^8$};
+    \end{tikzpicture}
+  \end{center}
+\end{frame}
+
+\begin{frame}{Relaxed planning graph: idle arcs}
+  For each proposition node $a^i$ with $i \in \{1, \dots, k\}$,
+  $\textit{RPG}_k(\relaxation{\Pi})$ contains an arc from $a^i$ to
+  $a^{i-1}$ (\alert{idle arcs}).
+ 
+  \bigskip
+
+  \hilite{Intuition:} If a state variable is true in step $i$, one of
+  the possible reasons is that it \alert{was already previously true}.
+\end{frame}
+
+\begin{frame}{Relaxed planning graph: idle arcs}
+  \begin{center}
+    \begin{tikzpicture}
+      \pgfsetxvec{\pgfpoint{1.2cm}{0.0cm}}
+      \pgfsetyvec{\pgfpoint{0.0cm}{0.96cm}}
+      %% layer 0
+      \node[trueinitprop] at (0,7) (a0) {$a^0$};
+      \node[prop] at (0,6) (b0) {$b^0$};
+      \node[trueinitprop] at (0,5) (c0) {$c^0$};
+      \node[trueinitprop] at (0,4) (d0) {$d^0$};
+      \node[prop] at (0,3) (e0) {$e^0$};
+      \node[prop] at (0,2) (f0) {$f^0$};
+      \node[prop] at (0,1) (g0) {$g^0$};
+      \node[prop] at (0,0) (h0) {$h^0$};
+      %% layer 1
+      \node[prop] at (1,7) (a1) {$a^1$};
+      \node[prop] at (1,6) (b1) {$b^1$};
+      \node[prop] at (1,5) (c1) {$c^1$};
+      \node[prop] at (1,4) (d1) {$d^1$};
+      \node[prop] at (1,3) (e1) {$e^1$};
+      \node[prop] at (1,2) (f1) {$f^1$};
+      \node[prop] at (1,1) (g1) {$g^1$};
+      \node[prop] at (1,0) (h1) {$h^1$};
+      %% layer 2
+      \node[prop] at (2,7) (a2) {$a^2$};
+      \node[prop] at (2,6) (b2) {$b^2$};
+      \node[prop] at (2,5) (c2) {$c^2$};
+      \node[prop] at (2,4) (d2) {$d^2$};
+      \node[prop] at (2,3) (e2) {$e^2$};
+      \node[prop] at (2,2) (f2) {$f^2$};
+      \node[prop] at (2,1) (g2) {$g^2$};
+      \node[prop] at (2,0) (h2) {$h^2$};
+      %% layer 3
+      \node[prop] at (3,7) (a3) {$a^3$};
+      \node[prop] at (3,6) (b3) {$b^3$};
+      \node[prop] at (3,5) (c3) {$c^3$};
+      \node[prop] at (3,4) (d3) {$d^3$};
+      \node[prop] at (3,3) (e3) {$e^3$};
+      \node[prop] at (3,2) (f3) {$f^3$};
+      \node[prop] at (3,1) (g3) {$g^3$};
+      \node[prop] at (3,0) (h3) {$h^3$};
+      %% layer 4
+      \node[prop] at (4,7) (a4) {$a^4$};
+      \node[prop] at (4,6) (b4) {$b^4$};
+      \node[prop] at (4,5) (c4) {$c^4$};
+      \node[prop] at (4,4) (d4) {$d^4$};
+      \node[prop] at (4,3) (e4) {$e^4$};
+      \node[prop] at (4,2) (f4) {$f^4$};
+      \node[prop] at (4,1) (g4) {$g^4$};
+      \node[prop] at (4,0) (h4) {$h^4$};
+      %% layer 5
+      \node[prop] at (5,7) (a5) {$a^5$};
+      \node[prop] at (5,6) (b5) {$b^5$};
+      \node[prop] at (5,5) (c5) {$c^5$};
+      \node[prop] at (5,4) (d5) {$d^5$};
+      \node[prop] at (5,3) (e5) {$e^5$};
+      \node[prop] at (5,2) (f5) {$f^5$};
+      \node[prop] at (5,1) (g5) {$g^5$};
+      \node[prop] at (5,0) (h5) {$h^5$};
+      %% layer 6
+      \node[prop] at (6,7) (a6) {$a^6$};
+      \node[prop] at (6,6) (b6) {$b^6$};
+      \node[prop] at (6,5) (c6) {$c^6$};
+      \node[prop] at (6,4) (d6) {$d^6$};
+      \node[prop] at (6,3) (e6) {$e^6$};
+      \node[prop] at (6,2) (f6) {$f^6$};
+      \node[prop] at (6,1) (g6) {$g^6$};
+      \node[prop] at (6,0) (h6) {$h^6$};
+      %% layer 7
+      \node[prop] at (7,7) (a7) {$a^7$};
+      \node[prop] at (7,6) (b7) {$b^7$};
+      \node[prop] at (7,5) (c7) {$c^7$};
+      \node[prop] at (7,4) (d7) {$d^7$};
+      \node[prop] at (7,3) (e7) {$e^7$};
+      \node[prop] at (7,2) (f7) {$f^7$};
+      \node[prop] at (7,1) (g7) {$g^7$};
+      \node[prop] at (7,0) (h7) {$h^7$};
+      %% layer 8
+      \node[prop] at (8,7) (a8) {$a^8$};
+      \node[prop] at (8,6) (b8) {$b^8$};
+      \node[prop] at (8,5) (c8) {$c^8$};
+      \node[prop] at (8,4) (d8) {$d^8$};
+      \node[prop] at (8,3) (e8) {$e^8$};
+      \node[prop] at (8,2) (f8) {$f^8$};
+      \node[prop] at (8,1) (g8) {$g^8$};
+      \node[prop] at (8,0) (h8) {$h^8$};
+      %% idle arcs
+      \pause
+      \draw[->,idle] (a8)--(a7);
+      \draw[->,idle] (a7)--(a6);
+      \draw[->,idle] (a6)--(a5);
+      \draw[->,idle] (a5)--(a4);
+      \draw[->,idle] (a4)--(a3);
+      \draw[->,idle] (a3)--(a2);
+      \draw[->,idle] (a2)--(a1);
+      \draw[->,idle] (a1)--(a0);
+      \draw[->,idle] (b8)--(b7);
+      \draw[->,idle] (b7)--(b6);
+      \draw[->,idle] (b6)--(b5);
+      \draw[->,idle] (b5)--(b4);
+      \draw[->,idle] (b4)--(b3);
+      \draw[->,idle] (b3)--(b2);
+      \draw[->,idle] (b2)--(b1);
+      \draw[->,idle] (b1)--(b0);
+      \draw[->,idle] (c8)--(c7);
+      \draw[->,idle] (c7)--(c6);
+      \draw[->,idle] (c6)--(c5);
+      \draw[->,idle] (c5)--(c4);
+      \draw[->,idle] (c4)--(c3);
+      \draw[->,idle] (c3)--(c2);
+      \draw[->,idle] (c2)--(c1);
+      \draw[->,idle] (c1)--(c0);
+      \draw[->,idle] (d8)--(d7);
+      \draw[->,idle] (d7)--(d6);
+      \draw[->,idle] (d6)--(d5);
+      \draw[->,idle] (d5)--(d4);
+      \draw[->,idle] (d4)--(d3);
+      \draw[->,idle] (d3)--(d2);
+      \draw[->,idle] (d2)--(d1);
+      \draw[->,idle] (d1)--(d0);
+      \draw[->,idle] (e8)--(e7);
+      \draw[->,idle] (e7)--(e6);
+      \draw[->,idle] (e6)--(e5);
+      \draw[->,idle] (e5)--(e4);
+      \draw[->,idle] (e4)--(e3);
+      \draw[->,idle] (e3)--(e2);
+      \draw[->,idle] (e2)--(e1);
+      \draw[->,idle] (e1)--(e0);
+      \draw[->,idle] (f8)--(f7);
+      \draw[->,idle] (f7)--(f6);
+      \draw[->,idle] (f6)--(f5);
+      \draw[->,idle] (f5)--(f4);
+      \draw[->,idle] (f4)--(f3);
+      \draw[->,idle] (f3)--(f2);
+      \draw[->,idle] (f2)--(f1);
+      \draw[->,idle] (f1)--(f0);
+      \draw[->,idle] (g8)--(g7);
+      \draw[->,idle] (g7)--(g6);
+      \draw[->,idle] (g6)--(g5);
+      \draw[->,idle] (g5)--(g4);
+      \draw[->,idle] (g4)--(g3);
+      \draw[->,idle] (g3)--(g2);
+      \draw[->,idle] (g2)--(g1);
+      \draw[->,idle] (g1)--(g0);
+      \draw[->,idle] (h8)--(h7);
+      \draw[->,idle] (h7)--(h6);
+      \draw[->,idle] (h6)--(h5);
+      \draw[->,idle] (h5)--(h4);
+      \draw[->,idle] (h4)--(h3);
+      \draw[->,idle] (h3)--(h2);
+      \draw[->,idle] (h2)--(h1);
+      \draw[->,idle] (h1)--(h0);
+    \end{tikzpicture}
+  \end{center}
+\end{frame}
+
+\begin{frame}{Relaxed planning graph: operator subgraphs}
+  For each $i \in \{1, \dots, k\}$ and each operator
+  $\relaxation{o} = \langle \chi, \relaxation{e}\rangle \in
+    \relaxation{O}$,
+  $\textit{RPG}_k(\relaxation{\Pi})$
+  contains a subgraph called an \alert{operator subgraph} with the
+  following parts:
+  \begin{itemize}
+    \only<all:1>{
+    \item one \alert{formula node $n^i_\varphi$} for each
+      formula $\varphi$ which is a subformula of $\chi$ or of some effect
+      condition in $\relaxation{e}$:
+      \begin{itemize}
+      \item If $\varphi = a$ for some atom $a$,
+        $n^i_\varphi$ is the proposition node $a^{i-1}$.
+      \item If $\varphi = \top$, $n^i_\varphi$ is a new AND node
+        without outgoing arcs.
+      \item If $\varphi = \bot$, $n^i_\varphi$ is a new OR node
+        without outgoing arcs.
+      \item If $\varphi = (\varphi' \land \varphi'')$,
+        $n^i_\varphi$ is a new AND node \\
+        with outgoing arcs to $n^i_{\varphi'}$ and $n^i_{\varphi''}$.
+      \item If $\varphi = (\varphi' \lor \varphi'')$,
+        $n^i_\varphi$ is a new OR node \\
+        with outgoing arcs to $n^i_{\varphi'}$ and $n^i_{\varphi''}$.
+      \end{itemize}
+    }
+    \only<all:2>{
+    \item for each conditional effect $(\chi' \CEF a)$ in
+      $\relaxation{e}$, an \alert{effect node $o^i_{\chi'}$} (an AND
+      node) with outgoing arcs to the precondition formula node
+      $n^i_\chi$ and effect condition formula node $n^i_{\chi'}$, and
+      incoming arc from proposition node $a^i$
+      \begin{itemize}
+      \item unconditional effects $a$ (effects which are not part of a
+        conditional effect) are treated the same, except that there is
+        no arc to an effect condition formula node
+      \item effects with identical condition (including groups of
+        unconditional effects) share the same effect node
+      \item the effect node for unconditional effects is denoted by
+        $o^i$
+      \end{itemize}
+    }
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Relaxed planning graph: operator subgraphs}
+  Operator subgraph for
+  \alert{$o_1 = \langle b \lor (c \land d),
+    b \land ((a \land b) \CEF e)\rangle$} \\
+  for layer \alert{$i = 1$}.
+
+  \begin{center}
+    \begin{tikzpicture}
+      \pgfsetxvec{\pgfpoint{7.0cm}{0.0cm}}
+      \pgfsetyvec{\pgfpoint{0.0cm}{0.96cm}}
+      %% layer 0
+      \node[trueinitprop] at (0,7) (a0) {$a^0$};
+      \node[prop] at (0,6) (b0) {$b^0$};
+      \node[trueinitprop] at (0,5) (c0) {$c^0$};
+      \node[trueinitprop] at (0,4) (d0) {$d^0$};
+      %% layer 1
+      \node[prop] at (1,6) (b1) {$b^1$};
+      \node[prop] at (1,3) (e1) {$e^1$};
+      %% operator
+      \node[logic-and] at (0.25,4.5) (c0-and-d0) {};
+      \draw[->,idle] (c0-and-d0)--(c0);
+      \draw[->,idle] (c0-and-d0)--(d0);
+      \node[logic-or] at (0.5,5.35) (precond-o1-0) {};
+      \draw[->,idle] (precond-o1-0)--(c0-and-d0);
+      \draw[->,idle] (precond-o1-0)--(b0);
+      \node[logic-and] at (0.5,6.5) (effcond-o1-0) {};
+      \draw[->,idle] (effcond-o1-0)--(a0);
+      \draw[->,idle] (effcond-o1-0)--(b0);
+      \node[operator] at (0.75,5.35) (o1-0) {$o_1^1$};
+      \draw[->,idle] (o1-0)--(precond-o1-0);
+      \node[logic-cond, inner sep=1pt] at (0.75,6.5) (efftrigger-o1-0) {\tiny $o_{1,a
+          \land b}^1$};
+      \draw[->,idle] (efftrigger-o1-0)--(effcond-o1-0);
+      \draw[->,idle] (efftrigger-o1-0)--(precond-o1-0);
+      \draw[->,idle] (b1)--(o1-0);
+      \draw[->,idle] (e1)--(efftrigger-o1-0);
+    \end{tikzpicture}
+  \end{center}
+\end{frame}
+
+\begin{frame}{Relaxed planning graph: goal subgraph}
+  $\textit{RPG}_k(\relaxation{\Pi})$ contains a subgraph called a
+  \alert{goal subgraph} with the following parts:
+  \begin{itemize}
+  \item one \alert{formula node $n^k_\varphi$} for each
+    formula $\varphi$ which is a subformula of $\gamma$:
+    \begin{itemize}
+    \item If $\varphi = a$ for some atom $a$,
+      $n^k_\varphi$ is the proposition node $a^i$.
+    \item If $\varphi = \top$, $n^k_\varphi$ is a new AND node
+      without outgoing arcs.
+    \item If $\varphi = \bot$, $n^k_\varphi$ is a new OR node
+      without outgoing arcs.
+    \item If $\varphi = (\varphi' \land \varphi'')$,
+      $n^k_\varphi$ is a new AND node \\
+      with outgoing arcs to $n^k_{\varphi'}$ and $n^k_{\varphi''}$.
+    \item If $\varphi = (\varphi' \lor \varphi'')$,
+      $n^k_\varphi$ is a new OR node \\
+      with outgoing arcs to $n^k_{\varphi'}$ and $n^k_{\varphi''}$.
+    \end{itemize}
+  \end{itemize}
+  The node $n^k_\gamma$ is called the \alert{goal node}.
+\end{frame}
+
+\begin{frame}{Relaxed planning graph: goal subgraphs}
+  Goal subgraph for \alert{$\gamma = e \land (g \land h)$}
+  and depth \alert{$k = 2$}:
+
+  \begin{center}
+    \begin{tikzpicture}
+      \pgfsetxvec{\pgfpoint{7.0cm}{0.0cm}}
+      \pgfsetyvec{\pgfpoint{0.0cm}{0.96cm}}
+      %% layer 2
+      \node[prop] at (2,3) (e2) {$e^2$};
+      \node[prop] at (2,1) (g2) {$g^2$};
+      \node[prop] at (2,0) (h2) {$h^2$};
+      %% goal
+      \node[logic-and] at (2.25,0.5) (g2-and-h2) {};
+      \draw[->,idle] (g2-and-h2)--(g2);
+      \draw[->,idle] (g2-and-h2)--(h2);
+      \node[goal-and] at (2.5,1.75) (goal2) {$\gamma$};
+      \draw[->,idle] (goal2)--(g2-and-h2);
+      \draw[->,idle] (goal2)--(e2);
+    \end{tikzpicture}
+  \end{center}
+\end{frame}
+
+\begin{frame}{Relaxed planning graph: complete (depth 2)}
+  \begin{center}
+    \only<beamer>{
+      \alert{
+        \hspace*{\fill}
+        \only<3-4>{$o_1 = \langle b \lor (c \land d),
+          b \land ((a \land b) \CEF e)\rangle$}
+        \only<5-6>{$o_2 = \langle \top, f\rangle$}
+        \only<7-8>{$o_3 = \langle f, g\rangle$}
+        \only<9-10>{$o_4 = \langle f, h\rangle$}
+        \only<11>{$\gamma = e \land (g \land h)$}
+        \hspace*{\fill}
+      }
+      \medskip
+
+    }
+    \begin{tikzpicture}
+      \tikzstyle{tiny rpg}=[draw,inner sep=1pt,font=\tiny]
+      \tikzstyle{rpg square}=[tiny rpg,minimum size=0.40cm,rectangle]
+      \tikzstyle{rpg circle}=[tiny rpg,minimum size=0.40cm,circle]
+      \pgfsetxvec{\pgfpoint{3.77cm}{0.0cm}}
+      \pgfsetyvec{\pgfpoint{0.0cm}{0.87cm}}
+      %% layer 0
+      \node[trueinitprop] at (0.0,7.0) (a0) {$a^0$};
+      \node[prop] at (0.0,6.0) (b0) {$b^0$};
+      \node[trueinitprop] at (0.0,5.0) (c0) {$c^0$};
+      \node[trueinitprop] at (0.0,4.0) (d0) {$d^0$};
+      \node[prop] at (0.0,3.0) (e0) {$e^0$};
+      \node[prop] at (0.0,2.0) (f0) {$f^0$};
+      \node[prop] at (0.0,1.0) (g0) {$g^0$};
+      \node[prop] at (0.0,0.0) (h0) {$h^0$};
+      %% layer 1
+      \node[prop] at (1.0,7.0) (a1) {$a^1$};
+      \node[prop] at (1.0,6.0) (b1) {$b^1$};
+      \node[prop] at (1.0,5.0) (c1) {$c^1$};
+      \node[prop] at (1.0,4.0) (d1) {$d^1$};
+      \node[prop] at (1.0,3.0) (e1) {$e^1$};
+      \node[prop] at (1.0,2.0) (f1) {$f^1$};
+      \node[prop] at (1.0,1.0) (g1) {$g^1$};
+      \node[prop] at (1.0,0.0) (h1) {$h^1$};
+      %% layer 2
+      \node[prop] at (2.0,7.0) (a2) {$a^2$};
+      \node[prop] at (2.0,6.0) (b2) {$b^2$};
+      \node[prop] at (2.0,5.0) (c2) {$c^2$};
+      \node[prop] at (2.0,4.0) (d2) {$d^2$};
+      \node[prop] at (2.0,3.0) (e2) {$e^2$};
+      \node[prop] at (2.0,2.0) (f2) {$f^2$};
+      \node[prop] at (2.0,1.0) (g2) {$g^2$};
+      \node[prop] at (2.0,0.0) (h2) {$h^2$};
+      %% idle arcs
+      \pause
+      \draw[->,idle] (a2)--(a1);
+      \draw[->,idle] (a1)--(a0);
+      \draw[->,idle] (b2)--(b1);
+      \draw[->,idle] (b1)--(b0);
+      \draw[->,idle] (c2)--(c1);
+      \draw[->,idle] (c1)--(c0);
+      \draw[->,idle] (d2)--(d1);
+      \draw[->,idle] (d1)--(d0);
+      \draw[->,idle] (e2)--(e1);
+      \draw[->,idle] (e1)--(e0);
+      \draw[->,idle] (f2)--(f1);
+      \draw[->,idle] (f1)--(f0);
+      \draw[->,idle] (g2)--(g1);
+      \draw[->,idle] (g1)--(g0);
+      \draw[->,idle] (h2)--(h1);
+      \draw[->,idle] (h1)--(h0);
+      %% operator subgraph for o_1 at layer 1
+      \pause
+      \node[logic-and] at (0.25,4.5) (c0-and-d0) {};
+      \node[logic-or] at (0.5,5.35) (precond-o1-1) {};
+      \node[logic-and] at (0.5,6.5) (effcond-o1-1) {};
+      \node[operator] at (0.75,5.35) (o1-1) {$o_1^1$};
+      \node[logic-cond] at (0.75,6.5) (efftrigger-o1-1) {$o_{1,a \land b}^1$};
+      \draw[->,nonidle] (c0-and-d0)--(c0);
+      \draw[->,nonidle] (c0-and-d0)--(d0);
+      \draw[->,nonidle] (precond-o1-1)--(c0-and-d0);
+      \draw[->,nonidle] (precond-o1-1)--(b0);
+      \draw[->,nonidle] (effcond-o1-1)--(a0);
+      \draw[->,nonidle] (effcond-o1-1)--(b0);
+      \draw[->,nonidle] (o1-1)--(precond-o1-1);
+      \draw[->,nonidle] (efftrigger-o1-1)--(effcond-o1-1);
+      \draw[->,nonidle] (efftrigger-o1-1)--(precond-o1-1);
+      \draw[->,nonidle] (b1)--(o1-1);
+      \draw[->,nonidle] (e1)--(efftrigger-o1-1);
+     %% operator subgraph for o_1 at layer 2
+     \pause
+     \node[logic-and] at (1.25,4.5) (c1-and-d1) {};
+     \node[logic-or] at (1.5,5.35) (precond-o1-2) {};
+     \node[logic-and] at (1.5,6.5) (effcond-o1-2) {};
+     \node[operator] at (1.75,5.35) (o1-2) {$o_1^2$};
+     \node[logic-cond] at (1.75,6.5) (efftrigger-o1-2) {$o_{1,a \land b}^2$};
+     \draw[->,nonidle] (c1-and-d1)--(c1);
+     \draw[->,nonidle] (c1-and-d1)--(d1);
+     \draw[->,nonidle] (precond-o1-2)--(c1-and-d1);
+     \draw[->,nonidle] (precond-o1-2)--(b1);
+     \draw[->,nonidle] (effcond-o1-2)--(a1);
+     \draw[->,nonidle] (effcond-o1-2)--(b1);
+     \draw[->,nonidle] (o1-2)--(precond-o1-2);
+     \draw[->,nonidle] (efftrigger-o1-2)--(effcond-o1-2);
+     \draw[->,nonidle] (efftrigger-o1-2)--(precond-o1-2);
+     \draw[->,nonidle] (b2)--(o1-2);
+     \draw[->,nonidle] (e2)--(efftrigger-o1-2);
+     %% operator subgraph for o_2 at layer 1
+     \pause
+     \node[logic-and] at (0.5,2.35) (precond-o2-1) {};
+     \node[operator] at (0.75,2.35) (o2-1) {$o_2^1$};
+     \draw[->,nonidle] (o2-1)--(precond-o2-1);
+     \draw[->,nonidle] (f1)--(o2-1);
+     %% operator subgraph for o_2 at layer 2
+     \pause
+     \node[logic-and] at (1.5,2.35) (precond-o2-2) {};
+     \node[operator] at (1.75,2.35) (o2-2) {$o_2^2$};
+     \draw[->,nonidle] (o2-2)--(precond-o2-2);
+     \draw[->,nonidle] (f2)--(o2-2);
+     %% operator subgraph for o_3 at layer 1
+     \pause
+     \node[operator] at (0.75,1.35) (o3-1) {$o_3^1$};
+     \draw[->,nonidle] (o3-1)--(f0);
+     \draw[->,nonidle] (g1)--(o3-1);
+     %% operator subgraph for o_3 at layer 2
+     \pause
+     \node[operator] at (1.75,1.35) (o3-2) {$o_3^2$};
+     \draw[->,nonidle] (o3-2)--(f1);
+     \draw[->,nonidle] (g2)--(o3-2);
+     %% operator subgraph for o_4 at layer 1
+     \pause
+     \node[operator] at (0.75,0.35) (o4-1) {$o_4^1$};
+     \draw[->,nonidle] (o4-1)--(f0);
+     \draw[->,nonidle] (h1)--(o4-1);
+     %% operator subgraph for o_4 at layer 2
+     \pause
+     \node[operator] at (1.75,0.35) (o4-2) {$o_4^2$};
+     \draw[->,nonidle] (o4-2)--(f1);
+     \draw[->,nonidle] (h2)--(o4-2);
+     %% goal subgraph at layer 2
+     \pause
+     \node[logic-and] at (2.25,0.5) (g2-and-h2) {};
+     \node[goal-and] at (2.5,1.75) (goal2) {$\gamma$};
+     \draw[->,nonidle] (g2-and-h2)--(g2);
+     \draw[->,nonidle] (g2-and-h2)--(h2);
+     \draw[->,nonidle] (goal2)--(g2-and-h2);
+     \draw[->,nonidle] (goal2)--(e2);
+     %% complete picture
+     \pause
+   \end{tikzpicture}
+ \end{center}
+\end{frame}
+
+\subsection{Truth values}
+
+\begin{frame}{Connection to forward sets and plan steps}
+  \begin{theorem}[relaxed planning graph truth values]
+    Let $\relaxation{\Pi} = \langle A, I, \relaxation{O}, \gamma\rangle$ be
+    a relaxed planning task.
+
+    Then the truth values of the nodes of its depth-$k$ relaxed
+    planning graph $\textit{RPG}_k(\relaxation{\Pi})$ relate to
+    the forward sets and forward plan steps of $\relaxation{\Pi}$ as
+    follows:
+    \begin{itemize}
+    \item \alert{Proposition nodes:} \\
+      For all $a \in A$ and $i \in \{0, \dots, k\}$,
+      $\textit{val}(a^i) = 1$ iff $a \in S^{\text F}_i$.
+    \item \alert{(Unconditional) effect nodes:} \\
+      For all $o \in \relaxation{O}$ and $i \in \{1, \dots, k\}$, 
+      $\textit{val}(o^i) = 1$ iff $o \in \omega^{\text F}_i$.
+    \item \alert{Goal nodes:} \\
+      $\textit{val}(n^k_\gamma) = 1$ iff the parallel forward distance of
+      $\relaxation{\Pi}$ is at most $k$.
+    \end{itemize}
+  \end{theorem}
+  (We omit the straight-forward proof.)
+\end{frame}
+
+\begin{frame}<handout:12>{Computing the node truth values}
+  %% TODO: Fix overly thick borders of some nodes.
+  \begin{center}
+    \begin{tikzpicture}
+      \tikzstyle{tiny rpg}=[draw,inner sep=1pt,font=\tiny]
+      \tikzstyle{rpg square}=[tiny rpg,minimum size=0.40cm,rectangle]
+      \tikzstyle{rpg circle}=[tiny rpg,minimum size=0.40cm,circle]
+      \pgfsetxvec{\pgfpoint{3.77cm}{0.0cm}}
+      \pgfsetyvec{\pgfpoint{0.0cm}{0.87cm}}
+      \only<all:1-1>{
+        \node[trueinitprop] at (0.0,7.0) (a0) {$a^0$};
+        \node[prop] at (0.0,6.0) (b0) {$b^0$};
+        \node[trueinitprop] at (0.0,5.0) (c0) {$c^0$};
+        \node[trueinitprop] at (0.0,4.0) (d0) {$d^0$};
+        \node[prop] at (0.0,3.0) (e0) {$e^0$};
+        \node[prop] at (0.0,2.0) (f0) {$f^0$};
+        \node[prop] at (0.0,1.0) (g0) {$g^0$};
+        \node[prop] at (0.0,0.0) (h0) {$h^0$};
+      }
+      \only<all:1-2>{
+        \node[logic-and] at (0.25,4.5) (c0-and-d0) {};
+      }
+      \only<all:1-3>{
+        \node[logic-or] at (0.5,5.35) (precond-o1-1) {};
+        \node[logic-and] at (0.5,6.5) (effcond-o1-1) {};
+        \node[logic-and] at (0.5,2.35) (precond-o2-1) {};
+      }
+      \only<all:1-4>{
+        \node[logic-cond] at (0.75,6.5) (efftrigger-o1-1) {$o_{1,a \land b}^1$};
+        \node[operator] at (0.75,5.35) (o1-1) {$o_1^1$};
+        \node[operator] at (0.75,2.35) (o2-1) {$o_2^1$};
+        \node[operator] at (0.75,1.35) (o3-1) {$o_3^1$};
+        \node[operator] at (0.75,0.35) (o4-1) {$o_4^1$};
+      }
+      \only<all:1-5> {
+        \node[prop] at (1.0,7.0) (a1) {$a^1$};
+        \node[prop] at (1.0,6.0) (b1) {$b^1$};
+        \node[prop] at (1.0,5.0) (c1) {$c^1$};
+        \node[prop] at (1.0,4.0) (d1) {$d^1$};
+        \node[prop] at (1.0,3.0) (e1) {$e^1$};
+        \node[prop] at (1.0,2.0) (f1) {$f^1$};
+        \node[prop] at (1.0,1.0) (g1) {$g^1$};
+        \node[prop] at (1.0,0.0) (h1) {$h^1$};
+      }         
+      \only<all:1-6> {
+        \node[logic-and] at (1.25,4.5) (c1-and-d1) {};
+      }
+      \only<all:1-7> {
+        \node[logic-or] at (1.5,5.35) (precond-o1-2) {};
+        \node[logic-and] at (1.5,6.5) (effcond-o1-2) {};
+        \node[logic-and] at (1.5,2.35) (precond-o2-2) {};
+      }
+      \only<all:1-8> {
+        \node[logic-cond] at (1.75,6.5) (efftrigger-o1-2) {$o_{1,a \land b}^2$};
+        \node[operator] at (1.75,5.35) (o1-2) {$o_1^2$};
+        \node[operator] at (1.75,2.35) (o2-2) {$o_2^2$};
+        \node[operator] at (1.75,1.35) (o3-2) {$o_3^2$};
+        \node[operator] at (1.75,0.35) (o4-2) {$o_4^2$};
+      }
+      \only<all:1-9> {
+        \node[prop] at (2.0,7.0) (a2) {$a^2$};
+        \node[prop] at (2.0,6.0) (b2) {$b^2$};
+        \node[prop] at (2.0,5.0) (c2) {$c^2$};
+        \node[prop] at (2.0,4.0) (d2) {$d^2$};
+        \node[prop] at (2.0,3.0) (e2) {$e^2$};
+        \node[prop] at (2.0,2.0) (f2) {$f^2$};
+        \node[prop] at (2.0,1.0) (g2) {$g^2$};
+        \node[prop] at (2.0,0.0) (h2) {$h^2$};
+      }
+      \only<all:1-10> {
+        \node[logic-and] at (2.25,0.5) (g2-and-h2) {};
+      }
+      \only<all:1-11> {
+        \node[goal-and] at (2.5,1.75) (goal2) {$\gamma$};
+      }
+      \only<all:2->{
+        \node[trueinitprop,true] at (0.0,7.0) (a0) {$1$};
+        \node[prop,false] at (0.0,6.0) (b0) {$0$};
+        \node[trueinitprop,true] at (0.0,5.0) (c0) {$1$};
+        \node[trueinitprop,true] at (0.0,4.0) (d0) {$1$};
+        \node[prop,false] at (0.0,3.0) (e0) {$0$};
+        \node[prop,false] at (0.0,2.0) (f0) {$0$};
+        \node[prop,false] at (0.0,1.0) (g0) {$0$};
+        \node[prop,false] at (0.0,0.0) (h0) {$0$};
+      }
+      \only<all:3->{
+        \node[logic-and,true] at (0.25,4.5) (c0-and-d0) {$1$};
+      }
+      \only<all:4->{
+        \node[logic-or,true] at (0.5,5.35) (precond-o1-1) {$1$};
+        \node[logic-and,false] at (0.5,6.5) (effcond-o1-1) {$0$};
+        \node[logic-and,true] at (0.5,2.35) (precond-o2-1) {$1$};
+      }
+      \only<all:5->{
+        \node[logic-cond,false] at (0.75,6.5) (efftrigger-o1-1) {$0$};
+        \node[operator,true] at (0.75,5.35) (o1-1) {$1$};
+        \node[operator,true] at (0.75,2.35) (o2-1) {$1$};
+        \node[operator,false] at (0.75,1.35) (o3-1) {$0$};
+        \node[operator,false] at (0.75,0.35) (o4-1) {$0$};
+      }
+      \only<all:6-> {
+        \node[prop,true] at (1.0,7.0) (a1) {$1$};
+        \node[prop,true] at (1.0,6.0) (b1) {$1$};
+        \node[prop,true] at (1.0,5.0) (c1) {$1$};
+        \node[prop,true] at (1.0,4.0) (d1) {$1$};
+        \node[prop,false] at (1.0,3.0) (e1) {$0$};
+        \node[prop,true] at (1.0,2.0) (f1) {$1$};
+        \node[prop,false] at (1.0,1.0) (g1) {$0$};
+        \node[prop,false] at (1.0,0.0) (h1) {$0$};
+      }   
+      \only<all:7-> {
+        \node[logic-and,true] at (1.25,4.5) (c1-and-d1) {$1$};
+      }
+      \only<all:8-> {
+        \node[logic-or,true] at (1.5,5.35) (precond-o1-2) {$1$};
+        \node[logic-and,true] at (1.5,6.5) (effcond-o1-2) {$1$};
+        \node[logic-and,true] at (1.5,2.35) (precond-o2-2) {$1$};
+      }
+      \only<all:9-> {
+        \node[logic-cond,true] at (1.75,6.5) (efftrigger-o1-2) {$1$};
+        \node[operator,true] at (1.75,5.35) (o1-2) {$1$};
+        \node[operator,true] at (1.75,2.35) (o2-2) {$1$};
+        \node[operator,true] at (1.75,1.35) (o3-2) {$1$};
+        \node[operator,true] at (1.75,0.35) (o4-2) {$1$};
+      }
+      \only<all:10-> {
+        \node[prop,true] at (2.0,7.0) (a2) {$1$};
+        \node[prop,true] at (2.0,6.0) (b2) {$1$};
+        \node[prop,true] at (2.0,5.0) (c2) {$1$};
+        \node[prop,true] at (2.0,4.0) (d2) {$1$};
+        \node[prop,true] at (2.0,3.0) (e2) {$1$};
+        \node[prop,true] at (2.0,2.0) (f2) {$1$};
+        \node[prop,true] at (2.0,1.0) (g2) {$1$};
+        \node[prop,true] at (2.0,0.0) (h2) {$1$};
+      }
+      \only<all:11-> {
+        \node[logic-and,true] at (2.25,0.5) (g2-and-h2) {$1$};
+      }
+      \only<all:12-> {
+        \node[goal-and,true] at (2.5,1.75) (goal2) {$1$};
+      }
+      
+      \draw[->,idle] (a2)--(a1);
+      \draw[->,idle] (a1)--(a0);
+      \draw[->,idle] (b2)--(b1);
+      \draw[->,idle] (b1)--(b0);
+      \draw[->,idle] (c2)--(c1);
+      \draw[->,idle] (c1)--(c0);
+      \draw[->,idle] (d2)--(d1);
+      \draw[->,idle] (d1)--(d0);
+      \draw[->,idle] (e2)--(e1);
+      \draw[->,idle] (e1)--(e0);
+      \draw[->,idle] (f2)--(f1);
+      \draw[->,idle] (f1)--(f0);
+      \draw[->,idle] (g2)--(g1);
+      \draw[->,idle] (g1)--(g0);
+      \draw[->,idle] (h2)--(h1);
+      \draw[->,idle] (h1)--(h0);
+      \draw[->,nonidle] (c0-and-d0)--(c0);
+      \draw[->,nonidle] (c0-and-d0)--(d0);
+      \draw[->,nonidle] (precond-o1-1)--(c0-and-d0);
+      \draw[->,nonidle] (precond-o1-1)--(b0);
+      \draw[->,nonidle] (effcond-o1-1)--(a0);
+      \draw[->,nonidle] (effcond-o1-1)--(b0);
+      \draw[->,nonidle] (o1-1)--(precond-o1-1);
+      \draw[->,nonidle] (efftrigger-o1-1)--(effcond-o1-1);
+      \draw[->,nonidle] (efftrigger-o1-1)--(precond-o1-1);
+      \draw[->,nonidle] (b1)--(o1-1);
+      \draw[->,nonidle] (e1)--(efftrigger-o1-1);
+      \draw[->,nonidle] (c1-and-d1)--(c1);
+      \draw[->,nonidle] (c1-and-d1)--(d1);
+      \draw[->,nonidle] (precond-o1-2)--(c1-and-d1);
+      \draw[->,nonidle] (precond-o1-2)--(b1);
+      \draw[->,nonidle] (effcond-o1-2)--(a1);
+      \draw[->,nonidle] (effcond-o1-2)--(b1);
+      \draw[->,nonidle] (o1-2)--(precond-o1-2);
+      \draw[->,nonidle] (efftrigger-o1-2)--(effcond-o1-2);
+      \draw[->,nonidle] (efftrigger-o1-2)--(precond-o1-2);
+      \draw[->,nonidle] (b2)--(o1-2);
+      \draw[->,nonidle] (e2)--(efftrigger-o1-2);
+
+      \draw[->,nonidle] (o2-1)--(precond-o2-1);
+      \draw[->,nonidle] (f1)--(o2-1);
+
+      \draw[->,nonidle] (o2-2)--(precond-o2-2);
+      \draw[->,nonidle] (f2)--(o2-2);
+      
+      \draw[->,nonidle] (o3-1)--(f0);
+      \draw[->,nonidle] (g1)--(o3-1);
+      
+      \draw[->,nonidle] (o3-2)--(f1);
+      \draw[->,nonidle] (g2)--(o3-2);
+      
+      \draw[->,nonidle] (o4-1)--(f0);
+      \draw[->,nonidle] (h1)--(o4-1);
+      
+      \draw[->,nonidle] (o4-2)--(f1);
+      \draw[->,nonidle] (h2)--(o4-2);
+      
+      \draw[->,nonidle] (g2-and-h2)--(g2);
+      \draw[->,nonidle] (g2-and-h2)--(h2);
+      \draw[->,nonidle] (goal2)--(g2-and-h2);
+      \draw[->,nonidle] (goal2)--(e2);
+    \end{tikzpicture}
+  \end{center}
+\end{frame}
+
+\begin{frame}{Relaxed planning graphs for STRIPS}
+  \hilite{Remark:} Relaxed planning graphs have historically been
+  defined for STRIPS tasks only. In this case, we can simplify:
+  \begin{itemize}
+  \item \alert{Only one effect node per operator:} STRIPS does not
+    have conditional effects.
+    \begin{itemize}
+    \item Because each operator has only one effect node, effect nodes
+      are called \alert{operator nodes} in relaxed planning graphs for
+      STRIPS.
+    \end{itemize}
+  \item \alert{No goal nodes:}
+    The test whether all goals are reached is done by the algorithm
+    that evaluates the AND/OR dag.
+  \item \alert{No formula nodes:} Operator nodes are directly connected
+    to their preconditions.
+  \end{itemize}
+  $\leadsto$ Relaxed planning graphs for STRIPS are \alert{layered}
+    digraphs and only have \alert{proposition and operator nodes}.
+\end{frame}
+
+\section{Relaxation heuristics}
+\subsection[Generic template]{Generic template for relaxation heuristics}
+
+\begin{frame}{Computing parallel forward distances from RPGs}
+  So far, relaxed planning graphs offer us a way to compute parallel
+  forward distances:
+  \begin{block}{Parallel forward distances from relaxed planning
+      graphs}
+    \textbf{def}
+    $\textit{parallel-forward-distance}(\relaxation{\Pi})$: \\
+    {}\qquad Let $A$ be the set of state variables of
+    $\relaxation{\Pi}$. \\
+    {}\qquad\textbf{for} $k \in \{0, 1, 2, \dots\}$: \\
+    {}\qquad\qquad $\textit{rpg} := \textit{RPG}_k(\relaxation{\Pi})$ \\
+    {}\qquad\qquad Evaluate truth values for \textit{rpg}. \\
+    {}\qquad\qquad \textbf{if} goal node of \textit{rpg}
+    has value $1$: \\
+    {}\qquad\qquad\qquad \textbf{return} $k$ \\
+    {}\qquad\qquad \textbf{else if} $k = |A|$: \\
+    {}\qquad\qquad\qquad \textbf{return} $\infty$
+  \end{block}
+\end{frame}
+
+\begin{frame}{Remarks on the algorithm}
+  \begin{itemize}
+  \item The relaxed planning graph for depth $k \ge 1$ can be built
+    \alert{incrementally} from the one for depth $k-1$:
+    \begin{itemize}
+    \item Add new layer $k$.
+    \item Move goal subgraph from layer $k-1$ to layer $k$.
+    \end{itemize}
+  \item Similarly, all truth values up to layer $k-1$ can be reused.
+  \item Thus, overall computation with maximal depth $m$ requires time
+    $O(\|\textit{RPG}_m(\relaxation{\Pi})\|) = O((m+1) \cdot
+    \|\relaxation{\Pi}\|)$.
+  \item This is not a very efficient way of computing parallel forward
+    distances (and wouldn't be used in practice).
+  \item However, it allows computing \alert{additional information}
+    for the relaxed planning graph nodes along the way, which can be
+    used for heuristic estimates.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Generic relaxed planning graph heuristics}
+  \begin{block}{Computing heuristics from relaxed planning graphs}
+    \textbf{def}
+    $\textit{generic-rpg-heuristic}(\langle A, I, O,
+    \gamma\rangle, s)$: \\
+    {}\qquad $\relaxation{\Pi} := \langle A, s, \relaxation{O},
+    \gamma\rangle$ \\
+    {}\qquad\textbf{for} $k \in \{0, 1, 2, \dots\}$: \\
+    {}\qquad\qquad $\textit{rpg} := \textit{RPG}_k(\relaxation{\Pi})$
+    \\
+    {}\qquad\qquad Evaluate truth values for \textit{rpg}. \\
+    {}\qquad\qquad \textbf{if} goal node of \textit{rpg}
+    has value $1$: \\
+    {}\qquad\qquad\qquad \hilite{Annotate true nodes of \textit{rpg}.}
+    \\
+    \qquad\qquad\qquad \textbf{if} \hilite{termination criterion is
+    true}: \\
+    \qquad\qquad\qquad\qquad \textbf{return} \hilite{heuristic value
+    from annotations} \\
+    \qquad\qquad \textbf{else if} $k = |A|$: \\
+    {}\qquad\qquad\qquad \textbf{return} $\infty$
+  \end{block}
+  \begin{itemize}
+  \item[$\leadsto$] \alert{generic template} for heuristic functions
+  \item[$\leadsto$] to get \alert{concrete heuristic}: fill in
+    \hilite{highlighted parts}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Concrete examples for the generic heuristic}
+  Many planning heuristics fit the generic template:
+  \begin{itemize}
+  \item \alert{additive heuristic \hadd}
+    (Bonet, Loerincs \& Geffner, 1997)
+  \item \alert{max heuristic \hmax}
+    (Bonet \& Geffner, 1999)
+  \item \alert{FF heuristic \hff}
+    (Hoffmann \& Nebel, 2001)
+  \item \alert{cost-sharing heuristic \hcs}
+    (Mirkis \& Domshlak, 2007)
+    \begin{itemize}
+    \item not covered in this course
+    \end{itemize}
+  \item \alert{set-additive heuristic \hsa}
+    (Keyder \& Geffner, 2008)
+  \end{itemize}
+  \hilite{Remarks:}
+  \begin{itemize}
+  \item For all these heuristics, equivalent definitions that don't
+    refer to relaxed planning graphs are possible.
+  \item Historically, such equivalent definitions have mostly been
+    used for $\hmax$, $\hadd$ and $\hsa$.
+  \item For those heuristics, the most efficient implementations do
+    not use relaxed planning graphs explicitly.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Forward cost heuristics}
+  \begin{itemize}
+  \item The simplest relaxed planning graph heuristics are
+    \alert{forward cost heuristics}.
+  \item Examples: \alert{$\hmax$}, \alert{$\hadd$}
+  \item Here, node annotations are \alert{cost values} (natural
+    numbers).
+  \item The cost of a node estimates how expensive (in terms
+    of required operators) it is to make this node true.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Forward cost heuristics: fitting the template}
+  \begin{block}{Forward cost heuristics}
+    \hilite{Computing annotations:}
+    \begin{itemize}
+    \item Propagate cost values bottom-up using a \hilite{combination
+      rule for OR nodes} and a \hilite{combination rule for AND nodes}.
+    \item At \alert{effect nodes}, \alert{add 1} after applying
+      combination rule.
+    \end{itemize}
+
+    \hilite{Termination criterion:}
+    \begin{itemize}
+    \item \alert{stability:} terminate if cost for proposition node
+      $a^k$ equals cost for $a^{k-1}$ for all true propositions $a$ in
+      layer $k$
+    \end{itemize}
+    
+    \hilite{Heuristic value:}
+    \begin{itemize}
+    \item The heuristic value is the cost of the goal node.
+    \end{itemize}
+  \end{block}
+  \begin{itemize}
+  \item Different forward cost heuristics only differ in their choice
+    of combination rules.
+  \end{itemize}
+\end{frame}
+
+\subsection[\hmax]{The max heuristic \hmax}
+
+\begin{frame}{The max heuristic {\hmax} (again)}
+  \begin{block}{Forward cost heuristics: max heuristic \hmax}
+    \hilite{Combination rule for AND nodes:}
+    \begin{itemize}
+    \item $\textit{cost}(u) = \alert{\max} (\{\textit{cost}(v_1), \dots,
+      \textit{cost}(v_k)\})$ \\
+      (with $\max(\emptyset) := 0$)
+    \end{itemize}
+
+    \hilite{Combination rule for OR nodes:}
+    \begin{itemize}
+    \item $\textit{cost}(u) = \min(\{\textit{cost}(v_1), \dots,
+      \textit{cost}(v_k)\})$
+    \end{itemize}
+
+    In both cases, $\{v_1, \dots, v_k\}$ is the set of true
+    successors of $u$.
+  \end{block}
+
+  \hilite{Intuition:}
+  \begin{itemize}
+  \item \hilite{AND rule:} If we have to achieve several conditions,
+    estimate this by the \alert{most expensive} cost.
+  \item \hilite{OR rule:} If we have a choice how to achieve a
+    condition, pick the \alert{cheapest} possibility.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Running example: \hmax}
+  \begin{center}
+    \begin{tikzpicture}
+      \tikzstyle{tiny rpg}=[draw,inner sep=1pt,font=\tiny]
+      \tikzstyle{rpg square}=[tiny rpg,minimum size=0.40cm,rectangle]
+      \tikzstyle{rpg circle}=[tiny rpg,minimum size=0.40cm,circle]
+      \pgfsetxvec{\pgfpoint{3.77cm}{0.0cm}}
+      \pgfsetyvec{\pgfpoint{0.0cm}{0.87cm}}
+
+      \node[trueinitprop,true] at (0.0,7.0) (a0) {\only<2->{$0$}};
+      \node[prop,false] at (0.0,6.0) (b0) {};
+      \node[trueinitprop,true] at (0.0,5.0) (c0) {\only<2->{$0$}};
+      \node[trueinitprop,true] at (0.0,4.0) (d0) {\only<2->{$0$}};
+      \node[prop,false] at (0.0,3.0) (e0) {};
+      \node[prop,false] at (0.0,2.0) (f0) {};
+      \node[prop,false] at (0.0,1.0) (g0) {};
+      \node[prop,false] at (0.0,0.0) (h0) {};
+
+      \node[logic-and,true] at (0.25,4.5) (c0-and-d0) {\only<3->{$0$}};
+
+      \node[logic-or,true] at (0.5,5.35) (precond-o1-1) {\only<4->{$0$}};
+      \node[logic-and,false] at (0.5,6.5) (effcond-o1-1) {};
+      \node[logic-and,true] at (0.5,2.35) (precond-o2-1) {\only<4->{$0$}};
+
+      \node[logic-cond,false] at (0.75,6.5) (efftrigger-o1-1) {};
+      \node[operator,true] at (0.75,5.35) (o1-1) {\only<5->{$1$}};
+      \markplusone{o1-1}
+      \node[operator,true] at (0.75,2.35) (o2-1) {\only<5->{$1$}};
+      \markplusone{o2-1}
+      \node[operator,false] at (0.75,1.35) (o3-1) {};
+      \node[operator,false] at (0.75,0.35) (o4-1) {};
+
+      \node[prop,true] at (1.0,7.0) (a1) {\only<6->{$0$}};
+      \node[prop,true] at (1.0,6.0) (b1) {\only<6->{$1$}};
+      \node[prop,true] at (1.0,5.0) (c1) {\only<6->{$0$}};
+      \node[prop,true] at (1.0,4.0) (d1) {\only<6->{$0$}};
+      \node[prop,false] at (1.0,3.0) (e1) {};
+      \node[prop,true] at (1.0,2.0) (f1) {\only<6->{$1$}};
+      \node[prop,false] at (1.0,1.0) (g1) {};
+      \node[prop,false] at (1.0,0.0) (h1) {};
+
+      \node[logic-and,true] at (1.25,4.5) (c1-and-d1) {\only<7->{$0$}};
+
+      \node[logic-or,true] at (1.5,5.35) (precond-o1-2) {\only<8->{$0$}};
+      \node[logic-and,true] at (1.5,6.5) (effcond-o1-2) {\only<8->{$1$}};
+      \node[logic-and,true] at (1.5,2.35) (precond-o2-2) {\only<8->{$0$}};
+
+      \node[logic-cond,true] at (1.75,6.5) (efftrigger-o1-2) {\only<9->{$2$}};
+      \markplusone{efftrigger-o1-2}
+      \node[operator,true] at (1.75,5.35) (o1-2) {\only<9->{$1$}};
+      \markplusone{o1-2}
+      \node[operator,true] at (1.75,2.35) (o2-2) {\only<9->{$1$}};
+      \markplusone{o2-2}
+      \node[operator,true] at (1.75,1.35) (o3-2) {\only<9->{$2$}};
+      \markplusone{o3-2}
+      \node[operator,true] at (1.75,0.35) (o4-2) {\only<9->{$2$}};
+      \markplusone{o4-2}
+
+      \node[prop,true] at (2.0,7.0) (a2) {\only<10->{$0$}};
+      \node[prop,true] at (2.0,6.0) (b2) {\only<10->{$1$}};
+      \node[prop,true] at (2.0,5.0) (c2) {\only<10->{$0$}};
+      \node[prop,true] at (2.0,4.0) (d2) {\only<10->{$0$}};
+      \node[prop,true] at (2.0,3.0) (e2) {\only<10->{$2$}};
+      \node[prop,true] at (2.0,2.0) (f2) {\only<10->{$1$}};
+      \node[prop,true] at (2.0,1.0) (g2) {\only<10->{$2$}};
+      \node[prop,true] at (2.0,0.0) (h2) {\only<10->{$2$}};
+
+      \node[logic-and,true] at (2.25,0.5) (g2-and-h2) {\only<11->{$2$}};
+
+      \node[goal-and,true] at (2.5,1.75) (goal2) {\only<12->{$2$}};
+      
+      \draw[->,idle] (a2)--(a1);
+      \draw[->,idle] (a1)--(a0);
+      \draw[->,idle] (b2)--(b1);
+      \draw[->,idle] (b1)--(b0);
+      \draw[->,idle] (c2)--(c1);
+      \draw[->,idle] (c1)--(c0);
+      \draw[->,idle] (d2)--(d1);
+      \draw[->,idle] (d1)--(d0);
+      \draw[->,idle] (e2)--(e1);
+      \draw[->,idle] (e1)--(e0);
+      \draw[->,idle] (f2)--(f1);
+      \draw[->,idle] (f1)--(f0);
+      \draw[->,idle] (g2)--(g1);
+      \draw[->,idle] (g1)--(g0);
+      \draw[->,idle] (h2)--(h1);
+      \draw[->,idle] (h1)--(h0);
+      \draw[->,nonidle] (c0-and-d0)--(c0);
+      \draw[->,nonidle] (c0-and-d0)--(d0);
+      \draw[->,nonidle] (precond-o1-1)--(c0-and-d0);
+      \draw[->,nonidle] (precond-o1-1)--(b0);
+      \draw[->,nonidle] (effcond-o1-1)--(a0);
+      \draw[->,nonidle] (effcond-o1-1)--(b0);
+      \draw[->,nonidle] (o1-1)--(precond-o1-1);
+      \draw[->,nonidle] (efftrigger-o1-1)--(effcond-o1-1);
+      \draw[->,nonidle] (efftrigger-o1-1)--(precond-o1-1);
+      \draw[->,nonidle] (b1)--(o1-1);
+      \draw[->,nonidle] (e1)--(efftrigger-o1-1);
+      \draw[->,nonidle] (c1-and-d1)--(c1);
+      \draw[->,nonidle] (c1-and-d1)--(d1);
+      \draw[->,nonidle] (precond-o1-2)--(c1-and-d1);
+      \draw[->,nonidle] (precond-o1-2)--(b1);
+      \draw[->,nonidle] (effcond-o1-2)--(a1);
+      \draw[->,nonidle] (effcond-o1-2)--(b1);
+      \draw[->,nonidle] (o1-2)--(precond-o1-2);
+      \draw[->,nonidle] (efftrigger-o1-2)--(effcond-o1-2);
+      \draw[->,nonidle] (efftrigger-o1-2)--(precond-o1-2);
+      \draw[->,nonidle] (b2)--(o1-2);
+      \draw[->,nonidle] (e2)--(efftrigger-o1-2);
+
+      \draw[->,nonidle] (o2-1)--(precond-o2-1);
+      \draw[->,nonidle] (f1)--(o2-1);
+
+      \draw[->,nonidle] (o2-2)--(precond-o2-2);
+      \draw[->,nonidle] (f2)--(o2-2);
+      
+      \draw[->,nonidle] (o3-1)--(f0);
+      \draw[->,nonidle] (g1)--(o3-1);
+      
+      \draw[->,nonidle] (o3-2)--(f1);
+      \draw[->,nonidle] (g2)--(o3-2);
+				   
+      \draw[->,nonidle] (o4-1)--(f0);
+      \draw[->,nonidle] (h1)--(o4-1);
+      
+      \draw[->,nonidle] (o4-2)--(f1);
+      \draw[->,nonidle] (h2)--(o4-2);
+      
+      \draw[->,nonidle] (g2-and-h2)--(g2);
+      \draw[->,nonidle] (g2-and-h2)--(h2);
+      \draw[->,nonidle] (goal2)--(g2-and-h2);
+      \draw[->,nonidle] (goal2)--(e2);
+    \end{tikzpicture}
+  \end{center}
+\end{frame}
+
+\begin{frame}{Remarks on {\hmax}}
+  \begin{itemize}
+  \item The definition of {\hmax} as a forward cost heuristic is
+    equivalent to our earlier definition in this chapter.
+  \item Unlike the earlier definition, it generalizes to an extension
+    where every operator has an associated non-negative \alert{cost}
+    (rather than all operators having cost $1$).
+  \item In the case without costs (and only then), it is easy to prove
+    that the goal node has the same cost in all graphs
+    $\textit{RPG}_k(\relaxation{\Pi})$ where it is true. (Namely, the
+    cost is equal to the lowest value of $k$ for which the goal
+    node is true.)
+  \item We can thus terminate the computation as soon as the goal
+    becomes true, without waiting for stability.
+  \item The same is \alert{not true} for other forward-propagating
+    heuristics ($\hadd$, $\hcs$, $\hsa$).
+  \end{itemize}
+\end{frame}
+
+\subsection[\hadd]{The additive heuristic \hadd}
+
+\begin{frame}{The additive heuristic}
+  \begin{block}{Forward cost heuristics: additive heuristic \hadd}
+    \hilite{Combination rule for AND nodes:}
+    \begin{itemize}
+    \item $\textit{cost}(u) = \textit{cost}(v_1) \alert{+} \dots
+      \alert{+} \textit{cost}(v_k)$ \\
+      (with $\sum(\emptyset) := 0$)
+    \end{itemize}
+
+    \hilite{Combination rule for OR nodes:}
+    \begin{itemize}
+    \item $\textit{cost}(u) = \min(\{\textit{cost}(v_1), \dots,
+      \textit{cost}(v_k)\})$
+    \end{itemize}
+
+    In both cases, $\{v_1, \dots, v_k\}$ is the set of true
+    successors of $u$.
+  \end{block}
+
+  \hilite{Intuition:}
+  \begin{itemize}
+  \item \hilite{AND rule:} If we have to achieve several conditions,
+    estimate this by the cost of achieving \alert{each in isolation}.
+  \item \hilite{OR rule:} If we have a choice how to achieve a
+    condition, pick the \alert{cheapest} possibility.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Running example: \hadd}
+  \begin{center}
+    \begin{tikzpicture}
+      \tikzstyle{tiny rpg}=[draw,inner sep=1pt,font=\tiny]
+      \tikzstyle{rpg square}=[tiny rpg,minimum size=0.40cm,rectangle]
+      \tikzstyle{rpg circle}=[tiny rpg,minimum size=0.40cm,circle]
+      \pgfsetxvec{\pgfpoint{3.77cm}{0.0cm}}
+      \pgfsetyvec{\pgfpoint{0.0cm}{0.87cm}}
+
+      \node[trueinitprop,true] at (0.0,7.0) (a0) {\only<2->{$0$}};
+      \node[prop,false] at (0.0,6.0) (b0) {};
+      \node[trueinitprop,true] at (0.0,5.0) (c0) {\only<2->{$0$}};
+      \node[trueinitprop,true] at (0.0,4.0) (d0) {\only<2->{$0$}};
+      \node[prop,false] at (0.0,3.0) (e0) {};
+      \node[prop,false] at (0.0,2.0) (f0) {};
+      \node[prop,false] at (0.0,1.0) (g0) {};
+      \node[prop,false] at (0.0,0.0) (h0) {};
+
+      \node[logic-and,true] at (0.25,4.5) (c0-and-d0) {\only<3->{$0$}};
+
+      \node[logic-or,true] at (0.5,5.35) (precond-o1-1) {\only<4->{$0$}};
+      \node[logic-and,false] at (0.5,6.5) (effcond-o1-1) {};
+      \node[logic-and,true] at (0.5,2.35) (precond-o2-1) {\only<4->{$0$}};
+
+      \node[logic-cond,false] at (0.75,6.5) (efftrigger-o1-1) {};
+      \node[operator,true] at (0.75,5.35) (o1-1) {\only<5->{$1$}};
+      \markplusone{o1-1}
+      \node[operator,true] at (0.75,2.35) (o2-1) {\only<5->{$1$}};
+      \markplusone{o2-1}
+      \node[operator,false] at (0.75,1.35) (o3-1) {};
+      \node[operator,false] at (0.75,0.35) (o4-1) {};
+
+      \node[prop,true] at (1.0,7.0) (a1) {\only<6->{$0$}};
+      \node[prop,true] at (1.0,6.0) (b1) {\only<6->{$1$}};
+      \node[prop,true] at (1.0,5.0) (c1) {\only<6->{$0$}};
+      \node[prop,true] at (1.0,4.0) (d1) {\only<6->{$0$}};
+      \node[prop,false] at (1.0,3.0) (e1) {};
+      \node[prop,true] at (1.0,2.0) (f1) {\only<6->{$1$}};
+      \node[prop,false] at (1.0,1.0) (g1) {};
+      \node[prop,false] at (1.0,0.0) (h1) {};
+
+      \node[logic-and,true] at (1.25,4.5) (c1-and-d1) {\only<7->{$0$}};
+
+      \node[logic-or,true] at (1.5,5.35) (precond-o1-2) {\only<8->{$0$}};
+      \node[logic-and,true] at (1.5,6.5) (effcond-o1-2) {\only<8->{$1$}};
+      \node[logic-and,true] at (1.5,2.35) (precond-o2-2) {\only<8->{$0$}};
+
+      \node[logic-cond,true] at (1.75,6.5) (efftrigger-o1-2) {\only<9->{$2$}};
+      \markplusone{efftrigger-o1-2}
+      \node[operator,true] at (1.75,5.35) (o1-2) {\only<9->{$1$}};
+      \markplusone{o1-2}
+      \node[operator,true] at (1.75,2.35) (o2-2) {\only<9->{$1$}};
+      \markplusone{o2-2}
+      \node[operator,true] at (1.75,1.35) (o3-2) {\only<9->{$2$}};
+      \markplusone{o3-2}
+      \node[operator,true] at (1.75,0.35) (o4-2) {\only<9->{$2$}};
+      \markplusone{o4-2}
+
+      \node[prop,true] at (2.0,7.0) (a2) {\only<10->{$0$}};
+      \node[prop,true] at (2.0,6.0) (b2) {\only<10->{$1$}};
+      \node[prop,true] at (2.0,5.0) (c2) {\only<10->{$0$}};
+      \node[prop,true] at (2.0,4.0) (d2) {\only<10->{$0$}};
+      \node[prop,true] at (2.0,3.0) (e2) {\only<10->{$2$}};
+      \node[prop,true] at (2.0,2.0) (f2) {\only<10->{$1$}};
+      \node[prop,true] at (2.0,1.0) (g2) {\only<10->{$2$}};
+      \node[prop,true] at (2.0,0.0) (h2) {\only<10->{$2$}};
+
+      \node[logic-and,true] at (2.25,0.5) (g2-and-h2) {\only<11->{$4$}};
+
+      \node[goal-and,true] at (2.5,1.75) (goal2) {\only<12->{$6$}};
+      
+      \draw[->,idle] (a2)--(a1);
+      \draw[->,idle] (a1)--(a0);
+      \draw[->,idle] (b2)--(b1);
+      \draw[->,idle] (b1)--(b0);
+      \draw[->,idle] (c2)--(c1);
+      \draw[->,idle] (c1)--(c0);
+      \draw[->,idle] (d2)--(d1);
+      \draw[->,idle] (d1)--(d0);
+      \draw[->,idle] (e2)--(e1);
+      \draw[->,idle] (e1)--(e0);
+      \draw[->,idle] (f2)--(f1);
+      \draw[->,idle] (f1)--(f0);
+      \draw[->,idle] (g2)--(g1);
+      \draw[->,idle] (g1)--(g0);
+      \draw[->,idle] (h2)--(h1);
+      \draw[->,idle] (h1)--(h0);
+      \draw[->,nonidle] (c0-and-d0)--(c0);
+      \draw[->,nonidle] (c0-and-d0)--(d0);
+      \draw[->,nonidle] (precond-o1-1)--(c0-and-d0);
+      \draw[->,nonidle] (precond-o1-1)--(b0);
+      \draw[->,nonidle] (effcond-o1-1)--(a0);
+      \draw[->,nonidle] (effcond-o1-1)--(b0);
+      \draw[->,nonidle] (o1-1)--(precond-o1-1);
+      \draw[->,nonidle] (efftrigger-o1-1)--(effcond-o1-1);
+      \draw[->,nonidle] (efftrigger-o1-1)--(precond-o1-1);
+      \draw[->,nonidle] (b1)--(o1-1);
+      \draw[->,nonidle] (e1)--(efftrigger-o1-1);
+      \draw[->,nonidle] (c1-and-d1)--(c1);
+      \draw[->,nonidle] (c1-and-d1)--(d1);
+      \draw[->,nonidle] (precond-o1-2)--(c1-and-d1);
+      \draw[->,nonidle] (precond-o1-2)--(b1);
+      \draw[->,nonidle] (effcond-o1-2)--(a1);
+      \draw[->,nonidle] (effcond-o1-2)--(b1);
+      \draw[->,nonidle] (o1-2)--(precond-o1-2);
+      \draw[->,nonidle] (efftrigger-o1-2)--(effcond-o1-2);
+      \draw[->,nonidle] (efftrigger-o1-2)--(precond-o1-2);
+      \draw[->,nonidle] (b2)--(o1-2);
+      \draw[->,nonidle] (e2)--(efftrigger-o1-2);
+
+      \draw[->,nonidle] (o2-1)--(precond-o2-1);
+      \draw[->,nonidle] (f1)--(o2-1);
+
+      \draw[->,nonidle] (o2-2)--(precond-o2-2);
+      \draw[->,nonidle] (f2)--(o2-2);
+      
+      \draw[->,nonidle] (o3-1)--(f0);
+      \draw[->,nonidle] (g1)--(o3-1);
+      
+      \draw[->,nonidle] (o3-2)--(f1);
+      \draw[->,nonidle] (g2)--(o3-2);
+				   
+      \draw[->,nonidle] (o4-1)--(f0);
+      \draw[->,nonidle] (h1)--(o4-1);
+      
+      \draw[->,nonidle] (o4-2)--(f1);
+      \draw[->,nonidle] (h2)--(o4-2);
+      
+      \draw[->,nonidle] (g2-and-h2)--(g2);
+      \draw[->,nonidle] (g2-and-h2)--(h2);
+      \draw[->,nonidle] (goal2)--(g2-and-h2);
+      \draw[->,nonidle] (goal2)--(e2);
+    \end{tikzpicture}
+  \end{center}
+\end{frame}
+
+\begin{frame}{Remarks on {\hadd}}
+  \begin{itemize}
+  \item It is important to test for stability in computing \hadd! \\
+    (The reason for this is that, unlike \hmax, cost values of true
+    propositions can \alert{decrease} from layer to layer.)
+  \item Stability is achieved after layer $|A|$ in the worst case.
+  \item {\hadd} is \alert{safe} and \alert{goal-aware}.
+  \item Unlike {\hmax}, \alert{\hadd} is a \alert{very informative}
+    heuristic in many planning domains.
+  \item The price for this is that it is \alert{not admissible} (and
+    hence also \alert{not consistent}), so not suitable for optimal
+    planning.
+  \item In fact, it \alert{almost always} overestimates the {\hplus}
+    value because it does not take \alert{positive interactions} into
+    account.
+  \end{itemize}
+\end{frame}
+
+\subsection[\hsa]{The set-additive heuristic \hsa}
+
+\begin{frame}{The set-additive heuristic}
+  \begin{itemize}
+  \item We now discuss a refinement of the additive heuristic
+    called the \alert{set-additive heuristic} \alert{\hsa}.
+  \item The set-additive heuristic addresses the problem that
+    $\hadd$ does not take positive interactions into account.
+  \item Like $\hmax$ and $\hadd$, $\hsa$ is calculated through
+    \alert{forward propagation} of node annotations.
+  \item However, the node annotations are not cost values,
+    but \alert{sets of operators} (kind of).
+  \item The idea is that by taking \alert{set unions} instead of
+    \alert{adding costs}, operators needed only once are
+    \alert{counted only once}.
+  \end{itemize}
+  \begin{scriptsize}
+    \hilite{Disclaimer:} There are some quite subtle
+    differences between the {\hsa} heuristic as we describe it here and
+    the ``real'' heuristic of Keyder \& Geffner. We do not want to
+    discuss this in detail, but please note that such differences
+    exist.
+  \end{scriptsize}
+  %% For example, "our" h_sa can lead to relaxed plans of length
+  %% greater than the number of propositions, while the ECAI 2008
+  %% paper version cannot. However, Emil's actual *implementation*
+  %% appears to look more like what we do here, and there's some
+  %% reason for that because it's not quite clear how to efficiently
+  %% implement the h_sa heuristic as defined in the ECAI paper. See
+  %% the discussion on May 15th 2009 in the email folder for this
+  %% lecture for details.
+\end{frame}
+
+\begin{frame}{Operators needed several times}
+  \begin{itemize}
+  \item The original {\hsa} heuristic as described in the literature
+    is defined for STRIPS tasks and propagates \alert{sets of
+      operators}.
+  \item This is fine because in relaxed STRIPS tasks, each operator
+    \alert{need only be applied once}.
+  \item The same is \alert{not true in general}: in our running
+    example, operator $o_1$ must be applied twice in the relaxed plan.
+  \item In general, it only makes sense to apply an operator again in
+    a relaxed planning task if a \alert{previously unsatisfied effect
+      condition} has been made true.
+  \item For this reason, we keep track of \alert{operator/effect
+    condition pairs} rather than just plain operators.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Set-additive heuristic: fitting the
+    template\only<all:2>{ (ctd.)}}
+  \begin{block}{The set-additive heuristic {\hsa}\only<all:2>{ (ctd.)}}
+    \begin{overprint}
+    \onslide<all:1>
+    \hilite{Computing annotations:}
+    \begin{itemize}
+    \item Annotations are \alert{sets of operator/effect condition
+      pairs}, computed bottom-up.
+      \smallskip
+
+      \hilite{Combination rule for AND nodes:}
+      \begin{itemize}
+      \item $\textit{ann}(u) = \textit{ann}(v_1) \cup \dots
+	\cup \textit{ann}(v_k)$
+	(with $\bigcup(\emptyset) := \emptyset$)
+      \end{itemize}
+
+      \hilite{Combination rule for OR nodes:}
+      \begin{itemize}
+      \item $\textit{ann}(u) = \textit{ann}(v_i)$
+	for some $v_i$ minimizing $|\textit{ann}(v_i)|$
+
+	In case of several minimizers, use any tie-breaking rule.
+      \end{itemize}
+
+      In both cases, $\{v_1, \dots, v_k\}$ is the set of true
+      successors of $u$.
+
+      \smallskip
+
+      \dots
+    \end{itemize}
+
+    \onslide<all:2>
+    \hilite{Computing annotations:}      
+    \begin{itemize}
+    \item \dots
+
+      \smallskip
+
+      At \alert{effect nodes}, \alert{add the corresponding
+	operator/effect condition pair} to the set after applying
+      combination rule. (Effect nodes for unconditional effects are
+      represented just by the operator, without a condition.)
+    \end{itemize}
+    
+    \hilite{Termination criterion:}
+    \begin{itemize}
+    \item \alert{stability:} terminate if set for proposition node
+      $a^k$ has same cardinality as for $a^{k-1}$ for all true
+      propositions $a$ in layer $k$
+    \end{itemize}
+    
+    \hilite{Heuristic value:}
+    \begin{itemize}
+    \item The heuristic value is the \alert{set cardinality} of the
+      goal node annotation.
+    \end{itemize}
+    \end{overprint}
+  \end{block}
+\end{frame}
+
+\begin{frame}{Running example: \hsa}
+  \only<handout>{\hspace*{\fill}}
+  \begin{tikzpicture}
+    \tikzstyle{tiny rpg}=[draw,inner sep=1pt,font=\tiny]
+    \tikzstyle{rpg square}=[tiny rpg,minimum size=0.5cm,rectangle]
+    \tikzstyle{rpg circle}=[tiny rpg,minimum size=0.5cm,circle]
+    \pgfsetxvec{\pgfpoint{3.77cm}{0.0cm}}
+    \pgfsetyvec{\pgfpoint{0.0cm}{0.87cm}}
+
+    \node[trueinitprop,true] at (0.0,7.0) (a0) {\only<2->{%
+	$\emptyset$}};
+    \node[prop,false] at (0.0,6.0) (b0) {};
+    \node[trueinitprop,true] at (0.0,5.0) (c0) {\only<2->{%
+	$\emptyset$}};
+    \node[trueinitprop,true] at (0.0,4.0) (d0) {\only<2->{%
+	$\emptyset$}};
+    \node[prop,false] at (0.0,3.0) (e0) {};
+    \node[prop,false] at (0.0,2.0) (f0) {};
+    \node[prop,false] at (0.0,1.0) (g0) {};
+    \node[prop,false] at (0.0,0.0) (h0) {};
+    
+    \node[logic-and,true] at (0.25,4.5) (c0-and-d0) {\only<3->{%
+	$\emptyset$}};
+
+    \node[logic-or,true] at (0.5,5.35) (precond-o1-1) {\only<4->{%
+	$\emptyset$}};
+    \node[logic-and,false] at (0.5,6.5) (effcond-o1-1) {};
+    \node[logic-and,true] at (0.5,2.35) (precond-o2-1) {\only<4->{%
+	$\emptyset$}};
+
+    \node[operator,true] at (0.75,5.35) (o1-1) {\only<5->{$\{o_1\}$}};
+    \markopnode{o1-1}{o_1}
+    \node[operator,true] at (0.75,2.35) (o2-1) {\only<5->{$\{o_2\}$}};
+    \markopnode{o2-1}{o_2}
+    \node[operator,false] at (0.75,1.35) (o3-1) {};
+    \node[operator,false] at (0.75,0.35) (o4-1) {};
+
+    \node[logic-cond,false] at (0.75,6.5) (efftrigger-o1-1) {};
+    
+    \node[prop,true] at (1.0,7.0) (a1) {\only<6->{$\emptyset$}};
+    \node[prop,true] at (1.0,6.0) (b1) {\only<6->{$\{o_1\}$}};
+    \node[prop,true] at (1.0,5.0) (c1) {\only<6->{$\emptyset$}};
+    \node[prop,true] at (1.0,4.0) (d1) {\only<6->{$\emptyset$}};
+    \node[prop,false] at (1.0,3.0) (e1) {};
+    \node[prop,true] at (1.0,2.0) (f1) {\only<6->{$\{o_2\}$}};
+    \node[prop,false] at (1.0,1.0) (g1) {};
+    \node[prop,false] at (1.0,0.0) (h1) {};
+
+    \node[logic-and,true] at (1.25,4.5) (c1-and-d1) {\only<7->{%
+	$\emptyset$}};
+
+    \node[logic-or,true] at (1.5,5.35) (precond-o1-2) {\only<8->{%
+	$\emptyset$}};
+    \node[logic-and,true] at (1.5,6.5) (effcond-o1-2) {\only<8->{%
+	$\{o_1\}$}};
+    \node[logic-and,true] at (1.5,2.35) (precond-o2-2) {\only<8->{%
+	$\emptyset$}};
+
+    \node[logic-cond,true] at (1.75,6.5) (efftrigger-o1-2){\only<9->{%
+	$\begin{array}{@{}r@{}l@{}}\{&
+            o_1,\\&o_{1, a \land b}\}\end{array}$}};
+    \markopnode{efftrigger-o1-2}{o_{1, a \land b}}
+    \node[operator,true] at (1.75,5.35) (o1-2) {\only<9->{$\{o_1\}$}};
+    \markopnode{o1-2}{o_1}
+    \node[operator,true] at (1.75,2.35) (o2-2) {\only<9->{$\{o_2\}$}};
+    \markopnode{o2-2}{o_2}
+    \node[operator,true] at (1.75,1.35) (o3-2) {\only<9->{%
+	$\begin{array}{@{}r@{}l@{}}\{&
+            o_2,\\&o_3\}\end{array}$}};
+    \markopnode{o3-2}{o_3}
+    \node[operator,true] at (1.75,0.35) (o4-2) {\only<9->{%
+	$\begin{array}{@{}r@{}l@{}}\{&
+            o_2,\\&o_4\}\end{array}$}};
+    \markopnode{o4-2}{o_4}
+
+    \node[prop,true] at (2.0,7.0) (a2) {\only<10->{$\emptyset$}};
+    \node[prop,true] at (2.0,6.0) (b2) {\only<10->{$\{o_1\}$}};
+    \node[prop,true] at (2.0,5.0) (c2) {\only<10->{$\emptyset$}};
+    \node[prop,true] at (2.0,4.0) (d2) {\only<10->{$\emptyset$}};
+    \node[prop,true,ellipse] at (2.0,3.0) (e2) {\only<10->{%
+        $\begin{array}{@{}r@{}l@{}}\{&
+            o_1,\\&o_{1, a \land b}\}\end{array}$}};
+    \node[prop,true] at (2.0,2.0) (f2) {\only<10->{$\{o_2\}$}};
+    \node[prop,true,ellipse] at (2.0,1.0) (g2) {\only<10->{%
+        $\begin{array}{@{}r@{}l@{}}\{&
+            o_2,\\&o_3\}\end{array}$}};
+    \node[prop,true,ellipse] at (2.0,0.0) (h2) {\only<10->{%
+	$\begin{array}{@{}r@{}l@{}}\{&
+            o_2,\\&o_4\}\end{array}$}};
+
+    \node[logic-and,true] at (2.25,0.5) (g2-and-h2) {\only<11->{%
+	$\begin{array}{@{}r@{}l@{}}\{&o_2,\\&o_3,\\&o_4\}\end{array}$}};
+
+    \node[goal-and,true] at (2.5,1.75) (goal2) {\only<12->{%
+	$\begin{array}{@{}r@{}l@{}}\{&
+            o_1,\\&o_{1, a \land b},\\&o_2,\\&o_3,\\&o_4\}\end{array}$}};
+
+    \draw[->,idle] (a2)--(a1);
+    \draw[->,idle] (a1)--(a0);
+    \draw[->,idle] (b2)--(b1);
+    \draw[->,idle] (b1)--(b0);
+    \draw[->,idle] (c2)--(c1);
+    \draw[->,idle] (c1)--(c0);
+    \draw[->,idle] (d2)--(d1);
+    \draw[->,idle] (d1)--(d0);
+    \draw[->,idle] (e2)--(e1);
+    \draw[->,idle] (e1)--(e0);
+    \draw[->,idle] (f2)--(f1);
+    \draw[->,idle] (f1)--(f0);
+    \draw[->,idle] (g2)--(g1);
+    \draw[->,idle] (g1)--(g0);
+    \draw[->,idle] (h2)--(h1);
+    \draw[->,idle] (h1)--(h0);
+    \draw[->,nonidle] (c0-and-d0)--(c0);
+    \draw[->,nonidle] (c0-and-d0)--(d0);
+    \draw[->,nonidle] (precond-o1-1)--(c0-and-d0);
+    \draw[->,nonidle] (precond-o1-1)--(b0);
+    \draw[->,nonidle] (effcond-o1-1)--(a0);
+    \draw[->,nonidle] (effcond-o1-1)--(b0);
+    \draw[->,nonidle] (o1-1)--(precond-o1-1);
+    \draw[->,nonidle] (efftrigger-o1-1)--(effcond-o1-1);
+    \draw[->,nonidle] (efftrigger-o1-1)--(precond-o1-1);
+    \draw[->,nonidle] (b1)--(o1-1);
+    \draw[->,nonidle] (e1)--(efftrigger-o1-1);
+    \draw[->,nonidle] (c1-and-d1)--(c1);
+    \draw[->,nonidle] (c1-and-d1)--(d1);
+    \draw[->,nonidle] (precond-o1-2)--(c1-and-d1);
+    \draw[->,nonidle] (precond-o1-2)--(b1);
+    \draw[->,nonidle] (effcond-o1-2)--(a1);
+    \draw[->,nonidle] (effcond-o1-2)--(b1);
+    \draw[->,nonidle] (o1-2)--(precond-o1-2);
+    \draw[->,nonidle] (efftrigger-o1-2)--(effcond-o1-2);
+    \draw[->,nonidle] (efftrigger-o1-2)--(precond-o1-2);
+    \draw[->,nonidle] (b2)--(o1-2);
+    \draw[->,nonidle] (e2)--(efftrigger-o1-2);
+
+    \draw[->,nonidle] (o2-1)--(precond-o2-1);
+    \draw[->,nonidle] (f1)--(o2-1);
+
+    \draw[->,nonidle] (o2-2)--(precond-o2-2);
+    \draw[->,nonidle] (f2)--(o2-2);
+      
+    \draw[->,nonidle] (o3-1)--(f0);
+    \draw[->,nonidle] (g1)--(o3-1);
+      
+    \draw[->,nonidle] (o3-2)--(f1);
+    \draw[->,nonidle] (g2)--(o3-2);
+				   
+    \draw[->,nonidle] (o4-1)--(f0);
+    \draw[->,nonidle] (h1)--(o4-1);
+      
+    \draw[->,nonidle] (o4-2)--(f1);
+    \draw[->,nonidle] (h2)--(o4-2);
+      
+    \draw[->,nonidle] (g2-and-h2)--(g2);
+    \draw[->,nonidle] (g2-and-h2)--(h2);
+    \draw[->,nonidle] (goal2)--(g2-and-h2);
+    \draw[->,nonidle] (goal2)--(e2);
+  \end{tikzpicture}%
+  \only<handout>{\hspace*{\fill}}
+\end{frame}
+
+\begin{frame}{Remarks on {\hsa}}
+  \begin{itemize}
+  \item The same remarks for stability as for {\hadd} apply.
+  \item Like {\hadd}, {\hsa} is \alert{safe} and \alert{goal-aware},
+    but neither \alert{admissible} nor \alert{consistent}.
+  \item {\hsa} is generally \alert{better informed} than {\hadd}, but
+    significantly more expensive to compute.
+  \item The $\hsa$ value depends on the tie-breaking rule used, so
+    {\hsa} is \alert{not well-defined} without specifying the
+    tie-breaking rule.
+  \item The operators contained in the goal node annotation, suitably
+    ordered, define a \alert{relaxed plan} for the task.
+    \begin{itemize}
+    \item Operators mentioned several times in the annotation must be
+      added as many times in the relaxed plan.
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\subsection{Incremental computation}
+
+\begin{frame}{Incremental computation of forward heuristics}
+  One nice property of forward-propagating heuristics is that they
+  allow \alert{incremental computation}:
+  \begin{itemize}
+  \item when evaluating several states in sequence which only differ
+    in a few state variables, can
+    \begin{itemize}
+    \item \alert{start computation from previous results} and
+    \item keep track only of \alert{what needs to be recomputed}
+    \end{itemize}
+  \item typical use case: \alert{depth-first} style searches
+    (\eg, \idastar)
+  \item rarely exploited in practice
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Incremental computation example: \hadd}
+  \only<all:1>{\small Result for $\{a \mapsto 1, b \mapsto 0, c
+      \mapsto 1, d \mapsto 1, e \mapsto 0, f \mapsto 0, g \mapsto 0, h
+      \mapsto 0\}$}%
+  \only<all:2>{\small Change value of \alert{e to $1$}.}%
+  \only<all:3->{\small \alert{Recompute} outdated values.}%
+  \begin{center}
+    \begin{tikzpicture}
+      \tikzstyle{tiny rpg}=[draw,inner sep=1pt,font=\tiny]
+      \tikzstyle{rpg square}=[tiny rpg,minimum size=0.40cm,rectangle]
+      \tikzstyle{rpg circle}=[tiny rpg,minimum size=0.40cm,circle]
+      \pgfsetxvec{\pgfpoint{3.77cm}{0.0cm}}
+      \pgfsetyvec{\pgfpoint{0.0cm}{0.87cm}}
+
+      \node[trueinitprop,true] at (0.0,7.0) (a0) {$0$};
+      \node[prop,false] at (0.0,6.0) (b0) {};
+      \node[trueinitprop,true] at (0.0,5.0) (c0) {$0$};
+      \node[trueinitprop,true] at (0.0,4.0) (d0) {$0$};
+      \only<all:1>{\node[prop,false] at (0.0,3.0) (e0) {};}
+      \only<all:2-3>{\node[trueinitprop,dirty] at (0.0,3.0) (e0) {?};}
+      \only<all:4->{\node[trueinitprop,true] at (0.0,3.0) (e0) {$0$};}
+      \node[prop,false] at (0.0,2.0) (f0) {};
+      \node[prop,false] at (0.0,1.0) (g0) {};
+      \node[prop,false] at (0.0,0.0) (h0) {};
+
+      \node[logic-and,true] at (0.25,4.5) (c0-and-d0) {$0$};
+
+      \node[logic-or,true] at (0.5,5.35) (precond-o1-1) {$0$};
+      \node[logic-and,false] at (0.5,6.5) (effcond-o1-1) {};
+      \node[logic-and,true] at (0.5,2.35) (precond-o2-1) {$0$};
+
+      \node[logic-cond,false] at (0.75,6.5) (efftrigger-o1-1) {};
+      \node[operator,true] at (0.75,5.35) (o1-1) {$1$};
+      \markplusone{o1-1}
+      \node[operator,true] at (0.75,2.35) (o2-1) {$1$};
+      \markplusone{o2-1}
+      \node[operator,false] at (0.75,1.35) (o3-1) {};
+      \node[operator,false] at (0.75,0.35) (o4-1) {};
+
+      \node[prop,true] at (1.0,7.0) (a1) {$0$};
+      \node[prop,true] at (1.0,6.0) (b1) {$1$};
+      \node[prop,true] at (1.0,5.0) (c1) {$0$};
+      \node[prop,true] at (1.0,4.0) (d1) {$0$};
+      \only<all:1-3>{\node[prop,false] at (1.0,3.0) (e1) {};}
+      \only<all:4>{\node[prop,dirty] at (1.0,3.0) (e1) {?};}
+      \only<all:5->{\node[prop,true] at (1.0,3.0) (e1) {$0$};}
+
+      \node[prop,true] at (1.0,2.0) (f1) {$1$};
+      \node[prop,false] at (1.0,1.0) (g1) {};
+      \node[prop,false] at (1.0,0.0) (h1) {};
+
+      \node[logic-and,true] at (1.25,4.5) (c1-and-d1) {$0$};
+
+      \node[logic-or,true] at (1.5,5.35) (precond-o1-2) {$0$};
+      \node[logic-and,true] at (1.5,6.5) (effcond-o1-2) {$1$};
+      \node[logic-and,true] at (1.5,2.35) (precond-o2-2) {$0$};
+
+      \node[logic-cond,true] at (1.75,6.5) (efftrigger-o1-2) {$2$};
+      \markplusone{efftrigger-o1-2}
+      \node[operator,true] at (1.75,5.35) (o1-2) {$1$};
+      \markplusone{o1-2}
+      \node[operator,true] at (1.75,2.35) (o2-2) {$1$};
+      \markplusone{o2-2}
+      \node[operator,true] at (1.75,1.35) (o3-2) {$2$};
+      \markplusone{o3-2}
+      \node[operator,true] at (1.75,0.35) (o4-2) {$2$};
+      \markplusone{o4-2}
+
+      \node[prop,true] at (2.0,7.0) (a2) {$0$};
+      \node[prop,true] at (2.0,6.0) (b2) {$1$};
+      \node[prop,true] at (2.0,5.0) (c2) {$0$};
+      \node[prop,true] at (2.0,4.0) (d2) {$0$};
+      \only<all:1-4>{\node[prop,true] at (2.0,3.0) (e2) {$2$};}
+      \only<all:5>{\node[prop,dirty] at (2.0,3.0) (e2) {?};}
+      \only<all:6->{\node[prop,true] at (2.0,3.0) (e2) {$0$};}
+      \node[prop,true] at (2.0,2.0) (f2) {$1$};
+      \node[prop,true] at (2.0,1.0) (g2) {$2$};
+      \node[prop,true] at (2.0,0.0) (h2) {$2$};
+
+      \node[logic-and,true] at (2.25,0.5) (g2-and-h2) {$4$};
+
+      \only<all:1-5>{\node[goal-and,true] at (2.5,1.75) (goal2) {$6$};}
+      \only<all:6>{\node[goal-and,dirty] at (2.5,1.75) (goal2) {?};}
+      \only<all:7->{\node[goal-and,true] at (2.5,1.75) (goal2) {$4$};}
+      
+      \draw[->,idle] (a2)--(a1);
+      \draw[->,idle] (a1)--(a0);
+      \draw[->,idle] (b2)--(b1);
+      \draw[->,idle] (b1)--(b0);
+      \draw[->,idle] (c2)--(c1);
+      \draw[->,idle] (c1)--(c0);
+      \draw[->,idle] (d2)--(d1);
+      \draw[->,idle] (d1)--(d0);
+      \draw[->,idle] (e2)--(e1);
+      \draw[->,idle] (e1)--(e0);
+      \draw[->,idle] (f2)--(f1);
+      \draw[->,idle] (f1)--(f0);
+      \draw[->,idle] (g2)--(g1);
+      \draw[->,idle] (g1)--(g0);
+      \draw[->,idle] (h2)--(h1);
+      \draw[->,idle] (h1)--(h0);
+      \draw[->,nonidle] (c0-and-d0)--(c0);
+      \draw[->,nonidle] (c0-and-d0)--(d0);
+      \draw[->,nonidle] (precond-o1-1)--(c0-and-d0);
+      \draw[->,nonidle] (precond-o1-1)--(b0);
+      \draw[->,nonidle] (effcond-o1-1)--(a0);
+      \draw[->,nonidle] (effcond-o1-1)--(b0);
+      \draw[->,nonidle] (o1-1)--(precond-o1-1);
+      \draw[->,nonidle] (efftrigger-o1-1)--(effcond-o1-1);
+      \draw[->,nonidle] (efftrigger-o1-1)--(precond-o1-1);
+      \draw[->,nonidle] (b1)--(o1-1);
+      \draw[->,nonidle] (e1)--(efftrigger-o1-1);
+      \draw[->,nonidle] (c1-and-d1)--(c1);
+      \draw[->,nonidle] (c1-and-d1)--(d1);
+      \draw[->,nonidle] (precond-o1-2)--(c1-and-d1);
+      \draw[->,nonidle] (precond-o1-2)--(b1);
+      \draw[->,nonidle] (effcond-o1-2)--(a1);
+      \draw[->,nonidle] (effcond-o1-2)--(b1);
+      \draw[->,nonidle] (o1-2)--(precond-o1-2);
+      \draw[->,nonidle] (efftrigger-o1-2)--(effcond-o1-2);
+      \draw[->,nonidle] (efftrigger-o1-2)--(precond-o1-2);
+      \draw[->,nonidle] (b2)--(o1-2);
+      \draw[->,nonidle] (e2)--(efftrigger-o1-2);
+
+      \draw[->,nonidle] (o2-1)--(precond-o2-1);
+      \draw[->,nonidle] (f1)--(o2-1);
+
+      \draw[->,nonidle] (o2-2)--(precond-o2-2);
+      \draw[->,nonidle] (f2)--(o2-2);
+      
+      \draw[->,nonidle] (o3-1)--(f0);
+      \draw[->,nonidle] (g1)--(o3-1);
+      
+      \draw[->,nonidle] (o3-2)--(f1);
+      \draw[->,nonidle] (g2)--(o3-2);
+				   
+      \draw[->,nonidle] (o4-1)--(f0);
+      \draw[->,nonidle] (h1)--(o4-1);
+      
+      \draw[->,nonidle] (o4-2)--(f1);
+      \draw[->,nonidle] (h2)--(o4-2);
+      
+      \draw[->,nonidle] (g2-and-h2)--(g2);
+      \draw[->,nonidle] (g2-and-h2)--(h2);
+      \draw[->,nonidle] (goal2)--(g2-and-h2);
+      \draw[->,nonidle] (goal2)--(e2);
+    \end{tikzpicture}
+  \end{center}
+\end{frame}
+
+\subsection[\hff]{The FF heuristic \hff}
+
+\begin{frame}{Heuristic estimate $\hff$}
+  \begin{itemize}
+  \item $\hsa$ is more expensive to compute than the other forward
+    propagating heuristics because we must propagate \alert{sets}.
+  \item It is possible to get the same advantage over $\hadd$
+    combined with efficient propagation.
+  \item Key idea of \alert{\hff}: perform a \alert{backward
+    propagation} that selects a sufficient subset of nodes to make the
+    goal true (called a \alert{solution graph} in AND/OR dag
+    literature).
+  \item The resulting heuristic is almost as informative as $\hsa$, \\
+    yet computable as quickly as $\hadd$.
+  \end{itemize}
+
+  \hilite{Note:} Our presentation inverts the historical order. \\
+  The set-additive heuristic was defined \alert{after} the FF
+  heuristic \\
+  (sacrificing speed for even higher informativeness).
+\end{frame}
+
+\begin{frame}{FF heuristic: fitting the template\only<all:2-3>{ (ctd.)}}
+  \begin{block}{The FF heuristic {\hff}\only<all:2-3>{ (ctd.)}}
+    \begin{overprint}
+    \onslide<all:1>
+    \hilite{Computing annotations:}
+    \begin{itemize}
+    \item Annotations are \alert{Boolean values}, computed top-down.
+
+      \smallskip
+
+      A node is \alert{marked} when its annotation is set to $1$ and
+      \alert{unmarked} if it is set to $0$. Initially, the goal node
+      is marked, and all other nodes are unmarked.
+
+      \smallskip
+
+      We say that a true AND node is \alert{justified} if all its true
+      successors are marked, and that a true OR node is
+      \alert{justified} if at least one of its true successors is
+      marked.
+
+      \dots
+    \end{itemize}
+    \onslide<all:2>
+    \hilite{Computing annotations:}      
+    \begin{itemize}
+    \item \dots
+
+      \smallskip
+
+      Apply these rules until \alert{all marked nodes are justified}:
+      \begin{enumerate}
+      \item Mark all true successors of a marked unjustified AND node.
+      \item Mark the true successor of a marked unjustified OR node
+        with only one true successor.
+      \item Mark a true successor of a marked unjustified OR node
+        connected via an idle arc.
+      \item Mark any true successor of a marked unjustified OR node.
+      \end{enumerate}
+      
+      The rules are given in priority order: earlier rules are
+      preferred if applicable.
+    \end{itemize}
+
+    \onslide<all:3>
+    \hilite{Termination criterion:}
+    \begin{itemize}
+    \item \alert{Always terminate} at first layer where goal node is
+      true.
+    \end{itemize}
+    
+    \hilite{Heuristic value:}
+    \begin{itemize}
+    \item The heuristic value is the \alert{number of operator/effect
+      condition pairs} for which \alert{at least one} effect node is
+      marked.
+    \end{itemize}
+    \end{overprint}
+  \end{block}
+\end{frame}
+
+\begin{frame}{Running example: $\hff$}
+  \begin{center}
+    \begin{tikzpicture}
+      \tikzstyle{tiny rpg}=[draw,inner sep=1pt,font=\tiny]
+      \tikzstyle{rpg square}=[tiny rpg,minimum size=0.40cm,rectangle]
+      \tikzstyle{rpg circle}=[tiny rpg,minimum size=0.40cm,circle]
+      \pgfsetxvec{\pgfpoint{3.77cm}{0.0cm}}
+      \pgfsetyvec{\pgfpoint{0.0cm}{0.87cm}}
+
+      \node[prop,false] at (0.0,6.0) (b0) {};
+      \node[prop,false] at (0.0,3.0) (e0) {};
+      \node[prop,false] at (0.0,2.0) (f0) {};
+      \node[prop,false] at (0.0,1.0) (g0) {};
+      \node[prop,false] at (0.0,0.0) (h0) {};
+
+      \node[logic-and,false] at (0.5,6.5) (effcond-o1-1) {};
+
+      \node[operator,false] at (0.75,1.35) (o3-1) {};
+      \node[operator,false] at (0.75,0.35) (o4-1) {};
+      \node[logic-cond,false] at (0.75,6.5) (efftrigger-o1-1) {};
+
+      \node[prop,true] at (1.0,5.0) (c1) {};
+      \node[prop,true] at (1.0,4.0) (d1) {};
+      \node[prop,false] at (1.0,3.0) (e1) {};
+      \node[prop,false] at (1.0,1.0) (g1) {};
+      \node[prop,false] at (1.0,0.0) (h1) {};
+
+      \node[logic-and,true] at (1.25,4.5) (c1-and-d1) {};
+
+      \node[logic-and,true] at (1.5,2.35) (precond-o2-2) {};
+
+      \node[operator,true] at (1.75,5.35) (o1-2) {};
+      \markopnodeff{o1-2}{o_1}
+      \node[operator,true] at (1.75,2.35) (o2-2) {};
+      \markopnodeff{o2-2}{o_2}
+
+      \node[prop,true] at (2.0,7.0) (a2) {};
+      \node[prop,true] at (2.0,6.0) (b2) {};
+      \node[prop,true] at (2.0,5.0) (c2) {};
+      \node[prop,true] at (2.0,4.0) (d2) {};
+      \node[prop,true] at (2.0,2.0) (f2) {};
+
+      \only<1-16>{
+        \node[logic-and,true] at (0.5,2.35) (precond-o2-1) {};
+      }
+      \only<17->{
+        \node[logic-and,selected] at (0.5,2.35) (precond-o2-1) {\textbf{M}};
+      }
+
+      \only<1-15>{
+        \node[operator,true] at (0.75,2.35) (o2-1) {};
+      }
+      \only<16->{
+        \node[operator,selected] at (0.75,2.35) (o2-1) {\textbf{M}};
+      }
+      \markopnodeff{o2-1}{o_2}
+
+      \only<1-14>{
+        \node[trueinitprop,true] at (0.0,5.0) (c0) {};
+        \node[trueinitprop,true] at (0.0,4.0) (d0) {};
+      }
+      \only<15->{
+        \node[trueinitprop,selected] at (0.0,5.0) (c0) {\textbf{M}};
+        \node[trueinitprop,selected] at (0.0,4.0) (d0) {\textbf{M}};
+      }
+
+      \only<1-13>{
+        \node[logic-and,true] at (0.25,4.5) (c0-and-d0) {};
+      }
+      \only<14->{
+        \node[logic-and,selected] at (0.25,4.5) (c0-and-d0) {\textbf{M}};
+      }
+
+      \only<1-12>{
+        \node[logic-or,true] at (0.5,5.35) (precond-o1-1) {};
+      }
+      \only<13->{
+        \node[logic-or,selected] at (0.5,5.35) (precond-o1-1) {\textbf{M}};
+      }
+
+      \only<1-11>{
+        \node[operator,true] at (0.75,5.35) (o1-1) {};
+      }
+      \only<12->{
+        \node[operator,selected] at (0.75,5.35) (o1-1) {\textbf{M}};
+      }
+      \markopnodeff{o1-1}{o_1}
+
+      \only<1-10>{
+        \node[trueinitprop,true] at (0.0,7.0) (a0) {};
+      }
+      \only<11->{
+        \node[trueinitprop,selected] at (0.0,7.0) (a0) {\textbf{M}};
+      }
+
+      \only<1-9>{
+        \node[operator,true] at (1.75,0.35) (o4-2) {};
+      }
+      \only<10->{
+        \node[operator,selected] at (1.75,0.35) (o4-2) {\textbf{M}};
+      }
+      \markopnodeff{o4-2}{o_4}
+
+      \only<1-8>{
+        \node[prop,true] at (1.0,2.0) (f1) {};
+      }
+      \only<9->{
+        \node[prop,selected] at (1.0,2.0) (f1) {\textbf{M}};
+      }
+
+      \only<1-7>{
+        \node[operator,true] at (1.75,1.35) (o3-2) {};
+      }
+      \only<8->{
+        \node[operator,selected] at (1.75,1.35) (o3-2) {\textbf{M}};
+      }
+      \markopnodeff{o3-2}{o_3}
+
+      \only<1-6>{
+        \node[prop,true] at (1.0,7.0) (a1) {};
+        \node[prop,true] at (1.0,6.0) (b1) {};
+      }
+      \only<7->{
+        \node[prop,selected] at (1.0,7.0) (a1) {\textbf{M}};
+        \node[prop,selected] at (1.0,6.0) (b1) {\textbf{M}};
+      }
+
+      \only<1-5>{
+        \node[logic-or,true] at (1.5,5.35) (precond-o1-2) {};
+        \node[logic-and,true] at (1.5,6.5) (effcond-o1-2) {};
+      }
+      \only<6->{
+        \node[logic-and,selected] at (1.5,6.5) (effcond-o1-2) {\textbf{M}};
+        \node[logic-or,selected] at (1.5,5.35) (precond-o1-2) {\textbf{M}};
+      }
+
+      \only<1-4>{
+        \node[logic-cond,true] at (1.75,6.5) (efftrigger-o1-2) {};
+      }
+      \only<5->{
+        \node[logic-cond,selected] at (1.75,6.5) (efftrigger-o1-2) {\textbf{M}};
+      }
+      \markopnodeff{efftrigger-o1-2}{o_{1, a \land b}}
+
+      \only<1-3>{
+        \node[prop,true] at (2.0,1.0) (g2) {};
+        \node[prop,true] at (2.0,0.0) (h2) {};
+      }
+      \only<4->{
+        \node[prop,selected] at (2.0,1.0) (g2) {\textbf{M}};
+        \node[prop,selected] at (2.0,0.0) (h2) {\textbf{M}};
+      }
+
+      \only<1-2>{
+        \node[logic-and,true] at (2.25,0.5) (g2-and-h2) {};
+        \node[prop,true] at (2.0,3.0) (e2) {};
+      }
+      \only<3->{
+        \node[logic-and,selected] at (2.25,0.5) (g2-and-h2) {\textbf{M}};
+        \node[prop,selected] at (2.0,3.0) (e2) {\textbf{M}};
+      }
+
+      \only<1-1>{
+        \node[goal-and,true] at (2.5,1.75) (goal2) {};
+      }
+      \only<2->{
+        \node[goal-and,selected] at (2.5,1.75) (goal2) {\textbf{M}};
+      }
+      
+      \draw[->,idle] (a2)--(a1);
+      \draw[->,idle] (a1)--(a0);
+      \draw[->,idle] (b2)--(b1);
+      \draw[->,idle] (b1)--(b0);
+      \draw[->,idle] (c2)--(c1);
+      \draw[->,idle] (c1)--(c0);
+      \draw[->,idle] (d2)--(d1);
+      \draw[->,idle] (d1)--(d0);
+      \draw[->,idle] (e2)--(e1);
+      \draw[->,idle] (e1)--(e0);
+      \draw[->,idle] (f2)--(f1);
+      \draw[->,idle] (f1)--(f0);
+      \draw[->,idle] (g2)--(g1);
+      \draw[->,idle] (g1)--(g0);
+      \draw[->,idle] (h2)--(h1);
+      \draw[->,idle] (h1)--(h0);
+      \draw[->,nonidle] (c0-and-d0)--(c0);
+      \draw[->,nonidle] (c0-and-d0)--(d0);
+      \draw[->,nonidle] (precond-o1-1)--(c0-and-d0);
+      \draw[->,nonidle] (precond-o1-1)--(b0);
+      \draw[->,nonidle] (effcond-o1-1)--(a0);
+      \draw[->,nonidle] (effcond-o1-1)--(b0);
+      \draw[->,nonidle] (o1-1)--(precond-o1-1);
+      \draw[->,nonidle] (efftrigger-o1-1)--(effcond-o1-1);
+      \draw[->,nonidle] (efftrigger-o1-1)--(precond-o1-1);
+      \draw[->,nonidle] (b1)--(o1-1);
+      \draw[->,nonidle] (e1)--(efftrigger-o1-1);
+      \draw[->,nonidle] (c1-and-d1)--(c1);
+      \draw[->,nonidle] (c1-and-d1)--(d1);
+      \draw[->,nonidle] (precond-o1-2)--(c1-and-d1);
+      \draw[->,nonidle] (precond-o1-2)--(b1);
+      \draw[->,nonidle] (effcond-o1-2)--(a1);
+      \draw[->,nonidle] (effcond-o1-2)--(b1);
+      \draw[->,nonidle] (o1-2)--(precond-o1-2);
+      \draw[->,nonidle] (efftrigger-o1-2)--(effcond-o1-2);
+      \draw[->,nonidle] (efftrigger-o1-2)--(precond-o1-2);
+      \draw[->,nonidle] (b2)--(o1-2);
+      \draw[->,nonidle] (e2)--(efftrigger-o1-2);
+
+      \draw[->,nonidle] (o2-1)--(precond-o2-1);
+      \draw[->,nonidle] (f1)--(o2-1);
+
+      \draw[->,nonidle] (o2-2)--(precond-o2-2);
+      \draw[->,nonidle] (f2)--(o2-2);
+      
+      \draw[->,nonidle] (o3-1)--(f0);
+      \draw[->,nonidle] (g1)--(o3-1);
+      
+      \draw[->,nonidle] (o3-2)--(f1);
+      \draw[->,nonidle] (g2)--(o3-2);
+				   
+      \draw[->,nonidle] (o4-1)--(f0);
+      \draw[->,nonidle] (h1)--(o4-1);
+      
+      \draw[->,nonidle] (o4-2)--(f1);
+      \draw[->,nonidle] (h2)--(o4-2);
+      
+      \draw[->,nonidle] (g2-and-h2)--(g2);
+      \draw[->,nonidle] (g2-and-h2)--(h2);
+      \draw[->,nonidle] (goal2)--(g2-and-h2);
+      \draw[->,nonidle] (goal2)--(e2);
+    \end{tikzpicture}
+  \end{center}
+\end{frame}
+
+\begin{frame}{Remarks on {\hff}}
+  \begin{itemize}
+  \item Like {\hadd} and {\hsa}, {\hff} is \alert{safe} and
+    \alert{goal-aware}, but neither \alert{admissible} nor
+    \alert{consistent}.
+  \item Its informativeness can be expected to be slightly worse than
+    for \hsa, but is usually not far off.
+  \item Unlike \hsa, {\hff} can be computed in \alert{linear time}.
+  \item Similar to $\hsa$, the operators corresponding to the marked
+    operator/effect condition pairs define a \alert{relaxed plan}.
+  \item Similar to $\hsa$, the $\hff$ value depends on tie-breaking
+    when the marking rules allow several possible choices, so {\hff}
+    is \alert{not well-defined} without specifying the tie-breaking
+    rule.
+    \begin{itemize}
+    \item The implementation in FF uses additional rules of thumb
+      to try to reduce the size of the generated relaxed plan.
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\subsection[Comparison \& practice]{Comparison \& relaxation
+  heuristics in practice}
+
+%% NOTE/TODO: Would be nice to also provide absolute bounds for
+%% relaxed solvable states, but our information on h_FF and h_sa is a
+%% bit sketchy there. We know of couse that h_max \le \hplus |A|, but
+%% unfortunately the same is not clear for h_FF and h_sa, where the
+%% best obvious bound is by the number of operator/effect condition
+%% pairs. Of course, h_add can be exponential in ||T||.
+
+\begin{frame}{Comparison of relaxation heuristics}
+  \begin{theorem}[relationship between relaxation heuristics]
+    Let $s$ be a state of planning task $\langle A, I, O, \gamma\rangle$.
+    Then:
+    \begin{itemize}
+    \item $\hmax(s) \le \hplus(s) \le h^*(s)$
+    \item $\hmax(s) \le \hplus(s) \le \hsa(s) \le \hadd(s)$
+    \item $\hmax(s) \le \hplus(s) \le \hff(s) \le \hadd(s)$
+    \item $h^*$, $\hff$ and $\hsa$ are pairwise incomparable
+    \item $h^*$ and $\hadd$ are incomparable
+    \end{itemize}
+    Moreover, $\hplus$, $\hmax$, $\hadd$, $\hsa$ and $\hff$ assign
+    $\infty$ to the same set of states.
+  \end{theorem}
+  \hilite{Note:} For \alert{inadmissible} heuristics, dominance is in
+  general neither desirable nor undesirable. For relaxation
+  heuristics, the objective is usually to get as close to $\hplus$ as
+  possible.
+\end{frame}
+
+\begin{frame}{Relaxation heuristics in practice: HSP}
+  \begin{example}[HSP]
+    \alert{HSP} (Bonet \& Geffner) was one of the four top performers
+    at the 1st International Planning Competition (IPC-1998).
+    
+    \smallskip
+
+    Key ideas:
+    \begin{itemize}
+    \item \alert{hill climbing} search using \alert{$\hadd$}
+    \item on \alert{plateaus}, keep going for a number of iterations,
+      then restart
+    \item use a closed list during exploration of plateaus
+    \end{itemize}
+  \end{example}
+  \hilite{Literature:} Bonet, Loerincs \& Geffner (1997),
+  Bonet \& Geffner (2001)
+\end{frame}
+
+\begin{frame}{Relaxation heuristics in practice: FF}
+  \begin{example}[FF]
+    \alert{FF} (Hoffmann \& Nebel) won the 2nd International Planning
+    Competition (IPC-2000).
+
+    \smallskip
+
+    Key ideas:
+    \begin{itemize}
+    \item \alert{enforced hill-climbing} search using \alert{$\hff$}
+    \item \alert{helpful action pruning:} in each search node, only
+      consider successors from operators that add one of the atoms
+      marked in proposition layer $1$
+    \item \alert{goal ordering:} in certain cases, FF recognizes and
+      exploits that certain subgoals should be solved one after the
+      other
+    \end{itemize}
+    If the main search fails, FF performs a greedy best-first search
+    using {\hff} without helpful action pruning or goal ordering.
+  \end{example}
+  \hilite{Literature:} Hoffmann \& Nebel (2001), Hoffmann (2005)
+\end{frame}
+
+\begin{frame}{Relaxation heuristics in practice: Fast Downward}
+  \begin{example}[Fast Downward]
+    \alert{Fast Downward} (Helmert \& Richter) won the satisficing
+    track of the 4th International Planning Competition (IPC-2004).
+
+    \smallskip
+    
+    Key ideas:
+    \begin{itemize}
+    \item \alert{greedy best-first search} using \alert{$\hff$} and
+      \alert{causal graph heuristic} (not relaxation-based)
+    \item search enhancements:
+      \begin{itemize}
+      \item multi-heuristic best-first search
+      \item deferred evaluation of heuristic estimates
+      \item preferred operators (similar to FF's helpful actions)
+      \end{itemize}
+    \end{itemize}
+  \end{example}
+  \hilite{Literature:} Helmert (2006)
+\end{frame}
+
+\begin{frame}{Relaxation heuristics in practice: SGPlan}
+  \begin{example}[SGPlan]
+    \alert{SGPlan} (Wah, Hsu, Chen \& Huang) won the satisficing
+    track of the 5th International Planning Competition (IPC-2006).
+
+    \smallskip
+    
+    Key ideas:
+    \begin{itemize}
+    \item \alert{FF}
+    \item \alert{problem decomposition} techniques
+    \item \alert{domain-specific techniques}
+    \end{itemize}
+  \end{example}
+  \hilite{Literature:} Chen, Wah \& Hsu (2006)
+\end{frame}
+
+\begin{frame}{Relaxation heuristics in practice: LAMA}
+  \begin{example}[LAMA]
+    \alert{LAMA} (Richter \& Westphal) won the satisficing
+    track of the 6th International Planning Competition (IPC-2008).
+
+    \smallskip
+    
+    Key ideas:
+    \begin{itemize}
+    \item \alert{Fast Downward}
+    \item \alert{landmark pseudo-heuristic} instead of causal graph \\
+      heuristic (``somewhat'' relaxation-based)
+    \item anytime variant of \alert{Weighted \astar} instead of greedy
+      best-first search
+    \end{itemize}
+  \end{example}
+  \hilite{Literature:} Richter, Helmert \& Westphal (2008), \\
+  Richter \& Westphal (2010)
+\end{frame}
+
+\section*{Summary}
+
+\begin{frame}{Summary}
+  \begin{itemize}
+  \item \alert{Relaxed planning graphs} are \alert{AND/OR dags}. They
+    encode which propositions can be made true in $\Pi^+$ and how.
+    \begin{itemize}
+    \item They are closely related to \alert{forward sets} and
+      \alert{forward plan steps}, based on the notion of
+      \alert{parallel relaxed plans}.
+    \item They can be \alert{constructed and evaluated efficiently},
+      in time $O((m+1)\|\Pi^+\|)$ for planning task $\Pi$ and depth
+      $m$.
+    \end{itemize}
+  \item By annotating RPG nodes with appropriate information, we can
+    compute many useful heuristics.
+  \item Examples: the \alert{max} heuristic \alert{\hmax},
+    \alert{additive} heuristic \alert{\hadd}, \\ \alert{set-additive}
+    heuristic \alert{\hsa} and \alert{FF} heuristic \alert{\hff}
+    \begin{itemize}
+    \item Of these, only \hmax\ is admissible (but not very accurate).
+    \item The others are much more informative. The set-additive
+      heuristic is the most sophisticated one.
+    \item The FF heuristic is often similarly informative. It offers a
+      good trade-off between accuracy and computation time.
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\end{document}

@@ -1,0 +1,172 @@
+<html>
+<head>
+  <title>CI2613</title>
+  <style type="text/css">
+    body { color:black; background-color:white; font-family:sans-serif; font-size:120%; }
+    td { color:black; background-color:white; font-family:sans-serif; font-size:110%; }
+    em { color:darkolivegreen; font-weight:900; }
+    italic { font-style: italic; }
+    code { color:#A90000; font-weight:500; font-size:180%; }
+    strong { color:#A90000; font-weight:900; }
+    h1 { color:#2c6b70; }
+    h2 { color:#2c6b70; }
+    h3 { color:#2c6b70; }
+  </style>
+</head>
+
+<!-- 
+Colors:
+#999999 
+#deb887 (burlywood)
+#faebd7 (antiquewhite)
+#f5f5dc (beige)
+#a9a9a9 (darkgray)
+#bdb76b (darkkhaki)
+#556b2f (darkolivegreen)
+#5f9ea0 (cadetblue)
+#fffff0	(ivory)
+#dcdcdc (gainsboro)
+#eee8aa (palegoldenrod)
+-->
+
+<body link="#000000" vlink="#000099" alink="#000000">
+<table>
+<tr>
+  <td VALIGN=CENTER WIDTH="100%"><h1><b>CI2613: Algoritmos y Estructuras de Datos III (Pregrado)</b></h1><p>
+
+    Blai Bonet <br>
+    Matem&aacute;ticas y Sistemas, 215-A<br>
+    Departamento de Computaci&oacute;n<br>
+    Universidad Sim&oacute;n Bol&iacute;var<br>
+    <br>
+    bonet AT ldc DOT usb DOT ve<br>
+    Tel: +58 (212) 906-3263<br>
+    Web: <a href="http://www.ldc.usb.ve/~bonet"><font color="#356b0f">http://www.ldc.usb.ve/~bonet</font></a>
+
+  </td>
+  <td>
+    <!-- aqui va el picture -->
+  </td>
+</tr>
+</table>
+
+<h3><a NAME="sinopsis"></a>Sinopsis</h3>
+
+Tercer curso de la cadena de algoritmos y estructuras de datos. Se enfoca en algoritmos y estructuras
+de datos para grafos. Se cubren los temas de representaci&oacute;n de grafos; b&uacute;squeda
+en amplitud y profundidad; &aacute;rbol cobertor m&iacute;nimo, algoritmos de
+Prim y Kruskal; caminos de costo m&iacute;nimo, algoritmos Bellman-Ford, de Dijkstra,
+y Floyd-Warshall; flujo en redes, algoritmos Ford-Fulkerson y Edmonds-Karp.
+Tambi&eacute;n se estudian estructuras de datos para conjuntos disjuntos,
+heaps binomiales y Fibonacci, y nociones de an&aacute;lisis amortizado.
+
+<h3><a NAME="evaluacion"></a>Evaluaci&oacute;n</h3>
+
+<ul type="square">
+  <li><strong>Examen 1 (50%) el 8/10/2014 sobre lo visto hasta el 1/10/2014 (inclusivo).</strong></li>
+  <li><strong>Examen 2 (50%) el 26/11/2014 sobre lo visto hasta el 19/11/2014 (inclusivo).</strong></li>
+  <li><a href="notas/fall14/notas.html">Notas (Septiembre - Noviembre 2014)</a></li>
+</ul>
+
+<h3><a NAME="cronograma"></a>Objetivos y Cronograma</h3>
+
+<center><table border="2" width="90%">
+  <col width="10%">
+  <col width="45%">
+  <col width="45%">
+  <tr>
+    <td align="center">Semana&nbsp;</td>
+    <td align="center">D&iacute;a I (Lunes 5-6 en AUL-109)</td>
+    <td align="center">D&iacute;a II (Mi&eacute;rcoles 5-6 en AUL-109)</td>
+  </tr>
+
+
+  <tr>
+    <td align="center">I</td>
+    <td>8/9: Introducci&oacute;n. Notaci&oacute;n asint&oacute;tica.  Complejidad en tiempo y espacio. Algoritmos eficientes.</td>
+    <td>10/9: Conceptos b&aacute;sicos y representaci&oacute;n de grafos.  Atributos.  [&sect;22.1 + otros]</td>
+  </tr>
+
+  <tr>
+    <td align="center">II</td>
+    <td>15/9: B&uacute;squeda en amplitud (BFS). [&sect;22.2]</td>
+    <td>17/9: B&uacute;squeda en amplitud (BFS) (continuaci&oacute;n).
+              B&uacute;squeda en profundidad (DFS). [&sect;22.2 + &sect;22.3]</td>
+  </tr>
+
+  <tr>
+    <td align="center">III</td>
+    <td>22/9: B&uacute;squeda en profundidad (DFS) (continuaci&oacute;n).
+              Ordenamiento topol&oacute;gico. [&sect;22.3 + &sect;22.4]</td>
+    <td>24/9: Componentes fuertemente conectadas. [&sect;22.5]</td>
+  </tr>
+
+  <tr>
+    <td align="center">IV</td>
+    <td>29/9: An&aacute;lisis amortizado. [&sect;17]</td>
+    <td>1/10: ED para conjuntos disjuntos. Componentes conexas. [&sect;21]</td>
+  </tr>
+
+  <tr>
+    <td align="center">V</td>
+    <td>6/10: ED para cola de prioridad: heap binomial y Fibonacci. [&sect;19 + otros]</td>
+    <td><strong>8/10: Examen 1 (50%)</strong></td>
+  </tr>
+
+  <tr>
+    <td align="center">VI</td>
+    <td>13/10: &Aacute;rbol cobertor m&iacute;nimo (MST). Algoritmos de Kruskal y Prim. [&sect;23]</td>
+    <td>15/10: Caminos de costo m&iacute;nimo desde un v&eacute;rtice fuente fijo (SSSP). [&sect;24.0 + &sect;24.5]</td>
+  </tr>
+
+  <tr>
+    <td align="center">VII</td>
+    <td>20/10: Algoritmo Bellman-Ford.  SSSP en grafos dirigidos ac&iacute;clicos (DAGs). PERT. [&sect;24.1 + &sect;24.2]</td>
+    <td>22/10: Algoritmo de Dijkstra. [&sect;24.3]</td>
+  </tr>
+
+  <tr>
+    <td align="center">VIII</td>
+    <td>27/10: Aplicaciones: clustering, arbitraje, sistemas de diferencias, y alineaci&oacute;n de secuencias. [&sect;24.4 + otros]</td>
+    <td>29/10: Caminos de costo m&iacute;nimo para todos los pares de v&eacute;rtices (APSP).
+        Programaci&oacute;n din&aacute;mica y multiplicaci&oacute;n de matrices. Algoritmo de Floyd-Warshall. [&sect;25.1 + &sect;25.2]</td>
+  </tr>
+
+  <tr>
+    <td align="center">IX</td>
+    <td>3/11: Algoritmo de Johnson para grafos dispersos. [&sect;25.3]</td>
+    <td>5/11: Redes y flujos. Problema de flujo m&aacute;ximo. Redes y capacidades residuales. [&sect;26.1 + &sect;26.2]</td>
+  </tr>
+
+  <tr>
+    <td align="center">X</td>
+    <td>10/11: M&eacute;todo Ford-Fulkerson. Aumento de flujo. Caminos de aumento. Cortes y cortes m&iacute;nimos. [&sect;26.2]</td>
+    <td>12/11: Teorema de flujo m&aacute;ximo &mdash; corte m&iacute;nimo. Algoritmo b&aacute;sico Ford-Fulkerson y algoritmo Edmonds-Karp. Aplicaciones. [&sect;26.2 + otros]</td>
+  </tr>
+
+  <tr>
+    <td align="center">XI</td>
+    <td>17/11: </td>
+      <td>19/11: </td>
+  </tr>
+
+  <tr>
+    <td align="center">XII</td>
+    <td><strong>24/11: Libre</strong></td>
+    <td><strong>26/11: Examen 2 (50%)</strong></td>
+  </tr>
+
+</table></center>
+<!-- <strong color="red">[trabajo en progreso]</strong> -->
+
+<h3><a NAME="bibliografia"></a>Bibliograf&iacute;a</h3>
+
+<ul type="square">
+  <li>T. H. Cormen, C. E. Leiserson, R. L. Rivest y C. Stein. <em>Introduction to Algorithms.</em> MIT Press. (3ra edici&oacute;n)</li>
+  <li>(Consulta) O. Meza y M. Ortega. <em>Grafos y Algoritmos.</em> Equinoccio. Universidad Sim&oacute;n Bol&iacute;var.</li>
+</ul>
+
+</body>
+<address>Last Modified 29 Oct 2014</address>
+</html>
+

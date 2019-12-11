@@ -1,0 +1,12 @@
+sudoku_10k.txt
+    Contains 10,000 instances of the Sudoku game. I got it from one
+    of the many pages dedicated to Sudoku, but I forgot which one.
+
+sudoku_95_hard.txt
+    Contains 95 instances that are considered hard. Got it from Peter
+    Norvig's page.
+
+sudoku_11_hardest.txt
+    Contains 11 instances that are considered to be the hardest. Got
+    it from Peter Norvig's page.
+

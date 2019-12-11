@@ -1,0 +1,9 @@
+\beamer@endinputifotherversion {3.20pt}
+\beamer@sectionintoc {1}{Transition systems}{3}{0}{1}
+\beamer@subsectionintoc {1}{1}{Definition}{4}{0}{1}
+\beamer@subsectionintoc {1}{2}{Blocks world}{9}{0}{1}
+\beamer@sectionintoc {2}{Planning tasks}{14}{0}{2}
+\beamer@subsectionintoc {2}{1}{State variables}{15}{0}{2}
+\beamer@subsectionintoc {2}{2}{Propositional logic}{20}{0}{2}
+\beamer@subsectionintoc {2}{3}{Operators}{25}{0}{2}
+\beamer@subsectionintoc {2}{4}{Deterministic planning tasks}{31}{0}{2}

@@ -1,0 +1,8 @@
+\beamer@endinputifotherversion {3.20pt}
+\beamer@sectionintoc {1}{Schematic operators}{2}{0}{1}
+\beamer@subsectionintoc {1}{1}{Schematic operators}{3}{0}{1}
+\beamer@sectionintoc {2}{PDDL}{6}{0}{2}
+\beamer@subsectionintoc {2}{1}{Overview}{7}{0}{2}
+\beamer@subsectionintoc {2}{2}{Domain files}{8}{0}{2}
+\beamer@subsectionintoc {2}{3}{Problem files}{13}{0}{2}
+\beamer@subsectionintoc {2}{4}{Example}{15}{0}{2}

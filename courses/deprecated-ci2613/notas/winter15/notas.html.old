@@ -1,0 +1,693 @@
+<html>
+
+<head>
+<meta http-equiv=Content-Type content="text/html; charset=macintosh">
+<meta name=ProgId content=Excel.Sheet>
+<meta name=Generator content="Microsoft Excel 14">
+<link rel=File-List href="listaClases%20(2)_archivos/filelist.xml">
+<style>
+<!--table
+	{mso-displayed-decimal-separator:"\.";
+	mso-displayed-thousand-separator:"\,";}
+@page
+	{margin:1.0in .75in 1.0in .75in;
+	mso-header-margin:.5in;
+	mso-footer-margin:.5in;}
+.style0
+	{mso-number-format:General;
+	text-align:general;
+	vertical-align:bottom;
+	white-space:nowrap;
+	mso-rotate:0;
+	mso-background-source:auto;
+	mso-pattern:auto;
+	color:windowtext;
+	font-size:10.0pt;
+	font-weight:400;
+	font-style:normal;
+	text-decoration:none;
+	font-family:Arial, sans-serif;
+	mso-font-charset:0;
+	border:none;
+	mso-protection:locked visible;
+	mso-style-name:Normal;
+	mso-style-id:0;}
+td
+	{mso-style-parent:style0;
+	padding-top:1px;
+	padding-right:1px;
+	padding-left:1px;
+	mso-ignore:padding;
+	color:windowtext;
+	font-size:10.0pt;
+	font-weight:400;
+	font-style:normal;
+	text-decoration:none;
+	font-family:Arial, sans-serif;
+	mso-font-charset:0;
+	mso-number-format:General;
+	text-align:general;
+	vertical-align:bottom;
+	border:none;
+	mso-background-source:auto;
+	mso-pattern:auto;
+	mso-protection:locked visible;
+	white-space:nowrap;
+	mso-rotate:0;}
+.xl65
+	{mso-style-parent:style0;
+	text-align:right;}
+.xl66
+	{mso-style-parent:style0;
+	color:black;
+	font-size:12.0pt;
+	font-weight:700;
+	font-family:Arial;
+	mso-generic-font-family:auto;
+	mso-font-charset:0;
+	text-align:left;
+	vertical-align:top;
+	white-space:normal;}
+.xl67
+	{mso-style-parent:style0;
+	color:black;
+	font-family:Arial;
+	mso-generic-font-family:auto;
+	mso-font-charset:0;
+	text-align:right;
+	vertical-align:top;
+	white-space:normal;}
+.xl68
+	{mso-style-parent:style0;
+	color:black;
+	font-family:Arial;
+	mso-generic-font-family:auto;
+	mso-font-charset:0;
+	text-align:left;
+	vertical-align:top;
+	white-space:normal;}
+-->
+</style>
+</head>
+
+<body link=blue vlink=purple>
+
+<table border=0 cellpadding=0 cellspacing=0 width=667 style='border-collapse:
+ collapse;table-layout:fixed;width:667pt'>
+ <col width=55 style='mso-width-source:userset;mso-width-alt:2346;width:55pt'>
+ <col width=128 style='mso-width-source:userset;mso-width-alt:5461;width:128pt'>
+ <col width=140 style='mso-width-source:userset;mso-width-alt:5973;width:140pt'>
+ <col class=xl65 width=43 span=8 style='mso-width-source:userset;mso-width-alt:
+ 1834;width:43pt'>
+ <tr height=14 style='mso-height-source:userset;height:14.0pt'>
+  <td colspan=3 height=14 class=xl66 width=323 style='height:14.0pt;width:323pt'>CI2613
+  ALGORITMOS Y ESTRUCTURAS III</td>
+  <td class=xl67 width=43 style='width:43pt'></td>
+  <td class=xl65 width=43 style='width:43pt'></td>
+  <td class=xl65 width=43 style='width:43pt'></td>
+  <td class=xl65 width=43 style='width:43pt'></td>
+  <td class=xl65 width=43 style='width:43pt'></td>
+  <td class=xl65 width=43 style='width:43pt'></td>
+  <td class=xl65 width=43 style='width:43pt'></td>
+  <td class=xl65 width=43 style='width:43pt'></td>
+ </tr>
+ <tr height=14 style='mso-height-source:userset;height:14.0pt'>
+  <td colspan=3 height=14 class=xl68 width=323 style='height:14.0pt;width:323pt'>Sección
+  1</td>
+  <td class=xl65>P1</td>
+  <td class=xl65>P2-A</td>
+  <td class=xl65>P2-B</td>
+  <td class=xl65>P3-A</td>
+  <td class=xl65>P3-B</td>
+  <td class=xl65>P3-C</td>
+  <td class=xl65>P3-D</td>
+  <td class=xl65>Total</td>
+ </tr>
+ <tr height=14 style='mso-height-source:userset;height:14.0pt'>
+  <td height=14 class=xl68 width=55 style='height:14.0pt;width:55pt'>0810596</td>
+  <td class=xl68 width=128 style='width:128pt'>Latella Ardizzone</td>
+  <td class=xl68 width=140 style='width:140pt'>Giuli Antonieta</td>
+  <td class=xl67 width=43 style='width:43pt'>NP</td>
+  <td class=xl65>NP</td>
+  <td class=xl65>NP</td>
+  <td class=xl65>NP</td>
+  <td class=xl65>NP</td>
+  <td class=xl65>NP</td>
+  <td class=xl65>NP</td>
+  <td class=xl65>NP</td>
+ </tr>
+ <tr height=14 style='mso-height-source:userset;height:14.0pt'>
+  <td height=14 class=xl68 width=55 style='height:14.0pt;width:55pt'>0910810</td>
+  <td class=xl68 width=128 style='width:128pt'>Serrano</td>
+  <td class=xl68 width=140 style='width:140pt'>Luis Alberto</td>
+  <td class=xl67 width=43 style='width:43pt'>11.5</td>
+  <td class=xl65>6.33</td>
+  <td class=xl65>0</td>
+  <td class=xl65>0</td>
+  <td class=xl65>5</td>
+  <td class=xl65>0</td>
+  <td class=xl65>3</td>
+  <td class=xl65>25.83</td>
+ </tr>
+ <tr height=14 style='mso-height-source:userset;height:14.0pt'>
+  <td height=14 class=xl68 width=55 style='height:14.0pt;width:55pt'>0911023</td>
+  <td class=xl68 width=128 style='width:128pt'>Rodriguez Morelo</td>
+  <td class=xl68 width=140 style='width:140pt'>Honorio Jose</td>
+  <td class=xl67 width=43 style='width:43pt'>13</td>
+  <td class=xl65>11</td>
+  <td class=xl65>1</td>
+  <td class=xl65>0</td>
+  <td class=xl65>4</td>
+  <td class=xl65>0</td>
+  <td class=xl65>2</td>
+  <td class=xl65>31</td>
+ </tr>
+ <tr height=14 style='mso-height-source:userset;height:14.0pt'>
+  <td height=14 class=xl68 width=55 style='height:14.0pt;width:55pt'>0911100</td>
+  <td class=xl68 width=128 style='width:128pt'>Espinoza Poveda</td>
+  <td class=xl68 width=140 style='width:140pt'>Stephanie Rocio</td>
+  <td class=xl67 width=43 style='width:43pt'>14</td>
+  <td class=xl65>12</td>
+  <td class=xl65>3</td>
+  <td class=xl65>0</td>
+  <td class=xl65>1</td>
+  <td class=xl65>3</td>
+  <td class=xl65>0</td>
+  <td class=xl65>33</td>
+ </tr>
+ <tr height=14 style='mso-height-source:userset;height:14.0pt'>
+  <td height=14 class=xl68 width=55 style='height:14.0pt;width:55pt'>0911163</td>
+  <td class=xl68 width=128 style='width:128pt'>Negreira Peruzzi</td>
+  <td class=xl68 width=140 style='width:140pt'>Gerel Enrique</td>
+  <td class=xl67 width=43 style='width:43pt'>14</td>
+  <td class=xl65>12</td>
+  <td class=xl65>0</td>
+  <td class=xl65>4</td>
+  <td class=xl65>5</td>
+  <td class=xl65>0</td>
+  <td class=xl65>1</td>
+  <td class=xl65>36</td>
+ </tr>
+ <tr height=14 style='mso-height-source:userset;height:14.0pt'>
+  <td height=14 class=xl68 width=55 style='height:14.0pt;width:55pt'>0911175</td>
+  <td class=xl68 width=128 style='width:128pt'>Perez Bermudez</td>
+  <td class=xl68 width=140 style='width:140pt'>Vanessa</td>
+  <td class=xl67 width=43 style='width:43pt'>14</td>
+  <td class=xl65>12</td>
+  <td class=xl65>3</td>
+  <td class=xl65>4</td>
+  <td class=xl65>2</td>
+  <td class=xl65>0</td>
+  <td class=xl65>0</td>
+  <td class=xl65>35</td>
+ </tr>
+ <tr height=14 style='mso-height-source:userset;height:14.0pt'>
+  <td height=14 class=xl68 width=55 style='height:14.0pt;width:55pt'>1010005</td>
+  <td class=xl68 width=128 style='width:128pt'>Acosta Diaz</td>
+  <td class=xl68 width=140 style='width:140pt'>Fabiana Jose</td>
+  <td class=xl65>NP</td>
+  <td class=xl65>NP</td>
+  <td class=xl65>NP</td>
+  <td class=xl65>NP</td>
+  <td class=xl65>NP</td>
+  <td class=xl65>NP</td>
+  <td class=xl65>NP</td>
+  <td class=xl65>NP</td>
+ </tr>
+ <tr height=14 style='mso-height-source:userset;height:14.0pt'>
+  <td height=14 class=xl68 width=55 style='height:14.0pt;width:55pt'>1010251</td>
+  <td class=xl68 width=128 style='width:128pt'>Fontalvo Orozco</td>
+  <td class=xl68 width=140 style='width:140pt'>Clint Wilman</td>
+  <td class=xl67 width=43 style='width:43pt'>14</td>
+  <td class=xl65>7.66</td>
+  <td class=xl65>3</td>
+  <td class=xl65>0</td>
+  <td class=xl65>2</td>
+  <td class=xl65>0</td>
+  <td class=xl65>0</td>
+  <td class=xl65>26.66</td>
+ </tr>
+ <tr height=14 style='mso-height-source:userset;height:14.0pt'>
+  <td height=14 class=xl68 width=55 style='height:14.0pt;width:55pt'>1010341</td>
+  <td class=xl68 width=128 style='width:128pt'>Guzman Melendez</td>
+  <td class=xl68 width=140 style='width:140pt'>Andres Jose</td>
+  <td class=xl67 width=43 style='width:43pt'>14</td>
+  <td class=xl65>12</td>
+  <td class=xl65>3</td>
+  <td class=xl65>0</td>
+  <td class=xl65>5</td>
+  <td class=xl65>3</td>
+  <td class=xl65>3</td>
+  <td class=xl65>40</td>
+ </tr>
+ <tr height=14 style='mso-height-source:userset;height:14.0pt'>
+  <td height=14 class=xl68 width=55 style='height:14.0pt;width:55pt'>1010352</td>
+  <td class=xl68 width=128 style='width:128pt'>Hernandez Mogollon</td>
+  <td class=xl68 width=140 style='width:140pt'>Valentina<span
+  style="mso-spacerun:yes">&nbsp;</span></td>
+  <td class=xl67 width=43 style='width:43pt'>13</td>
+  <td class=xl65>12</td>
+  <td class=xl65>2</td>
+  <td class=xl65>0</td>
+  <td class=xl65>5</td>
+  <td class=xl65>0</td>
+  <td class=xl65>0</td>
+  <td class=xl65>32</td>
+ </tr>
+ <tr height=14 style='mso-height-source:userset;height:14.0pt'>
+  <td height=14 class=xl68 width=55 style='height:14.0pt;width:55pt'>1010513</td>
+  <td class=xl68 width=128 style='width:128pt'>Ortega Tovar</td>
+  <td class=xl68 width=140 style='width:140pt'>Alejandra</td>
+  <td class=xl67 width=43 style='width:43pt'>14</td>
+  <td class=xl65>12</td>
+  <td class=xl65>2</td>
+  <td class=xl65>4</td>
+  <td class=xl65>5</td>
+  <td class=xl65>0</td>
+  <td class=xl65>0</td>
+  <td class=xl65>37</td>
+ </tr>
+ <tr height=14 style='mso-height-source:userset;height:14.0pt'>
+  <td height=14 class=xl68 width=55 style='height:14.0pt;width:55pt'>1010581</td>
+  <td class=xl68 width=128 style='width:128pt'>Pumpido Ochoa</td>
+  <td class=xl68 width=140 style='width:140pt'>Alejandro Arturo</td>
+  <td class=xl67 width=43 style='width:43pt'>10</td>
+  <td class=xl65>12</td>
+  <td class=xl65>3</td>
+  <td class=xl65>0</td>
+  <td class=xl65>2</td>
+  <td class=xl65>3</td>
+  <td class=xl65>3</td>
+  <td class=xl65>33</td>
+ </tr>
+ <tr height=14 style='mso-height-source:userset;height:14.0pt'>
+  <td height=14 class=xl68 width=55 style='height:14.0pt;width:55pt'>1010613</td>
+  <td class=xl68 width=128 style='width:128pt'>Rodrigues Agrela</td>
+  <td class=xl68 width=140 style='width:140pt'>Leslie Angelica</td>
+  <td class=xl67 width=43 style='width:43pt'>11.5</td>
+  <td class=xl65>5.66</td>
+  <td class=xl65>2</td>
+  <td class=xl65>0</td>
+  <td class=xl65>5</td>
+  <td class=xl65>0</td>
+  <td class=xl65>1</td>
+  <td class=xl65>25.16</td>
+ </tr>
+ <tr height=14 style='mso-height-source:userset;height:14.0pt'>
+  <td height=14 class=xl68 width=55 style='height:14.0pt;width:55pt'>1010969</td>
+  <td class=xl68 width=128 style='width:128pt'>Arleo Rodriguez</td>
+  <td class=xl68 width=140 style='width:140pt'>Samuel Alejandro</td>
+  <td class=xl67 width=43 style='width:43pt'>14</td>
+  <td class=xl65>12</td>
+  <td class=xl65>3</td>
+  <td class=xl65>4</td>
+  <td class=xl65>5</td>
+  <td class=xl65>3</td>
+  <td class=xl65>2</td>
+  <td class=xl65>43</td>
+ </tr>
+ <tr height=14 style='mso-height-source:userset;height:14.0pt'>
+  <td height=14 class=xl68 width=55 style='height:14.0pt;width:55pt'>1011039</td>
+  <td class=xl68 width=128 style='width:128pt'>Manrrique Aquino</td>
+  <td class=xl68 width=140 style='width:140pt'>Shamuel Manuel</td>
+  <td class=xl67 width=43 style='width:43pt'>12</td>
+  <td class=xl65>12</td>
+  <td class=xl65>3</td>
+  <td class=xl65>4</td>
+  <td class=xl65>0</td>
+  <td class=xl65>0</td>
+  <td class=xl65>3</td>
+  <td class=xl65>34</td>
+ </tr>
+ <tr height=14 style='mso-height-source:userset;height:14.0pt'>
+  <td height=14 class=xl68 width=55 style='height:14.0pt;width:55pt'>1011148</td>
+  <td class=xl68 width=128 style='width:128pt'>Herradez Hernandez</td>
+  <td class=xl68 width=140 style='width:140pt'>Jose Ramon</td>
+  <td class=xl67 width=43 style='width:43pt'>14</td>
+  <td class=xl65>12</td>
+  <td class=xl65>3</td>
+  <td class=xl65>4</td>
+  <td class=xl65>5</td>
+  <td class=xl65>0</td>
+  <td class=xl65>3</td>
+  <td class=xl65>41</td>
+ </tr>
+ <tr height=14 style='mso-height-source:userset;height:14.0pt'>
+  <td height=14 class=xl68 width=55 style='height:14.0pt;width:55pt'>1110058</td>
+  <td class=xl68 width=128 style='width:128pt'>Arteaga Gutierrez</td>
+  <td class=xl68 width=140 style='width:140pt'>Domingo Enrique</td>
+  <td class=xl65>NP</td>
+  <td class=xl65>NP</td>
+  <td class=xl65>NP</td>
+  <td class=xl65>NP</td>
+  <td class=xl65>NP</td>
+  <td class=xl65>NP</td>
+  <td class=xl65>NP</td>
+  <td class=xl65>NP</td>
+ </tr>
+ <tr height=14 style='mso-height-source:userset;height:14.0pt'>
+  <td height=14 class=xl68 width=55 style='height:14.0pt;width:55pt'>1110092</td>
+  <td class=xl68 width=128 style='width:128pt'>Becerra Colmenares</td>
+  <td class=xl68 width=140 style='width:140pt'>Andersson Enrique</td>
+  <td class=xl67 width=43 style='width:43pt'>11.5</td>
+  <td class=xl65>12</td>
+  <td class=xl65>2</td>
+  <td class=xl65>4</td>
+  <td class=xl65>2</td>
+  <td class=xl65>0</td>
+  <td class=xl65>3</td>
+  <td class=xl65>34.5</td>
+ </tr>
+ <tr height=14 style='mso-height-source:userset;height:14.0pt'>
+  <td height=14 class=xl68 width=55 style='height:14.0pt;width:55pt'>1110106</td>
+  <td class=xl68 width=128 style='width:128pt'>Blanco Kobernyk</td>
+  <td class=xl68 width=140 style='width:140pt'>Emilio<span
+  style="mso-spacerun:yes">&nbsp;</span></td>
+  <td class=xl67 width=43 style='width:43pt'>14</td>
+  <td class=xl65>12</td>
+  <td class=xl65>2</td>
+  <td class=xl65>4</td>
+  <td class=xl65>2</td>
+  <td class=xl65>1</td>
+  <td class=xl65>0</td>
+  <td class=xl65>35</td>
+ </tr>
+ <tr height=14 style='mso-height-source:userset;height:14.0pt'>
+  <td height=14 class=xl68 width=55 style='height:14.0pt;width:55pt'>1110235</td>
+  <td class=xl68 width=128 style='width:128pt'>Cámara Rodríguez</td>
+  <td class=xl68 width=140 style='width:140pt'>Roberto Alejandro</td>
+  <td class=xl67 width=43 style='width:43pt'>13</td>
+  <td class=xl65>11.66</td>
+  <td class=xl65>3</td>
+  <td class=xl65>0</td>
+  <td class=xl65>5</td>
+  <td class=xl65>0</td>
+  <td class=xl65>0</td>
+  <td class=xl65>32.66</td>
+ </tr>
+ <tr height=14 style='mso-height-source:userset;height:14.0pt'>
+  <td height=14 class=xl68 width=55 style='height:14.0pt;width:55pt'>1110375</td>
+  <td class=xl68 width=128 style='width:128pt'>Gomes<span
+  style="mso-spacerun:yes">&nbsp; </span>González</td>
+  <td class=xl68 width=140 style='width:140pt'>Manuel Alejandro</td>
+  <td class=xl67 width=43 style='width:43pt'>13</td>
+  <td class=xl65>8.66</td>
+  <td class=xl65>3</td>
+  <td class=xl65>0</td>
+  <td class=xl65>2</td>
+  <td class=xl65>3</td>
+  <td class=xl65>0</td>
+  <td class=xl65>29.66</td>
+ </tr>
+ <tr height=14 style='mso-height-source:userset;height:14.0pt'>
+  <td height=14 class=xl68 width=55 style='height:14.0pt;width:55pt'>1110396</td>
+  <td class=xl68 width=128 style='width:128pt'>Gonzalez Valiente</td>
+  <td class=xl68 width=140 style='width:140pt'>Isaac Albenis</td>
+  <td class=xl67 width=43 style='width:43pt'>14</td>
+  <td class=xl65>12</td>
+  <td class=xl65>3</td>
+  <td class=xl65>4</td>
+  <td class=xl65>5</td>
+  <td class=xl65>3</td>
+  <td class=xl65>0</td>
+  <td class=xl65>41</td>
+ </tr>
+ <tr height=14 style='mso-height-source:userset;height:14.0pt'>
+  <td height=14 class=xl68 width=55 style='height:14.0pt;width:55pt'>1110684</td>
+  <td class=xl68 width=128 style='width:128pt'>Münch Casanova</td>
+  <td class=xl68 width=140 style='width:140pt'>Ricardo Eugenio</td>
+  <td class=xl67 width=43 style='width:43pt'>14</td>
+  <td class=xl65>8</td>
+  <td class=xl65>1</td>
+  <td class=xl65>4</td>
+  <td class=xl65>5</td>
+  <td class=xl65>0</td>
+  <td class=xl65>3</td>
+  <td class=xl65>35</td>
+ </tr>
+ <tr height=14 style='mso-height-source:userset;height:14.0pt'>
+  <td height=14 class=xl68 width=55 style='height:14.0pt;width:55pt'>1110801</td>
+  <td class=xl68 width=128 style='width:128pt'>Prado Garcia</td>
+  <td class=xl68 width=140 style='width:140pt'>Johanny Raquel</td>
+  <td class=xl67 width=43 style='width:43pt'>14</td>
+  <td class=xl65>11.33</td>
+  <td class=xl65>1</td>
+  <td class=xl65>4</td>
+  <td class=xl65>3</td>
+  <td class=xl65>0</td>
+  <td class=xl65>2</td>
+  <td class=xl65>35.33</td>
+ </tr>
+ <tr height=14 style='mso-height-source:userset;height:14.0pt'>
+  <td height=14 class=xl68 width=55 style='height:14.0pt;width:55pt'>1110968</td>
+  <td class=xl68 width=128 style='width:128pt'>Silva Rengel</td>
+  <td class=xl68 width=140 style='width:140pt'>Edgar José</td>
+  <td class=xl67 width=43 style='width:43pt'>13</td>
+  <td class=xl65>12</td>
+  <td class=xl65>3</td>
+  <td class=xl65>4</td>
+  <td class=xl65>5</td>
+  <td class=xl65>0</td>
+  <td class=xl65>1</td>
+  <td class=xl65>38</td>
+ </tr>
+ <tr height=14 style='mso-height-source:userset;height:14.0pt'>
+  <td height=14 class=xl68 width=55 style='height:14.0pt;width:55pt'>1111020</td>
+  <td class=xl68 width=128 style='width:128pt'>Terán Zambrano</td>
+  <td class=xl68 width=140 style='width:140pt'>Sergio Alejandro</td>
+  <td class=xl67 width=43 style='width:43pt'>14</td>
+  <td class=xl65>12</td>
+  <td class=xl65>1</td>
+  <td class=xl65>0</td>
+  <td class=xl65>5</td>
+  <td class=xl65>0</td>
+  <td class=xl65>3</td>
+  <td class=xl65>35</td>
+ </tr>
+ <tr height=14 style='mso-height-source:userset;height:14.0pt'>
+  <td height=14 class=xl68 width=55 style='height:14.0pt;width:55pt'>1111027</td>
+  <td class=xl68 width=128 style='width:128pt'>Torres Cuevas</td>
+  <td class=xl68 width=140 style='width:140pt'>Douglas Enrique</td>
+  <td class=xl67 width=43 style='width:43pt'>14</td>
+  <td class=xl65>11</td>
+  <td class=xl65>3</td>
+  <td class=xl65>4</td>
+  <td class=xl65>5</td>
+  <td class=xl65>1</td>
+  <td class=xl65>1</td>
+  <td class=xl65>39</td>
+ </tr>
+ <tr height=14 style='mso-height-source:userset;height:14.0pt'>
+  <td height=14 class=xl68 width=55 style='height:14.0pt;width:55pt'>1210240</td>
+  <td class=xl68 width=128 style='width:128pt'>Amos Carta</td>
+  <td class=xl68 width=140 style='width:140pt'>Benjamin Amós</td>
+  <td class=xl67 width=43 style='width:43pt'>12</td>
+  <td class=xl65>11.66</td>
+  <td class=xl65>3</td>
+  <td class=xl65>1</td>
+  <td class=xl65>5</td>
+  <td class=xl65>0</td>
+  <td class=xl65>0</td>
+  <td class=xl65>32.66</td>
+ </tr>
+ <tr height=14 style='mso-height-source:userset;height:14.0pt'>
+  <td height=14 class=xl68 width=55 style='height:14.0pt;width:55pt'>1210515</td>
+  <td class=xl68 width=128 style='width:128pt'>Rojas Key</td>
+  <td class=xl68 width=140 style='width:140pt'>Francisco Alberto</td>
+  <td class=xl67 width=43 style='width:43pt'>14</td>
+  <td class=xl65>11</td>
+  <td class=xl65>2</td>
+  <td class=xl65>0</td>
+  <td class=xl65>5</td>
+  <td class=xl65>0</td>
+  <td class=xl65>3</td>
+  <td class=xl65>35</td>
+ </tr>
+ <tr height=14 style='mso-height-source:userset;height:14.0pt'>
+  <td height=14 class=xl68 width=55 style='height:14.0pt;width:55pt'>1210561</td>
+  <td class=xl68 width=128 style='width:128pt'>Maldonado Montilva</td>
+  <td class=xl68 width=140 style='width:140pt'>Pablo Ricardo</td>
+  <td class=xl67 width=43 style='width:43pt'>13.5</td>
+  <td class=xl65>12</td>
+  <td class=xl65>3</td>
+  <td class=xl65>0</td>
+  <td class=xl65>3</td>
+  <td class=xl65>4</td>
+  <td class=xl65>3</td>
+  <td class=xl65>38.5</td>
+ </tr>
+ <tr height=14 style='mso-height-source:userset;height:14.0pt'>
+  <td height=14 class=xl68 width=55 style='height:14.0pt;width:55pt'>1210621</td>
+  <td class=xl68 width=128 style='width:128pt'>Suárez Castro</td>
+  <td class=xl68 width=140 style='width:140pt'>Marialicia</td>
+  <td class=xl67 width=43 style='width:43pt'>14</td>
+  <td class=xl65>12</td>
+  <td class=xl65>3</td>
+  <td class=xl65>4</td>
+  <td class=xl65>5</td>
+  <td class=xl65>0</td>
+  <td class=xl65>1</td>
+  <td class=xl65>39</td>
+ </tr>
+ <tr height=14 style='mso-height-source:userset;height:14.0pt'>
+  <td height=14 class=xl68 width=55 style='height:14.0pt;width:55pt'>1210645</td>
+  <td class=xl68 width=128 style='width:128pt'>Cordero García</td>
+  <td class=xl68 width=140 style='width:140pt'>Alejandra Del Carmen</td>
+  <td class=xl67 width=43 style='width:43pt'>14</td>
+  <td class=xl65>12</td>
+  <td class=xl65>3</td>
+  <td class=xl65>0</td>
+  <td class=xl65>5</td>
+  <td class=xl65>0</td>
+  <td class=xl65>2</td>
+  <td class=xl65>36</td>
+ </tr>
+ <tr height=14 style='mso-height-source:userset;height:14.0pt'>
+  <td height=14 class=xl68 width=55 style='height:14.0pt;width:55pt'>1210706</td>
+  <td class=xl68 width=128 style='width:128pt'>Becerra Gil</td>
+  <td class=xl68 width=140 style='width:140pt'>Ronald Alfonso</td>
+  <td class=xl67 width=43 style='width:43pt'>10</td>
+  <td class=xl65>7</td>
+  <td class=xl65>3</td>
+  <td class=xl65>0</td>
+  <td class=xl65>1</td>
+  <td class=xl65>0</td>
+  <td class=xl65>2</td>
+  <td class=xl65>23</td>
+ </tr>
+ <tr height=14 style='mso-height-source:userset;height:14.0pt'>
+  <td height=14 class=xl68 width=55 style='height:14.0pt;width:55pt'>1210771</td>
+  <td class=xl68 width=128 style='width:128pt'>Atias Martinez</td>
+  <td class=xl68 width=140 style='width:140pt'>David Alejandro</td>
+  <td class=xl67 width=43 style='width:43pt'>8</td>
+  <td class=xl65>12</td>
+  <td class=xl65>3</td>
+  <td class=xl65>0</td>
+  <td class=xl65>5</td>
+  <td class=xl65>3</td>
+  <td class=xl65>3</td>
+  <td class=xl65>34</td>
+ </tr>
+ <tr height=14 style='mso-height-source:userset;height:14.0pt'>
+  <td height=14 class=xl68 width=55 style='height:14.0pt;width:55pt'>1210872</td>
+  <td class=xl68 width=128 style='width:128pt'>Mena De Fonseca</td>
+  <td class=xl68 width=140 style='width:140pt'>Ricardo</td>
+  <td class=xl67 width=43 style='width:43pt'>14</td>
+  <td class=xl65>12</td>
+  <td class=xl65>3</td>
+  <td class=xl65>0</td>
+  <td class=xl65>5</td>
+  <td class=xl65>3</td>
+  <td class=xl65>6</td>
+  <td class=xl65>43</td>
+ </tr>
+ <tr height=14 style='mso-height-source:userset;height:14.0pt'>
+  <td height=14 class=xl68 width=55 style='height:14.0pt;width:55pt'>1210941</td>
+  <td class=xl68 width=128 style='width:128pt'>Rumbos Carrasco</td>
+  <td class=xl68 width=140 style='width:140pt'>Norelys Marian</td>
+  <td class=xl67 width=43 style='width:43pt'>14</td>
+  <td class=xl65>12</td>
+  <td class=xl65>3</td>
+  <td class=xl65>4</td>
+  <td class=xl65>5</td>
+  <td class=xl65>3</td>
+  <td class=xl65>3</td>
+  <td class=xl65>44</td>
+ </tr>
+ <tr height=14 style='mso-height-source:userset;height:14.0pt'>
+  <td height=14 class=xl68 width=55 style='height:14.0pt;width:55pt'>1210967</td>
+  <td class=xl68 width=128 style='width:128pt'>Fanghella Valero</td>
+  <td class=xl68 width=140 style='width:140pt'>Alfredo José</td>
+  <td class=xl67 width=43 style='width:43pt'>14</td>
+  <td class=xl65>12</td>
+  <td class=xl65>3</td>
+  <td class=xl65>4</td>
+  <td class=xl65>5</td>
+  <td class=xl65>5</td>
+  <td class=xl65>3</td>
+  <td class=xl65>46</td>
+ </tr>
+ <tr height=14 style='mso-height-source:userset;height:14.0pt'>
+  <td height=14 class=xl68 width=55 style='height:14.0pt;width:55pt'>1211152</td>
+  <td class=xl68 width=128 style='width:128pt'>Pérez Maurera</td>
+  <td class=xl68 width=140 style='width:140pt'>Fernando Benjamín</td>
+  <td class=xl67 width=43 style='width:43pt'>14</td>
+  <td class=xl65>9</td>
+  <td class=xl65>3</td>
+  <td class=xl65>4</td>
+  <td class=xl65>5</td>
+  <td class=xl65>1</td>
+  <td class=xl65>2</td>
+  <td class=xl65>38</td>
+ </tr>
+ <tr height=14 style='mso-height-source:userset;height:14.0pt'>
+  <td height=14 class=xl68 width=55 style='height:14.0pt;width:55pt'>1211170</td>
+  <td class=xl68 width=128 style='width:128pt'>Cadenas Zerpa</td>
+  <td class=xl68 width=140 style='width:140pt'>Andres Eduardo</td>
+  <td class=xl67 width=43 style='width:43pt'>14</td>
+  <td class=xl65>6.66</td>
+  <td class=xl65>3</td>
+  <td class=xl65>0</td>
+  <td class=xl65>5</td>
+  <td class=xl65>0</td>
+  <td class=xl65>3</td>
+  <td class=xl65>31.66</td>
+ </tr>
+ <tr height=14 style='mso-height-source:userset;height:14.0pt'>
+  <td height=14 class=xl68 width=55 style='height:14.0pt;width:55pt'>1211247</td>
+  <td class=xl68 width=128 style='width:128pt'>Rocha Ferrer</td>
+  <td class=xl68 width=140 style='width:140pt'>Andrés<span
+  style="mso-spacerun:yes">&nbsp; </span>Eduardo</td>
+  <td class=xl67 width=43 style='width:43pt'>12</td>
+  <td class=xl65>12</td>
+  <td class=xl65>3</td>
+  <td class=xl65>0</td>
+  <td class=xl65>5</td>
+  <td class=xl65>2</td>
+  <td class=xl65>3</td>
+  <td class=xl65>37</td>
+ </tr>
+ <tr height=14 style='mso-height-source:userset;height:14.0pt'>
+  <td height=14 class=xl68 width=55 style='height:14.0pt;width:55pt'>1211250</td>
+  <td class=xl68 width=128 style='width:128pt'>Gamboa Gomes</td>
+  <td class=xl68 width=140 style='width:140pt'>Natascha Sinai</td>
+  <td class=xl67 width=43 style='width:43pt'>14</td>
+  <td class=xl65>6</td>
+  <td class=xl65>3</td>
+  <td class=xl65>4</td>
+  <td class=xl65>3</td>
+  <td class=xl65>0</td>
+  <td class=xl65>3</td>
+  <td class=xl65>33</td>
+ </tr>
+ <tr height=14 style='mso-height-source:userset;height:14.0pt'>
+  <td height=14 class=xl68 width=55 style='height:14.0pt;width:55pt'>1211402</td>
+  <td class=xl68 width=128 style='width:128pt'>Tur Rojas</td>
+  <td class=xl68 width=140 style='width:140pt'>Georvic Alejandro</td>
+  <td class=xl67 width=43 style='width:43pt'>14</td>
+  <td class=xl65>9</td>
+  <td class=xl65>3</td>
+  <td class=xl65>4</td>
+  <td class=xl65>5</td>
+  <td class=xl65>4</td>
+  <td class=xl65>3</td>
+  <td class=xl65>42</td>
+ </tr>
+ <tr height=12 style='height:12.0pt'>
+  <td height=12 style='height:12.0pt'></td>
+  <td class=xl68 width=128 style='width:128pt'>Rivera</td>
+  <td class=xl68 width=140 style='width:140pt'>Ragme</td>
+  <td class=xl65>11</td>
+  <td class=xl65>12</td>
+  <td class=xl65>1</td>
+  <td class=xl65>0</td>
+  <td class=xl65>0</td>
+  <td class=xl65>0</td>
+  <td class=xl65>0</td>
+  <td class=xl65>24</td>
+ </tr>
+</table>
+
+</body>
+
+</html>
